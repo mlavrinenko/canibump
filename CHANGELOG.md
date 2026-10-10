@@ -24,3 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Results land in `$XDG_CACHE_HOME/canibump/state/<manifest path>.json` with
   `checked_at` and `fresh_until`; fresh ones are reused unless `--refresh`.
   `canibump status` reads only that file, and `status --path` prints it.
+- `reached = "github:o/r#N"` or `"github:o/r@sha"` with `in = { branch = ... }`,
+  `{ tag = ... }` or `{ tags = "v*", since = "0.5.0" }`: bumpable once the
+  commit, or the PR's merge commit, is there. A pattern names the first tag
+  that has it, found by binary search over tags in version order.
+- Versions compare as semver when both parse, else leniently: a letter
+  prefix drops (`b7012` = `7012`) and a letter suffix is a pre-release.

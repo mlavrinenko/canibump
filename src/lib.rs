@@ -11,3 +11,4 @@ pub mod provider;
 pub mod refs;
 pub mod report;
 pub mod run;
+pub mod version;

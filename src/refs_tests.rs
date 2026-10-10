@@ -41,3 +41,30 @@ fn names_the_known_schemes_for_an_unknown_one() {
     assert!(error.contains("svn"), "{error}");
     assert!(error.contains("github"), "{error}");
 }
+
+#[test]
+fn parses_a_github_commit_or_item_as_reachable() {
+    let commit: Reachable = "github:o/r@6ee6c33".parse().expect("valid");
+    assert_eq!(
+        commit,
+        Reachable::Commit(CommitRef {
+            source: Source::GitHub {
+                owner: "o".to_owned(),
+                repo: "r".to_owned(),
+            },
+            sha: "6ee6c33".to_owned(),
+        })
+    );
+    assert_eq!(commit.to_string(), "github:o/r@6ee6c33");
+    let item: Reachable = "github:o/r#5".parse().expect("valid");
+    assert_eq!(item.to_string(), "github:o/r#5");
+    assert_eq!(item.source().kind(), SourceKind::GitHub);
+}
+
+#[test]
+fn rejects_a_short_or_non_hex_sha() {
+    for text in ["github:o/r@abc", "github:o/r@zzzzzzz", "github:o/r"] {
+        let error = text.parse::<Reachable>().expect_err(text).to_string();
+        assert!(error.contains(text), "{error}");
+    }
+}

@@ -1,28 +1,77 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicUsize, Ordering};
 
 use async_trait::async_trait;
 
 use super::*;
-use crate::manifest::StateCondition;
-use crate::provider::{CheckError, ItemState, Registry, Tracker};
-use crate::refs::{ItemRef, SourceKind};
+use crate::manifest::{ReachedCondition, StateCondition, Within};
+use crate::provider::{CheckError, CodeHost, GitRef, ItemState, Registry, Tracker};
+use crate::refs::{ItemRef, Source, SourceKind};
 
-struct FakeTracker(HashMap<u64, Result<ItemState, CheckError>>);
+#[derive(Default)]
+struct Fake {
+    states: HashMap<u64, Result<ItemState, CheckError>>,
+    merge_commits: HashMap<u64, String>,
+    containing: HashSet<String>,
+    tags: Vec<String>,
+    host_error: Option<CheckError>,
+    contains_calls: AtomicUsize,
+}
 
 #[async_trait]
-impl Tracker for FakeTracker {
+impl Tracker for Fake {
     async fn item_state(&self, item: &ItemRef) -> Result<ItemState, CheckError> {
-        self.0
+        self.states
             .get(&item.number)
             .cloned()
             .unwrap_or_else(|| Err(CheckError::NotFound(item.to_string())))
     }
 }
 
+#[async_trait]
+impl CodeHost for Fake {
+    async fn merge_commit(&self, item: &ItemRef) -> Result<Option<String>, CheckError> {
+        Ok(self.merge_commits.get(&item.number).cloned())
+    }
+
+    async fn contains(
+        &self,
+        _source: &Source,
+        commit: &str,
+        target: &GitRef,
+    ) -> Result<bool, CheckError> {
+        self.contains_calls.fetch_add(1, Ordering::SeqCst);
+        if let Some(error) = &self.host_error {
+            return Err(error.clone());
+        }
+        assert_eq!(commit, "abc1234def");
+        Ok(self.containing.contains(target.name()))
+    }
+
+    async fn tags(&self, _source: &Source, prefix: &str) -> Result<Vec<String>, CheckError> {
+        Ok(self
+            .tags
+            .iter()
+            .filter(|tag| tag.starts_with(prefix))
+            .cloned()
+            .collect())
+    }
+}
+
+fn registry(fake: Fake) -> (Registry, Arc<Fake>) {
+    let fake = Arc::new(fake);
+    let registry = Registry::default()
+        .with_tracker(SourceKind::GitHub, fake.clone())
+        .with_code_host(SourceKind::GitHub, fake.clone());
+    (registry, fake)
+}
+
 async fn outcome_for(state: Result<ItemState, CheckError>) -> Outcome {
-    let tracker = FakeTracker(HashMap::from([(1, state)]));
-    let registry = Registry::default().with_tracker(SourceKind::GitHub, Arc::new(tracker));
+    let (registry, _) = registry(Fake {
+        states: HashMap::from([(1, state)]),
+        ..Fake::default()
+    });
     let item: ItemRef = "github:o/r#1".parse().expect("valid ref");
     evaluate(&Condition::State(StateCondition { item }), &registry).await
 }
@@ -78,4 +127,151 @@ async fn a_missing_provider_fails() {
     .await;
     assert_eq!(outcome.status, Status::Failed);
     assert!(outcome.detail.contains("no provider"), "{}", outcome.detail);
+}
+
+fn merged_pr() -> Fake {
+    Fake {
+        states: HashMap::from([(1, Ok(ItemState::Merged))]),
+        merge_commits: HashMap::from([(1, "abc1234def".to_owned())]),
+        ..Fake::default()
+    }
+}
+
+async fn reach(fake: Fake, target: &str, within: Within) -> (Outcome, Arc<Fake>) {
+    let (registry, fake) = registry(fake);
+    let condition = Condition::Reached(ReachedCondition {
+        target: target.parse().expect("valid target"),
+        within,
+    });
+    (evaluate(&condition, &registry).await, fake)
+}
+
+#[tokio::test]
+async fn a_merged_pr_in_a_branch_is_bumpable() {
+    let fake = Fake {
+        containing: HashSet::from(["main".to_owned()]),
+        ..merged_pr()
+    };
+    let (outcome, _) = reach(fake, "github:o/r#1", Within::Branch("main".to_owned())).await;
+    assert_eq!(
+        outcome,
+        Outcome::new(Status::Bumpable, "github:o/r#1 (abc1234) is in main")
+    );
+    let (outcome, _) = reach(
+        merged_pr(),
+        "github:o/r#1",
+        Within::Branch("main".to_owned()),
+    )
+    .await;
+    assert_eq!(
+        outcome,
+        Outcome::new(Status::Waiting, "github:o/r#1 (abc1234) is not in main yet")
+    );
+}
+
+#[tokio::test]
+async fn an_unmerged_pr_waits_or_is_dead() {
+    for (state, status, detail) in [
+        (ItemState::Open, Status::Waiting, "github:o/r#1 is open"),
+        (
+            ItemState::ClosedUnmerged,
+            Status::Dead,
+            "github:o/r#1 closed unmerged",
+        ),
+    ] {
+        let fake = Fake {
+            states: HashMap::from([(1, Ok(state))]),
+            ..Fake::default()
+        };
+        let (outcome, _) = reach(fake, "github:o/r#1", Within::Tag("v1".to_owned())).await;
+        assert_eq!(outcome, Outcome::new(status, detail));
+    }
+}
+
+#[tokio::test]
+async fn a_merged_pr_without_a_merge_commit_fails() {
+    let fake = Fake {
+        states: HashMap::from([(1, Ok(ItemState::Merged))]),
+        ..Fake::default()
+    };
+    let (outcome, _) = reach(fake, "github:o/r#1", Within::Tag("v1".to_owned())).await;
+    assert_eq!(outcome.status, Status::Failed);
+}
+
+#[tokio::test]
+async fn a_commit_in_a_tag_is_bumpable() {
+    let fake = Fake {
+        containing: HashSet::from(["v1".to_owned()]),
+        ..Fake::default()
+    };
+    let (outcome, _) = reach(fake, "github:o/r@abc1234def", Within::Tag("v1".to_owned())).await;
+    assert_eq!(
+        outcome,
+        Outcome::new(Status::Bumpable, "github:o/r@abc1234 is in v1")
+    );
+}
+
+fn released_from(first: u32) -> Fake {
+    let tags: Vec<String> = (1..=40)
+        .map(|minor| format!("v0.{minor}.0"))
+        .chain(["b100".to_owned(), "b200".to_owned()])
+        .collect();
+    let containing = (first..=40).map(|minor| format!("v0.{minor}.0")).collect();
+    Fake {
+        tags,
+        containing,
+        ..merged_pr()
+    }
+}
+
+fn tags(pattern: &str, since: Option<&str>) -> Within {
+    Within::Tags {
+        pattern: glob::Pattern::new(pattern).expect("glob"),
+        since: since.map(str::to_owned),
+    }
+}
+
+#[tokio::test]
+async fn finds_the_first_matching_tag_by_binary_search() {
+    let (outcome, fake) = reach(released_from(13), "github:o/r#1", tags("v*", None)).await;
+    assert_eq!(
+        outcome,
+        Outcome::new(Status::Bumpable, "github:o/r#1 (abc1234) is in v0.13.0")
+    );
+    assert!(fake.contains_calls.load(Ordering::SeqCst) <= 7);
+}
+
+#[tokio::test]
+async fn since_skips_older_tags() {
+    let (outcome, _) = reach(
+        released_from(13),
+        "github:o/r#1",
+        tags("v*", Some("0.20.0")),
+    )
+    .await;
+    assert_eq!(outcome.detail, "github:o/r#1 (abc1234) is in v0.20.0");
+}
+
+#[tokio::test]
+async fn waits_when_no_matching_tag_has_it() {
+    let (outcome, _) = reach(released_from(41), "github:o/r#1", tags("v*", None)).await;
+    assert_eq!(
+        outcome,
+        Outcome::new(
+            Status::Waiting,
+            "github:o/r#1 (abc1234) is in no v* tag yet"
+        )
+    );
+    let (outcome, _) = reach(released_from(1), "github:o/r#1", tags("x*", None)).await;
+    assert_eq!(outcome.status, Status::Waiting);
+}
+
+#[tokio::test]
+async fn a_host_error_fails_the_reach() {
+    let fake = Fake {
+        host_error: Some(CheckError::Network("boom".to_owned())),
+        ..released_from(1)
+    };
+    let (outcome, _) = reach(fake, "github:o/r#1", tags("v*", None)).await;
+    assert_eq!(outcome, Outcome::new(Status::Failed, "boom"));
 }

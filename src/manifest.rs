@@ -13,10 +13,10 @@ use serde::Deserialize;
 use thiserror::Error;
 use toml::{Table, Value};
 
-use crate::refs::ItemRef;
+use crate::refs::{ItemRef, Reachable};
 
 /// Condition keys a blocker may carry, one per blocker.
-pub const CONDITION_KEYS: &[&str] = &["state"];
+pub const CONDITION_KEYS: &[&str] = &["state", "reached"];
 
 const DEFAULT_TTL: SignedDuration = SignedDuration::from_hours(6);
 
@@ -57,6 +57,8 @@ pub struct Blocker {
 pub enum Condition {
     /// An issue is fixed, or a PR merged.
     State(StateCondition),
+    /// A commit, or a merged PR's merge commit, is in a branch or tag.
+    Reached(ReachedCondition),
 }
 
 /// `state = "<item>"`.
@@ -64,6 +66,32 @@ pub enum Condition {
 pub struct StateCondition {
     /// The issue or PR.
     pub item: ItemRef,
+}
+
+/// `reached = "<commit or PR>"` with `in = { ... }`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReachedCondition {
+    /// The commit, or the PR whose merge commit counts.
+    pub target: Reachable,
+    /// Where it has to arrive.
+    pub within: Within,
+}
+
+/// The `in` of a `reached` condition.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Within {
+    /// `{ branch = "main" }`.
+    Branch(String),
+    /// `{ tag = "v1.2" }`.
+    Tag(String),
+    /// `{ tags = "v*", since = "0.5.0" }`: the first matching tag, in version
+    /// order, at or after `since`.
+    Tags {
+        /// Which tags count.
+        pattern: glob::Pattern,
+        /// Ignore tags below this version.
+        since: Option<String>,
+    },
 }
 
 /// A manifest that cannot be used.
@@ -122,6 +150,42 @@ struct RawSettings {
 #[serde(deny_unknown_fields)]
 struct RawState {
     state: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawReached {
+    reached: String,
+    #[serde(rename = "in")]
+    within: RawWithin,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawWithin {
+    branch: Option<String>,
+    tag: Option<String>,
+    tags: Option<String>,
+    since: Option<String>,
+}
+
+impl RawWithin {
+    fn parse(self) -> Result<Within, String> {
+        let one_of = "`in` needs one of branch, tag, tags";
+        match (self.branch, self.tag, self.tags, self.since) {
+            (Some(_) | None, Some(_) | None, None, Some(_)) => {
+                Err("`since` goes with `tags`".to_owned())
+            }
+            (Some(branch), None, None, None) => Ok(Within::Branch(branch)),
+            (None, Some(tag), None, None) => Ok(Within::Tag(tag)),
+            (None, None, Some(tags), since) => {
+                let pattern = glob::Pattern::new(&tags)
+                    .map_err(|error| format!("`tags = \"{tags}\"`: {error}"))?;
+                Ok(Within::Tags { pattern, since })
+            }
+            _ => Err(one_of.to_owned()),
+        }
+    }
 }
 
 impl Manifest {
@@ -207,6 +271,13 @@ fn parse_blocker(index: usize, mut table: Table) -> Result<Blocker, ManifestErro
     })
 }
 
+/// Deserializes a condition table into its own type.
+fn typed<T: serde::de::DeserializeOwned>(table: Table) -> Result<T, String> {
+    Value::Table(table)
+        .try_into()
+        .map_err(|error: toml::de::Error| error.message().to_owned())
+}
+
 /// Reads the one condition a table holds, by the condition key present.
 fn parse_condition(table: Table) -> Result<Condition, String> {
     let present: Vec<&str> = CONDITION_KEYS
@@ -216,11 +287,15 @@ fn parse_condition(table: Table) -> Result<Condition, String> {
         .collect();
     match present.as_slice() {
         ["state"] => {
-            let raw: RawState = Value::Table(table)
-                .try_into()
-                .map_err(|error: toml::de::Error| error.message().to_owned())?;
+            let raw: RawState = typed(table)?;
             let item = raw.state.parse().map_err(|error| format!("{error}"))?;
             Ok(Condition::State(StateCondition { item }))
+        }
+        ["reached"] => {
+            let raw: RawReached = typed(table)?;
+            let target = raw.reached.parse().map_err(|error| format!("{error}"))?;
+            let within = raw.within.parse()?;
+            Ok(Condition::Reached(ReachedCondition { target, within }))
         }
         [] => Err(format!(
             "needs one condition: {}",

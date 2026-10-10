@@ -1,5 +1,5 @@
 use super::*;
-use crate::refs::{ItemRef, Source};
+use crate::refs::{ItemRef, Reachable, Source};
 
 fn first_error(text: &str) -> String {
     match Manifest::parse(text) {
@@ -125,4 +125,77 @@ fn load_names_the_missing_file() {
         .expect_err("missing file")
         .to_string();
     assert!(error.contains("/nonexistent/canibump.toml"), "{error}");
+}
+
+fn reached(within: &str) -> Result<Condition, ManifestError> {
+    let text = format!(
+        "[[blocker]]\nid = \"a\"\nnote = \"n\"\nreached = \"github:o/r#1\"\nin = {within}\n"
+    );
+    Manifest::parse(&text).map(|manifest| {
+        manifest
+            .blockers
+            .into_iter()
+            .next()
+            .map(|blocker| blocker.condition)
+            .expect("one blocker")
+    })
+}
+
+#[test]
+fn parses_reached_targets() {
+    let item: Reachable = "github:o/r#1".parse().expect("valid");
+    let expect = |within| {
+        Condition::Reached(ReachedCondition {
+            target: item.clone(),
+            within,
+        })
+    };
+    assert_eq!(
+        reached("{ branch = \"main\" }").expect("branch"),
+        expect(Within::Branch("main".to_owned()))
+    );
+    assert_eq!(
+        reached("{ tag = \"v1\" }").expect("tag"),
+        expect(Within::Tag("v1".to_owned()))
+    );
+    assert_eq!(
+        reached("{ tags = \"v*\", since = \"0.5.0\" }").expect("tags"),
+        expect(Within::Tags {
+            pattern: glob::Pattern::new("v*").expect("glob"),
+            since: Some("0.5.0".to_owned()),
+        })
+    );
+}
+
+#[test]
+fn rejects_a_bad_reached_target() {
+    for (within, message) in [
+        ("{ }", "`in` needs one of branch, tag, tags"),
+        (
+            "{ branch = \"a\", tag = \"b\" }",
+            "`in` needs one of branch, tag, tags",
+        ),
+        (
+            "{ branch = \"a\", since = \"1\" }",
+            "`since` goes with `tags`",
+        ),
+        ("{ tags = \"[\" }", "Pattern syntax error"),
+        ("{ commit = \"a\" }", "commit"),
+    ] {
+        let error = reached(within).expect_err(within).to_string();
+        assert!(error.contains(message), "{within}: {error}");
+    }
+    let error = first_error("[[blocker]]\nid = \"a\"\nnote = \"n\"\nreached = \"github:o/r#1\"\n");
+    assert!(error.contains("in"), "{error}");
+}
+
+#[test]
+fn rejects_two_conditions_in_one_blocker() {
+    let error = first_error(
+        "[[blocker]]\nid = \"a\"\nnote = \"n\"\nstate = \"github:o/r#1\"\nreached = \"github:o/r#1\"\nin = { tag = \"v1\" }\n",
+    );
+    assert!(
+        error.contains("several conditions (state, reached)"),
+        "{error}"
+    );
 }

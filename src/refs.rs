@@ -48,6 +48,35 @@ pub struct ItemRef {
     pub number: u64,
 }
 
+/// A commit in a repository.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct CommitRef {
+    /// The repository.
+    pub source: Source,
+    /// The commit id as written.
+    pub sha: String,
+}
+
+/// What a `reached` condition follows: a commit, or a PR's merge commit.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Reachable {
+    /// A PR or MR; its merge commit once merged.
+    Item(ItemRef),
+    /// A commit.
+    Commit(CommitRef),
+}
+
+impl Reachable {
+    /// The repository it lives in.
+    #[must_use]
+    pub const fn source(&self) -> &Source {
+        match self {
+            Self::Item(item) => &item.source,
+            Self::Commit(commit) => &commit.source,
+        }
+    }
+}
+
 /// A reference string that does not parse.
 #[derive(Debug, Error, PartialEq, Eq)]
 pub enum RefError {
@@ -88,27 +117,61 @@ impl FromStr for ItemRef {
     type Err = RefError;
 
     fn from_str(text: &str) -> Result<Self, Self::Err> {
-        let (scheme, locator) = split_scheme(text)?;
-        let malformed = || RefError::Malformed {
-            text: text.to_owned(),
-            expected: "github:owner/repo#number",
-        };
-        match scheme {
-            "github" => {
-                let (path, number) = locator.rsplit_once('#').ok_or_else(malformed)?;
-                let (owner, repo) = owner_repo(path).ok_or_else(malformed)?;
-                let number = number.parse().map_err(|_| malformed())?;
-                Ok(Self {
-                    source: Source::GitHub { owner, repo },
-                    number,
-                })
-            }
-            other => Err(RefError::UnknownScheme {
-                scheme: other.to_owned(),
+        match parse(text, "github:owner/repo#number")? {
+            Reachable::Item(item) => Ok(item),
+            Reachable::Commit(_) => Err(RefError::Malformed {
                 text: text.to_owned(),
+                expected: "github:owner/repo#number",
             }),
         }
     }
+}
+
+impl FromStr for Reachable {
+    type Err = RefError;
+
+    fn from_str(text: &str) -> Result<Self, Self::Err> {
+        parse(text, "github:owner/repo#number or github:owner/repo@sha")
+    }
+}
+
+/// A commit id: 7 to 40 hex digits.
+fn is_sha(text: &str) -> bool {
+    (7..=40).contains(&text.len()) && text.chars().all(|char| char.is_ascii_hexdigit())
+}
+
+/// Parses `<scheme>:<path>#<number>` or `<scheme>:<path>@<sha>`.
+fn parse(text: &str, expected: &'static str) -> Result<Reachable, RefError> {
+    let (scheme, locator) = split_scheme(text)?;
+    let malformed = || RefError::Malformed {
+        text: text.to_owned(),
+        expected,
+    };
+    let source = |path: &str| match scheme {
+        "github" => owner_repo(path)
+            .map(|(owner, repo)| Source::GitHub { owner, repo })
+            .ok_or_else(malformed),
+        other => Err(RefError::UnknownScheme {
+            scheme: other.to_owned(),
+            text: text.to_owned(),
+        }),
+    };
+    if let Some((path, sha)) = locator.rsplit_once('@') {
+        let source = source(path)?;
+        if !is_sha(sha) {
+            return Err(malformed());
+        }
+        return Ok(Reachable::Commit(CommitRef {
+            source,
+            sha: sha.to_owned(),
+        }));
+    }
+    let (path, number) = locator
+        .rsplit_once('#')
+        .ok_or_else(|| source(locator).err().unwrap_or_else(malformed))?;
+    let source = source(path)?;
+    let number = number.parse().map_err(|_| malformed())?;
+    Ok(Reachable::Item(ItemRef { source, number }))
 }
 
 impl fmt::Display for Source {
@@ -122,6 +185,21 @@ impl fmt::Display for Source {
 impl fmt::Display for ItemRef {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(formatter, "{}#{}", self.source, self.number)
+    }
+}
+
+impl fmt::Display for CommitRef {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(formatter, "{}@{}", self.source, self.sha)
+    }
+}
+
+impl fmt::Display for Reachable {
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Self::Item(item) => item.fmt(formatter),
+            Self::Commit(commit) => commit.fmt(formatter),
+        }
     }
 }
 
