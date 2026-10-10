@@ -38,8 +38,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub answers `reached` through the compare API and lists tags through
   `git/matching-refs`, so no clone is needed.
 - `reached = "git:<url>@sha"` works on any git remote: gix fetches only the
-  refs asked about into a bare repo under `~/.cache/canibump/git/` and walks
-  history in-process.
+  refs asked about into a bare repo under `~/.cache/canibump/git/` and checks
+  ancestry in-process, so a remote the size of llvm costs a paint down to the
+  fork point, not a walk of its whole history. A short sha that starts two
+  commits there fails and asks for more digits, rather than matching the first.
 - `version = "repology:<project>"` (with `repo`, optional `srcname`) or
   `version = "deps.dev:<system>/<name>"` with `at-least = "<version>"`:
   bumpable once the highest version there reaches the bound.

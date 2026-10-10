@@ -3,60 +3,131 @@ use gix::refs::transaction::PreviousValue;
 use super::*;
 use crate::refs::ItemKind;
 
-/// A source repo: c1 - c2 (v0.1.0) - c3 (v0.2.0) on main, c4 on side off c2.
+/// Builds commits over one empty tree in a bare repo.
+struct Builder {
+    repo: gix::Repository,
+    tree: gix::ObjectId,
+    signature: gix::actor::Signature,
+}
+
+impl Builder {
+    fn new(path: &Path) -> Self {
+        let repo = gix::init_bare(path).expect("init");
+        let tree = repo
+            .write_object(gix::objs::Tree::empty())
+            .expect("tree")
+            .detach();
+        let signature = gix::actor::Signature {
+            name: "t".into(),
+            email: "t@t".into(),
+            time: gix::date::Time::new(1_700_000_000, 0),
+        };
+        Self {
+            repo,
+            tree,
+            signature,
+        }
+    }
+
+    /// A commit on `reference`, which must point at the first parent.
+    fn commit(&self, reference: &str, message: &str, parents: Vec<gix::ObjectId>) -> gix::ObjectId {
+        let (mut author, mut committer) = Default::default();
+        self.repo
+            .commit_as(
+                self.signature.to_ref(&mut author),
+                self.signature.to_ref(&mut committer),
+                reference,
+                message,
+                self.tree,
+                parents,
+            )
+            .expect("commit")
+            .detach()
+    }
+}
+
+/// A source repo: c1 - c2 (v0.1.0) - c3 (v0.2.0) on main, c4 on side off c2,
+/// and c5 alone on orphan.
 struct Upstream {
     _dir: tempfile::TempDir,
     url: String,
+    tree: String,
     c2: String,
     c3: String,
     c4: String,
+    c5: String,
 }
 
 fn upstream() -> Upstream {
     let dir = tempfile::tempdir().expect("tempdir");
-    let repo = gix::init_bare(dir.path().join("up.git")).expect("init");
-    let tree = repo
-        .write_object(gix::objs::Tree::empty())
-        .expect("tree")
-        .detach();
-    let when = gix::date::Time::new(1_700_000_000, 0);
-    let signature = gix::actor::Signature {
-        name: "t".into(),
-        email: "t@t".into(),
-        time: when,
-    };
-    let commit = |reference: &str, message: &str, parents: Vec<gix::ObjectId>| {
-        repo.commit_as(
-            signature.to_ref(&mut gix::date::parse::TimeBuf::default()),
-            signature.to_ref(&mut gix::date::parse::TimeBuf::default()),
-            reference,
-            message,
-            tree,
-            parents,
-        )
-        .expect("commit")
-        .detach()
-    };
-    let c1 = commit("refs/heads/main", "c1", vec![]);
-    let c2 = commit("refs/heads/main", "c2", vec![c1]);
-    let c3 = commit("refs/heads/main", "c3", vec![c2]);
-    let c4 = commit("refs/heads/side", "c4", vec![c2]);
+    let path = dir.path().join("up.git");
+    let build = Builder::new(&path);
+    let c1 = build.commit("refs/heads/main", "c1", vec![]);
+    let c2 = build.commit("refs/heads/main", "c2", vec![c1]);
+    let c3 = build.commit("refs/heads/main", "c3", vec![c2]);
+    let c4 = build.commit("refs/heads/side", "c4", vec![c2]);
+    let c5 = build.commit("refs/heads/orphan", "c5", vec![]);
     for (tag, id) in [("v0.1.0", c2), ("v0.2.0", c3)] {
-        repo.reference(
-            format!("refs/tags/{tag}").as_str(),
-            id,
-            PreviousValue::Any,
-            "tag",
-        )
-        .expect("tag");
+        build
+            .repo
+            .reference(
+                format!("refs/tags/{tag}").as_str(),
+                id,
+                PreviousValue::Any,
+                "tag",
+            )
+            .expect("tag");
     }
     Upstream {
-        url: dir.path().join("up.git").display().to_string(),
+        url: path.display().to_string(),
         _dir: dir,
+        tree: build.tree.to_string(),
         c2: c2.to_string(),
         c3: c3.to_string(),
         c4: c4.to_string(),
+        c5: c5.to_string(),
     }
+}
+
+/// A source repo whose main holds two commits sharing a four-digit prefix.
+struct Collision {
+    _dir: tempfile::TempDir,
+    url: String,
+    prefix: String,
+}
+
+/// Commits pile onto main until two ids start alike. An id is a pure function
+/// of the fixed message and time, so every run builds the same few hundred
+/// commits.
+fn collision() -> Collision {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("up.git");
+    let build = Builder::new(&path);
+    let mut seen = HashSet::new();
+    let mut parents = vec![];
+    let mut shared = None;
+    for number in 0_u32.. {
+        let id = build.commit("refs/heads/main", &number.to_string(), parents);
+        let prefix = id.to_string().get(..4).expect("hex").to_owned();
+        if !seen.insert(prefix.clone()) {
+            shared = Some(prefix);
+            break;
+        }
+        parents = vec![id];
+    }
+    Collision {
+        url: path.display().to_string(),
+        _dir: dir,
+        prefix: shared.expect("the loop breaks on a collision"),
+    }
+}
+
+fn tag(name: &str) -> GitRef {
+    GitRef::Tag(name.to_owned())
+}
+
+fn branch(name: &str) -> GitRef {
+    GitRef::Branch(name.to_owned())
 }
 
 #[tokio::test]
@@ -71,14 +142,17 @@ async fn answers_containment_for_branches_and_tags() {
         let (remotes, source, sha) = (remotes.clone(), source.clone(), sha.to_owned());
         async move { remotes.contains(&source, &sha, &target).await }
     };
-    let tag = |name: &str| GitRef::Tag(name.to_owned());
-    let branch = |name: &str| GitRef::Branch(name.to_owned());
     assert_eq!(contains(&up.c2, tag("v0.1.0")).await, Ok(true));
     assert_eq!(contains(&up.c3, tag("v0.1.0")).await, Ok(false));
     assert_eq!(
         contains(up.c3.get(..7).expect("short"), branch("main")).await,
         Ok(true)
     );
+    assert_eq!(
+        contains(&up.c3.to_ascii_uppercase(), branch("main")).await,
+        Ok(true)
+    );
+    assert_eq!(contains(&up.c2, branch("main")).await, Ok(true));
     assert_eq!(contains(&up.c4, branch("main")).await, Ok(false));
     assert_eq!(contains(&up.c4, branch("side")).await, Ok(true));
     let missing = contains(&up.c2, tag("v9")).await;
@@ -90,6 +164,45 @@ async fn answers_containment_for_branches_and_tags() {
         remotes.tags(&source, "v").await,
         Ok(vec!["v0.1.0".to_owned(), "v0.2.0".to_owned()])
     );
+}
+
+/// A remote over `url`, cloned into a cache that lives as long as the dir.
+fn remote(url: &str) -> (tempfile::TempDir, GitRemotes, Source) {
+    let cache = tempfile::tempdir().expect("cache");
+    let remotes = GitRemotes::new(cache.path().to_owned());
+    let source = Source::Git {
+        url: url.to_owned(),
+    };
+    (cache, remotes, source)
+}
+
+#[tokio::test]
+async fn a_sha_the_history_lacks_reads_waiting() {
+    let up = upstream();
+    let (_cache, remotes, source) = remote(&up.url);
+    let main = branch("main");
+    // Unknown digits, and a tree that no commit history can contain.
+    for sha in ["deadbeef", up.tree.as_str()] {
+        assert_eq!(remotes.contains(&source, sha, &main).await, Ok(false));
+    }
+    // A commit that is here but shares no ancestor with main.
+    assert_eq!(
+        remotes.contains(&source, &up.c5, &branch("orphan")).await,
+        Ok(true)
+    );
+    assert_eq!(remotes.contains(&source, &up.c5, &main).await, Ok(false));
+}
+
+#[tokio::test]
+async fn a_short_sha_shared_by_two_commits_asks_for_more_digits() {
+    let up = collision();
+    let (_cache, remotes, source) = remote(&up.url);
+    let result = remotes.contains(&source, &up.prefix, &branch("main")).await;
+    let Err(CheckError::Unsupported(message)) = result else {
+        panic!("expected an ambiguity, got {result:?}");
+    };
+    assert!(message.contains(&up.prefix), "{message}");
+    assert!(message.contains("more digits"), "{message}");
 }
 
 #[tokio::test]

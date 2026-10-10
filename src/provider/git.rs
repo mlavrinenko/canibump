@@ -1,5 +1,7 @@
 //! Any git remote through gix: fetch only the refs asked about into a bare
-//! repo under the cache dir, then walk history in-process.
+//! repo under the cache dir, then answer ancestry in-process: one prefix
+//! lookup and a walk that stops where the two histories meet, never one down
+//! to the root.
 //!
 //! HTTP(S) remotes speak the git protocol natively. A local path or
 //! `file://` remote makes gix spawn `git-upload-pack`, and `ssh://` spawns
@@ -54,6 +56,65 @@ fn remote_url(source: &Source) -> Result<&str, CheckError> {
 
 fn network(source: &Source) -> impl Fn(&dyn std::fmt::Display) -> CheckError + '_ {
     move |error| CheckError::Network(format!("{source}: {error}"))
+}
+
+/// The one commit the written `sha` names among the objects fetched, `None`
+/// when there is none. Trees and blobs sharing the digits do not count.
+///
+/// The fetch brought the whole history of the ref asked about, so a commit it
+/// lacks is not reached rather than an error.
+fn resolve(
+    repo: &gix::Repository,
+    source: &Source,
+    sha: &str,
+) -> Result<Option<gix::ObjectId>, CheckError> {
+    let fail = network(source);
+    let prefix = gix::hash::Prefix::from_hex(sha)
+        .map_err(|error| CheckError::Unsupported(format!("{source}: {sha}: {error}")))?;
+    let mut matches = HashSet::new();
+    repo.objects
+        .lookup_prefix(prefix, Some(&mut matches))
+        .map_err(|error| fail(&error))?;
+    let mut commits = Vec::new();
+    for id in matches {
+        let header = repo.find_header(id).map_err(|error| fail(&error))?;
+        if header.kind() == gix::object::Kind::Commit {
+            commits.push(id);
+        }
+    }
+    match commits.as_slice() {
+        [] => Ok(None),
+        [only] => Ok(Some(*only)),
+        several => Err(CheckError::Unsupported(format!(
+            "{source}: {sha} starts {} commits, write more digits",
+            several.len()
+        ))),
+    }
+}
+
+/// Whether `tip` reaches `commit`.
+///
+/// Walks from `commit` with the history of `tip` hidden: gix paints both
+/// sides outward in generation order and stops where they meet, so a commit
+/// the tip reaches leaves nothing visible, and a miss ends at the fork point,
+/// never at the root of a long history.
+fn is_ancestor(
+    repo: &gix::Repository,
+    source: &Source,
+    commit: gix::ObjectId,
+    tip: gix::ObjectId,
+) -> Result<bool, CheckError> {
+    let fail = network(source);
+    let mut walk = repo
+        .rev_walk([commit])
+        .with_hidden([tip])
+        .all()
+        .map_err(|error| fail(&error))?;
+    match walk.next() {
+        None => Ok(true),
+        Some(Ok(_)) => Ok(false),
+        Some(Err(error)) => Err(fail(&error)),
+    }
 }
 
 impl GitRemotes {
@@ -140,16 +201,10 @@ impl Inner {
         let missing = || CheckError::NotFound(format!("{source}: {}", target.name()));
         let mut reference = repo.find_reference(local.as_str()).map_err(|_| missing())?;
         let tip = reference.peel_to_id().map_err(|_| missing())?.detach();
-        let fail = network(source);
-        let walk = repo.rev_walk([tip]).all().map_err(|error| fail(&error))?;
-        let wanted = sha.to_ascii_lowercase();
-        for info in walk {
-            let info = info.map_err(|error| fail(&error))?;
-            if info.id.to_hex().to_string().starts_with(&wanted) {
-                return Ok(true);
-            }
-        }
-        Ok(false)
+        let Some(commit) = resolve(&repo, source, sha)? else {
+            return Ok(false);
+        };
+        is_ancestor(&repo, source, commit, tip)
     }
 
     /// Whether every tag was fetched this run, so a tag needs no fetch of its own.

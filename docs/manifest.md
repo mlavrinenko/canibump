@@ -43,7 +43,8 @@ in = { branch = "master" }
 ```
 
 GitHub answers through its API, no clone. A `git:` remote gets a bare clone of
-just the refs you ask about under `~/.cache/canibump/git/`, via gix.
+just the refs you ask about under `~/.cache/canibump/git/`, via gix. If two
+commits there start with your short sha, the check fails and asks for more digits.
 
 `version` waits for a package to reach some version. Repology covers distro repos,
 nixpkgs channels included (`nix_unstable`, `nix_stable_25_11`). deps.dev
