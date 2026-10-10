@@ -155,6 +155,23 @@ fail-on = ["failed"]  # dead and bumpable print, the run still exits 0
 # fail-on = []        # never fail
 ```
 
+`canibump status <id>` answers for one blocker from the state file alone, with
+its own codes. 0 is bumpable and 1 is waiting. 2 is anything else, because a
+caller reads 1 as waiting: dead, failed, an id the manifest or the state file
+lacks, a result checked against an older condition than the manifest's now,
+and every error, a bad manifest or an unreadable state file included. Its
+stdout is that blocker's line, or with `--json` a report holding only it. It
+takes no `--path`.
+
+```console
+$ canibump status serde-pin; echo $?
+bumpable  serde-pin  github:serde-rs/serde#2590 merged (Cargo.toml: unpin serde)
+0
+$ canibump status nope; echo $?
+canibump: no blocker `nope` in canibump.toml
+2
+```
+
 ## Auth
 
 GitHub takes `GITHUB_TOKEN`, then `GH_TOKEN`, then whatever `gh auth token`

@@ -135,3 +135,26 @@ fn only_a_counted_status_adds_its_bit() {
     let twice = [Actionable::Dead, Actionable::Dead];
     assert_eq!(exit_code(&entries, &twice), 10);
 }
+
+#[test]
+fn a_blocker_answers_0_bumpable_1_waiting_and_2_for_the_rest() {
+    assert_eq!(blocker_exit_code(Status::Bumpable), 0);
+    assert_eq!(blocker_exit_code(Status::Waiting), 1);
+    assert_eq!(blocker_exit_code(Status::Dead), EXIT_UNKNOWN);
+    assert_eq!(blocker_exit_code(Status::Failed), EXIT_UNKNOWN);
+}
+
+#[test]
+fn an_error_exits_with_its_own_code_or_the_usual_one() {
+    let plain = anyhow::anyhow!("no luck");
+    assert_eq!(Exit::code_of(&plain), EXIT_ERROR);
+    let coded: anyhow::Error = Exit::new(EXIT_UNKNOWN, plain).into();
+    assert_eq!(Exit::code_of(&coded), EXIT_UNKNOWN);
+}
+
+#[test]
+fn an_exit_prints_as_the_error_it_wraps_with_its_chain() {
+    let inner = anyhow::anyhow!("root cause").context("while reading");
+    let coded: anyhow::Error = Exit::new(EXIT_UNKNOWN, inner).into();
+    assert_eq!(format!("{coded:#}"), "while reading: root cause");
+}

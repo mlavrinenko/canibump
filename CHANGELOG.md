@@ -97,6 +97,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The flake package installs bash, zsh and fish completions and
   `share/canibump/canibump.schema.json`; the README shows the Nix install and
   one line of setup per shell.
+- `canibump status <id>` answers for one blocker from the state file, by exit
+  code: 0 bumpable, 1 waiting, 2 anything else. Dead, failed, an id the
+  manifest or the state file lacks, a result checked against an older
+  condition and every error, a bad manifest or a corrupt state file included,
+  exit 2, because a caller reads 1 as waiting. It prints that blocker's line,
+  or with `--json` a report holding only it, and refuses `--path`.
 
 ### Changed
 

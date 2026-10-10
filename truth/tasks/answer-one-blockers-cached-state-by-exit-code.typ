@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: proposed(2026, 10, 10),
+  status: done(2026, 10, 10),
   links: depends-on(
     "fail-the-run-on-any-actionable-status-unless-softened.typ",
   ),

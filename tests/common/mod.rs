@@ -93,3 +93,26 @@ pub fn open() -> Value {
 pub fn fixed() -> Value {
     json!({"state": "closed", "state_reason": "completed"})
 }
+
+/// A repo holding a `waiting` blocker and one blocker per status in `kinds`
+/// (`bumpable`, `dead` or `failed`, which is also its id), under `settings`.
+pub fn repo_of(kinds: &[&str], settings: &str) -> Repo {
+    let mut manifest = settings.to_owned() + &blocker("waits", 1);
+    for (index, kind) in (2..).zip(kinds) {
+        manifest += &blocker(kind, index);
+    }
+    let repo = Repo::new(&manifest);
+    repo.issue(1, 200, &open());
+    for (index, kind) in (2..).zip(kinds) {
+        match *kind {
+            "bumpable" => repo.issue(index, 200, &fixed()),
+            "dead" => repo.issue(
+                index,
+                200,
+                &json!({"state": "closed", "state_reason": "not_planned"}),
+            ),
+            _ => repo.issue(index, 404, &json!({"message": "Not Found"})),
+        };
+    }
+    repo
+}

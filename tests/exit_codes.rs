@@ -5,30 +5,7 @@ mod common;
 use predicates::prelude::*;
 use serde_json::{Value, json};
 
-use common::{Repo, blocker, fixed, open};
-
-/// A repo holding a `waiting` blocker and one blocker per status in `kinds`
-/// (`bumpable`, `dead` or `failed`, which is also its id), under `settings`.
-fn repo_of(kinds: &[&str], settings: &str) -> Repo {
-    let mut manifest = settings.to_owned() + &blocker("waits", 1);
-    for (index, kind) in (2..).zip(kinds) {
-        manifest += &blocker(kind, index);
-    }
-    let repo = Repo::new(&manifest);
-    repo.issue(1, 200, &open());
-    for (index, kind) in (2..).zip(kinds) {
-        match *kind {
-            "bumpable" => repo.issue(index, 200, &fixed()),
-            "dead" => repo.issue(
-                index,
-                200,
-                &json!({"state": "closed", "state_reason": "not_planned"}),
-            ),
-            _ => repo.issue(index, 404, &json!({"message": "Not Found"})),
-        };
-    }
-    repo
-}
+use common::repo_of;
 
 #[test]
 fn a_dead_blocker_fails_the_run_with_10() {
@@ -158,5 +135,8 @@ fn help_states_the_table_and_the_default() {
         .assert()
         .success()
         .stdout(predicate::str::contains("8 plus 1 for bumpable"))
-        .stdout(predicate::str::contains("else bumpable, dead and failed"));
+        .stdout(predicate::str::contains("else bumpable, dead and failed"))
+        .stdout(predicate::str::contains(
+            "`status <id>` answers for one blocker",
+        ));
 }

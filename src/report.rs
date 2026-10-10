@@ -8,6 +8,7 @@ use clap::ValueEnum;
 use jiff::Timestamp;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
+use thiserror::Error;
 
 use crate::cache::Entry;
 use crate::outcome::Status;
@@ -69,6 +70,51 @@ pub fn exit_code(entries: &[Entry], counted: &[Actionable]) -> u8 {
         EXIT_OK
     } else {
         EXIT_ACTIONABLE | bits
+    }
+}
+
+/// `status <id>` exit code: the answer is not yes or no. Dead, failed, an
+/// entry that is absent, stale or unreadable, and every error land here, since
+/// the usual [`EXIT_ERROR`] would read as "waiting".
+pub const EXIT_UNKNOWN: u8 = 2;
+
+/// The `status <id>` exit code for a blocker's status: 0 bumpable, 1 waiting,
+/// [`EXIT_UNKNOWN`] for the rest.
+#[must_use]
+pub const fn blocker_exit_code(status: Status) -> u8 {
+    match status {
+        Status::Bumpable => 0,
+        Status::Waiting => 1,
+        Status::Dead | Status::Failed => EXIT_UNKNOWN,
+    }
+}
+
+/// A failure that exits with its own `code` instead of [`EXIT_ERROR`]. It
+/// prints as the error it wraps.
+#[derive(Debug, Error)]
+#[error("{error:#}")]
+pub struct Exit {
+    /// The process exit code.
+    pub code: u8,
+    error: anyhow::Error,
+}
+
+impl Exit {
+    /// `error`, ending the process with `code`.
+    pub fn new(code: u8, error: impl Into<anyhow::Error>) -> Self {
+        Self {
+            code,
+            error: error.into(),
+        }
+    }
+
+    /// The exit code `error` asks for: its own when it is an [`Exit`], else
+    /// [`EXIT_ERROR`].
+    #[must_use]
+    pub fn code_of(error: &anyhow::Error) -> u8 {
+        error
+            .downcast_ref::<Self>()
+            .map_or(EXIT_ERROR, |exit| exit.code)
     }
 }
 

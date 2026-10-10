@@ -11,14 +11,15 @@ use std::path::{Path, PathBuf};
 use crate::cache::{self, StateFile};
 use crate::manifest::Manifest;
 use crate::provider::defaults;
-use crate::report::{self, Actionable, Report};
+use crate::report::{self, Actionable, Exit, Report};
 use crate::run;
 
 /// Can I bump yet? Checks the upstream blockers in canibump.toml.
 ///
 /// Exit codes: 0 when nothing counted showed up, else 8 plus 1 for bumpable, 2
 /// for dead and 4 for failed, summed (bumpable and dead is 11). 1 is an unusable
-/// manifest, cache or arguments. `--fail-on` picks what counts.
+/// manifest, cache or arguments. `--fail-on` picks what counts. `status <id>`
+/// answers for one blocker instead: 0 bumpable, 1 waiting, 2 anything else.
 #[derive(Debug, Parser)]
 #[command(version, about, long_about)]
 pub struct Cli {
@@ -66,9 +67,14 @@ pub enum Command {
     /// Check every blocker, reusing results younger than the TTL.
     Check(CheckArgs),
     /// Print the last results from the state file, without network.
+    ///
+    /// With a blocker id, answers for that one alone by exit code: 0 bumpable,
+    /// 1 waiting, 2 anything else, errors included.
     Status {
+        /// The blocker to answer for.
+        id: Option<String>,
         /// Print the state file's path and exit.
-        #[arg(long)]
+        #[arg(long, conflicts_with = "id")]
         path: bool,
     },
     /// Print the JSON Schema for canibump.toml and exit.
@@ -97,8 +103,19 @@ impl Command {
 /// # Errors
 ///
 /// When the manifest, the state file or stdout cannot be used, or a check
-/// flag comes ahead of another subcommand.
+/// flag comes ahead of another subcommand. The error of `status <id>` is an
+/// [`Exit`] with code 2: the usual 1 would read as "waiting".
 pub fn run(cli: &Cli) -> Result<u8> {
+    let result = dispatch(cli);
+    match cli.command {
+        Some(Command::Status { id: Some(_), .. }) => {
+            result.map_err(|error| Exit::new(report::EXIT_UNKNOWN, error).into())
+        }
+        _ => result,
+    }
+}
+
+fn dispatch(cli: &Cli) -> Result<u8> {
     match &cli.command {
         None => check(cli, cli.check),
         Some(Command::Check(args)) => check(
@@ -118,7 +135,8 @@ pub fn run(cli: &Cli) -> Result<u8> {
             print(cli, &completions(*shell)?)?;
             Ok(report::EXIT_OK)
         }
-        Some(Command::Status { path }) => {
+        Some(Command::Status { id: Some(id), .. }) => blocker_status(cli, id),
+        Some(Command::Status { path, id: None }) => {
             let (manifest, cache_path) = load(cli)?;
             if *path {
                 print(cli, &format!("{}\n", cache_path.display()))?;
@@ -179,15 +197,51 @@ fn check(cli: &Cli, args: CheckArgs) -> Result<u8> {
     output(cli, &cache_path, &state, now, code)
 }
 
-fn status(cli: &Cli, manifest: &Manifest, cache_path: &Path) -> Result<u8> {
-    let Some(state) = cache::read(cache_path)? else {
-        bail!(
+fn results(cache_path: &Path) -> Result<StateFile> {
+    cache::read(cache_path)?.with_context(|| {
+        format!(
             "no results at {}: run `canibump` first",
             cache_path.display()
-        );
-    };
+        )
+    })
+}
+
+fn status(cli: &Cli, manifest: &Manifest, cache_path: &Path) -> Result<u8> {
+    let state = results(cache_path)?;
     let code = report::exit_code(&state.entries, counted(cli, manifest));
     output(cli, cache_path, &state, Timestamp::now(), code)
+}
+
+/// `status <id>`: one blocker's cached result, answered by exit code. A result
+/// checked against another condition than the manifest's now is not an answer.
+fn blocker_status(cli: &Cli, id: &str) -> Result<u8> {
+    let (manifest, cache_path) = load(cli)?;
+    let blocker = manifest
+        .blockers
+        .iter()
+        .find(|blocker| blocker.id == id)
+        .with_context(|| format!("no blocker `{id}` in {}", cli.manifest.display()))?;
+    let state = results(&cache_path)?;
+    let entry = state
+        .entries
+        .iter()
+        .find(|entry| entry.id == id)
+        .cloned()
+        .with_context(|| {
+            format!(
+                "`{id}` has no result in {}: run `canibump`",
+                cache_path.display()
+            )
+        })?;
+    if entry.spec != blocker.spec {
+        bail!("`{id}` was checked against an older condition: run `canibump`");
+    }
+    let code = report::blocker_exit_code(entry.status);
+    let state = StateFile {
+        entries: vec![entry],
+        ..state
+    };
+    output(cli, &cache_path, &state, Timestamp::now(), code)
 }
 
 /// The statuses that fail the run: the flag, else the manifest, else all three.

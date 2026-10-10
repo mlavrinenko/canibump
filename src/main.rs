@@ -8,7 +8,7 @@ fn main() -> ExitCode {
         Ok(code) => ExitCode::from(code),
         Err(error) => {
             eprintln!("canibump: {error:#}");
-            ExitCode::from(canibump::report::EXIT_ERROR)
+            ExitCode::from(canibump::report::Exit::code_of(&error))
         }
     }
 }

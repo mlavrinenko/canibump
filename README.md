@@ -106,6 +106,20 @@ canibump --fail-on bumpable,dead   # a flaky network won't page you
 
 A counted blocker keeps failing the run until you delete it. That's the reminder.
 
+`canibump status <id>` answers for one blocker, offline, so a script or a task tracker asks
+with one call and reads the exit code.
+
+| Code | Means |
+| --- | --- |
+| 0 | bumpable |
+| 1 | waiting |
+| 2 | anything else |
+
+Anything else is dead, failed, an id the manifest or the cache lacks, a result checked
+against an older condition (run `canibump` again) and every error. Errors exit 2 here, never
+1, which would read as waiting. It prints that blocker's usual line, and `--json` a report
+holding only it.
+
 ### Commands
 
 ```bash
@@ -113,6 +127,7 @@ canibump                 # check, reusing results younger than the TTL
 canibump --refresh       # check everything now
 canibump --json          # same, as JSON
 canibump status          # last results from the cache, no network
+canibump status <id>     # one blocker, by exit code
 canibump status --path   # where the cache lives
 canibump schema          # print the JSON Schema for canibump.toml
 canibump completions zsh # print a completion script for a shell

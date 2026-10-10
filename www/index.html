@@ -50,6 +50,15 @@ $ echo $?
   <p>All three count by default. <code>--fail-on failed</code> or
     <code>[settings] fail-on = ["failed"]</code> picks which ones do.
   </p>
+  <p>Ask about one blocker with <code>canibump status &lt;id&gt;</code>. It reads
+    the cache only and answers by exit code.
+  </p>
+  <table>
+    <tr><th>Code</th><th>Means</th></tr>
+    <tr><td>0</td><td>bumpable</td></tr>
+    <tr><td>1</td><td>waiting</td></tr>
+    <tr><td>2</td><td>anything else, errors included</td></tr>
+  </table>
 
   <footer>
     <p><a href="https://github.com/mlavrinenko/canibump">GitHub</a></p>
