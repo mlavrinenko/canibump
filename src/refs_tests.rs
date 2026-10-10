@@ -11,6 +11,7 @@ fn parses_a_github_item() {
                 repo: "llama.cpp".to_owned(),
             },
             number: 26487,
+            kind: ItemKind::Issue,
         }
     );
     assert_eq!(item.to_string(), "github:ggml-org/llama.cpp#26487");
@@ -96,4 +97,57 @@ fn parses_a_git_remote_commit() {
         error.contains("git:https://example.org/a/b.git#1"),
         "{error}"
     );
+}
+
+fn gitlab(host: &str, project: &str) -> Source {
+    Source::GitLab {
+        host: host.to_owned(),
+        project: project.to_owned(),
+    }
+}
+
+#[test]
+fn parses_gitlab_issues_and_merge_requests() {
+    let cases = [
+        (
+            "gitlab:group/sub/proj!12",
+            gitlab("gitlab.com", "group/sub/proj"),
+            12,
+            ItemKind::MergeRequest,
+        ),
+        (
+            "gitlab:gitlab.example.com/group/proj#3",
+            gitlab("gitlab.example.com", "group/proj"),
+            3,
+            ItemKind::Issue,
+        ),
+        (
+            "gitlab:my.group/proj#1",
+            gitlab("gitlab.com", "my.group/proj"),
+            1,
+            ItemKind::Issue,
+        ),
+    ];
+    for (text, source, number, kind) in cases {
+        let item: ItemRef = text.parse().expect(text);
+        assert_eq!(
+            item,
+            ItemRef {
+                source,
+                number,
+                kind
+            },
+            "{text}"
+        );
+        assert_eq!(item.to_string(), text);
+        assert_eq!(item.source.kind(), SourceKind::GitLab);
+    }
+}
+
+#[test]
+fn rejects_a_merge_request_off_gitlab_and_a_bare_project() {
+    for text in ["github:o/r!1", "gitlab:proj#1", "gitlab:group/proj!x"] {
+        let error = text.parse::<ItemRef>().expect_err(text).to_string();
+        assert!(error.contains(text), "{error}");
+    }
 }

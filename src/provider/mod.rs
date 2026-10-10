@@ -7,6 +7,7 @@ pub mod defaults;
 pub mod depsdev;
 pub mod git;
 pub mod github;
+pub mod gitlab;
 mod http;
 pub mod repology;
 

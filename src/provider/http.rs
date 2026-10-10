@@ -2,7 +2,7 @@
 
 use std::time::Duration;
 
-use reqwest::{Client, StatusCode, Url};
+use reqwest::{Client, RequestBuilder, StatusCode, Url};
 use serde::de::DeserializeOwned;
 
 use super::CheckError;
@@ -35,12 +35,16 @@ pub async fn get_json<T: DeserializeOwned>(
     url: Url,
     what: &str,
 ) -> Result<T, CheckError> {
+    send_json(client.get(url), what).await
+}
+
+/// Sends a request and decodes its JSON, naming `what` in any error.
+pub async fn send_json<T: DeserializeOwned>(
+    request: RequestBuilder,
+    what: &str,
+) -> Result<T, CheckError> {
     let network = |error: &dyn std::fmt::Display| CheckError::Network(format!("{what}: {error}"));
-    let response = client
-        .get(url)
-        .send()
-        .await
-        .map_err(|error| network(&error))?;
+    let response = request.send().await.map_err(|error| network(&error))?;
     let status = response.status();
     let what = what.to_owned();
     match status {

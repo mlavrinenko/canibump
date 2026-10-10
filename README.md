@@ -54,11 +54,17 @@ One line per blocker, and the status is one of these.
 
 Each blocker takes exactly one condition.
 
-`state`: an issue or PR. Merged or closed as completed is bumpable.
+`state`: an issue, PR or MR. Merged or closed as completed is bumpable.
 
 ```toml
 state = "github:serde-rs/serde#2590"
+# state = "gitlab:group/project!12"                    # MR on gitlab.com; #12 is an issue
+# state = "gitlab:gitlab.example.org/group/project#3" # self-hosted
 ```
+
+GitLab doesn't say why an issue closed, so a closed issue counts as
+completed only when an MR closed it. Tokens: `GITLAB_TOKEN` for `GITLAB_HOST`
+(default gitlab.com), plus whatever glab's config holds per host.
 
 `reached`: a commit, or a PR's merge commit, landed in a branch, a tag, or
 any tag matching a pattern. With a pattern, canibump names the first tag

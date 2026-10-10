@@ -1,7 +1,7 @@
 //! The real providers, wired from the environment.
 //!
-//! `CANIBUMP_GITHUB_API`, `CANIBUMP_REPOLOGY_API` and `CANIBUMP_DEPSDEV_API`
-//! point a provider elsewhere: a mock in tests, GitHub Enterprise, a mirror.
+//! `CANIBUMP_<PROVIDER>_API` (GITHUB, GITLAB, REPOLOGY, DEPSDEV) points a
+//! provider elsewhere: a mock in tests, GitHub Enterprise, a mirror.
 
 use std::sync::Arc;
 
@@ -9,6 +9,7 @@ use super::Registry;
 use super::depsdev::{self, DepsDev};
 use super::git::GitRemotes;
 use super::github::GitHub;
+use super::gitlab::GitLab;
 use super::repology::{self, Repology};
 use crate::package::IndexKind;
 use crate::refs::SourceKind;
@@ -34,6 +35,11 @@ pub fn registry() -> Registry {
                 .with_tracker(SourceKind::GitHub, github.clone())
                 .with_code_host(SourceKind::GitHub, github);
         }
+        Err(error) => log::warn!("{error}"),
+    }
+    let gitlab_api = std::env::var("CANIBUMP_GITLAB_API").ok();
+    match GitLab::new(gitlab_api.as_deref(), crate::auth::gitlab_tokens()) {
+        Ok(gitlab) => registry = registry.with_tracker(SourceKind::GitLab, Arc::new(gitlab)),
         Err(error) => log::warn!("{error}"),
     }
     let repology_api = env_or("CANIBUMP_REPOLOGY_API", repology::API);

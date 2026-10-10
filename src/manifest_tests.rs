@@ -37,6 +37,7 @@ fn parses_a_state_blocker() {
                     repo: "serde".to_owned(),
                 },
                 number: 2590,
+                kind: crate::refs::ItemKind::Issue,
             },
         })
     );

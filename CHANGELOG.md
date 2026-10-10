@@ -46,3 +46,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   like. An all-of stops at its first step that does not hold; an any-of
   resolves on its first that does. `at-least = { step = "<id>" }` uses the
   tag an earlier `reached` step found, checked when the manifest loads.
+- GitLab issues (`gitlab:group/proj#N`) and MRs (`!N`), self-hosted with
+  `gitlab:host/group/proj`. A closed issue is completed only when an MR
+  closed it. Tokens come from glab's config and `GITLAB_TOKEN` for
+  `GITLAB_HOST`, each sent only to its own host.

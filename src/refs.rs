@@ -14,6 +14,8 @@ pub enum SourceKind {
     GitHub,
     /// Any git remote.
     Git,
+    /// gitlab.com or a self-hosted GitLab.
+    GitLab,
 }
 
 /// Where an item lives.
@@ -25,6 +27,13 @@ pub enum Source {
         owner: String,
         /// The repository name.
         repo: String,
+    },
+    /// A GitLab project.
+    GitLab {
+        /// `gitlab.com` or a self-hosted host.
+        host: String,
+        /// `group/sub/project`.
+        project: String,
     },
     /// A git remote by URL (or local path).
     Git {
@@ -40,8 +49,18 @@ impl Source {
         match self {
             Self::GitHub { .. } => SourceKind::GitHub,
             Self::Git { .. } => SourceKind::Git,
+            Self::GitLab { .. } => SourceKind::GitLab,
         }
     }
+}
+
+/// How an item is numbered.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ItemKind {
+    /// `#N`: an issue, or on GitHub and Gitea a PR too.
+    Issue,
+    /// `!N`: a GitLab merge request.
+    MergeRequest,
 }
 
 /// An issue, pull request or merge request.
@@ -51,6 +70,8 @@ pub struct ItemRef {
     pub source: Source,
     /// The item's number.
     pub number: u64,
+    /// `#` or `!`.
+    pub kind: ItemKind,
 }
 
 /// A commit in a repository.
@@ -127,11 +148,11 @@ impl FromStr for ItemRef {
     type Err = RefError;
 
     fn from_str(text: &str) -> Result<Self, Self::Err> {
-        match parse(text, "github:owner/repo#number")? {
+        match parse(text, "<forge>:<repo>#number")? {
             Reachable::Item(item) => Ok(item),
             Reachable::Commit(_) => Err(RefError::Malformed {
                 text: text.to_owned(),
-                expected: "github:owner/repo#number",
+                expected: "<forge>:<repo>#number",
             }),
         }
     }
@@ -143,7 +164,7 @@ impl FromStr for Reachable {
     fn from_str(text: &str) -> Result<Self, Self::Err> {
         parse(
             text,
-            "github:owner/repo#number, github:owner/repo@sha or git:<url>@sha",
+            "<forge>:<repo>#number, <forge>:<repo>@sha or git:<url>@sha",
         )
     }
 }
@@ -153,29 +174,58 @@ fn is_sha(text: &str) -> bool {
     (7..=40).contains(&text.len()) && text.chars().all(|char| char.is_ascii_hexdigit())
 }
 
-/// Parses `<scheme>:<path>#<number>` or `<scheme>:<path>@<sha>`.
+/// Schemes an item or commit reference may start with.
+const SCHEMES: &[&str] = &["github", "gitlab", "git"];
+
+/// The default GitLab host.
+pub const GITLAB_COM: &str = "gitlab.com";
+
+/// Reads the repository part of a reference; `None` when it is malformed.
+fn source_of(scheme: &str, path: &str) -> Option<Source> {
+    match scheme {
+        "github" => owner_repo(path).map(|(owner, repo)| Source::GitHub { owner, repo }),
+        "git" => (!path.is_empty()).then(|| Source::Git {
+            url: path.to_owned(),
+        }),
+        "gitlab" => gitlab_project(path),
+        _ => None,
+    }
+}
+
+/// `[host/]group/.../project`: a first segment with a dot is the host when
+/// at least two segments follow it.
+fn gitlab_project(path: &str) -> Option<Source> {
+    let segments: Vec<&str> = path.split('/').collect();
+    if segments.len() < 2 || segments.iter().any(|segment| segment.is_empty()) {
+        return None;
+    }
+    let (host, project) = match segments.split_first() {
+        Some((first, rest)) if first.contains('.') && rest.len() >= 2 => (*first, rest.join("/")),
+        _ => (GITLAB_COM, path.to_owned()),
+    };
+    Some(Source::GitLab {
+        host: host.to_owned(),
+        project,
+    })
+}
+
+/// Parses `<scheme>:<path>#<number>`, `<scheme>:<path>!<number>` (GitLab)
+/// or `<scheme>:<path>@<sha>`.
 fn parse(text: &str, expected: &'static str) -> Result<Reachable, RefError> {
     let (scheme, locator) = split_scheme(text)?;
     let malformed = || RefError::Malformed {
         text: text.to_owned(),
         expected,
     };
-    let source = |path: &str| match scheme {
-        "github" => owner_repo(path)
-            .map(|(owner, repo)| Source::GitHub { owner, repo })
-            .ok_or_else(malformed),
-        "git" if !path.is_empty() => Ok(Source::Git {
-            url: path.to_owned(),
-        }),
-        "git" => Err(malformed()),
-        other => Err(RefError::UnknownScheme {
-            scheme: other.to_owned(),
+    if !SCHEMES.contains(&scheme) {
+        return Err(RefError::UnknownScheme {
+            scheme: scheme.to_owned(),
             text: text.to_owned(),
-            known: "github, git",
-        }),
-    };
+            known: "github, gitlab, git",
+        });
+    }
     if let Some((path, sha)) = locator.rsplit_once('@') {
-        let source = source(path)?;
+        let source = source_of(scheme, path).ok_or_else(malformed)?;
         if !is_sha(sha) {
             return Err(malformed());
         }
@@ -184,15 +234,24 @@ fn parse(text: &str, expected: &'static str) -> Result<Reachable, RefError> {
             sha: sha.to_owned(),
         }));
     }
-    if scheme == "git" {
-        return Err(malformed());
-    }
-    let (path, number) = locator
-        .rsplit_once('#')
-        .ok_or_else(|| source(locator).err().unwrap_or_else(malformed))?;
-    let source = source(path)?;
+    let split = locator
+        .rfind(['#', '!'])
+        .and_then(|at| Some((locator.get(..at)?, locator.get(at..)?)));
+    let (path, kind, number) = match split {
+        Some((path, suffix)) if scheme != "git" => match suffix.split_at(1) {
+            ("#", number) => (path, ItemKind::Issue, number),
+            ("!", number) if scheme == "gitlab" => (path, ItemKind::MergeRequest, number),
+            _ => return Err(malformed()),
+        },
+        _ => return Err(malformed()),
+    };
+    let source = source_of(scheme, path).ok_or_else(malformed)?;
     let number = number.parse().map_err(|_| malformed())?;
-    Ok(Reachable::Item(ItemRef { source, number }))
+    Ok(Reachable::Item(ItemRef {
+        source,
+        number,
+        kind,
+    }))
 }
 
 impl fmt::Display for Source {
@@ -200,13 +259,21 @@ impl fmt::Display for Source {
         match self {
             Self::GitHub { owner, repo } => write!(formatter, "github:{owner}/{repo}"),
             Self::Git { url } => write!(formatter, "git:{url}"),
+            Self::GitLab { host, project } if host == GITLAB_COM => {
+                write!(formatter, "gitlab:{project}")
+            }
+            Self::GitLab { host, project } => write!(formatter, "gitlab:{host}/{project}"),
         }
     }
 }
 
 impl fmt::Display for ItemRef {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(formatter, "{}#{}", self.source, self.number)
+        let separator = match self.kind {
+            ItemKind::Issue => '#',
+            ItemKind::MergeRequest => '!',
+        };
+        write!(formatter, "{}{separator}{}", self.source, self.number)
     }
 }
 

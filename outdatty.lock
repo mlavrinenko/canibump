@@ -3,8 +3,8 @@ algorithm: blake3
 groups:
   cli-docs:
     source:
-      src/auth.rs: 07d5361aa596a11d23d4fd098406226a3bcc6dfcf8f109916023ed0a90782157
-      src/auth_tests.rs: 02f13762af19a1afd2c9e0498c863b4a5c4aefea0305b017e52277f02883654d
+      src/auth.rs: b0a8bb7d792183ca4e4de9566f139e5692e6dbb26891d1ac53a1300a5c74fdad
+      src/auth_tests.rs: 182b54f432fddced7b4ebd9fcb9dfaa9f56e66439f4b150ecd5b43a839d46b38
       src/cache.rs: 0f4b27fdeb4ca28a0163706414836ab36a3c30e2956021ad17f90454408be794
       src/cache_tests.rs: 0da019aeb791df9f6ffeb2bd2dfe7462683dee1db02e1597e4fe691563e2efaf
       src/cli.rs: d9e2f55c317cd657a8e8af960521b34fc1acc7f8126a4c1b73bacd6eff00050e
@@ -14,29 +14,31 @@ groups:
       src/lib.rs: 840df8b713a672e59fcdba7c75dfcd877e1028149da31e98cf5aa4a0ff77d2d3
       src/main.rs: 78e10ececd7a8915846c5e34f8edc43a8766632702111b6c23201e09a9c397e5
       src/manifest.rs: e2103fcdc05b7841ce0d47fe8f63b4004b0437c9e9619cdb26be1f50f04ef2af
-      src/manifest_tests.rs: b7264c35aeac9e05a7311f042c8239380d69dabdd5b9e3f6193401f35235b762
+      src/manifest_tests.rs: 25e29b14b55ab51da30935297a402a131495af5ba32df397791410ceb131459d
       src/outcome.rs: e4571c63d7efeaa959281d956d66f731d2ff403b9fccfef6a61bf3ad163a1c92
       src/package.rs: 075b8ba117612287b38bb3a301d061bd657c884946fd622ab509472366be00b4
       src/package_tests.rs: 19500c6de1897919b94374ddcc6e16e59917eea95e9427be9fef04dda4876db7
-      src/provider/defaults.rs: c94dfad66bd9b110afa0a38927f0dfc4794b9264c0c8ab8536a5f1841dff2526
+      src/provider/defaults.rs: 739c7753e2ba870a085aa57f8ba9bae500db70a98b258f6f1f44cac47deb5251
       src/provider/depsdev.rs: 4a28482e40f193c927c8205526be3a829e30340347c7737ca74c486ef7a220f0
       src/provider/depsdev_tests.rs: 05e0e2cbfb8a9eea4a93d57a9ce3d0e78bd9de0dd401578f08057233a68fe5a7
       src/provider/git.rs: f5f9edc1a87961be71419fd48b7d4e63d10b1505ce40206fdc75d9d9323a53b1
-      src/provider/git_tests.rs: c53cc9a67766078c3bff8e30f1eae241a0e8caf36c09cc2800f97a31eeefe8e0
+      src/provider/git_tests.rs: 20b98e2e3b89695576a003373fa047fd135ac7de70eb8dd0c6b564591f187282
       src/provider/github.rs: 0b94b21774acbfb36df0c2ffa145b9dc5faf585f56a97f6338d727528615edfb
       src/provider/github_tests.rs: 85119432f8c2cdfde3f3b5a00d0001ed423d202dd96d095eb037e16956c4f820
-      src/provider/http.rs: c63cf62ee327c36e44b016769e68ff30e42cab8e542d2c1a8a6c46212dceb8d0
-      src/provider/mod.rs: 86d886932ee9b4b5b2d4503f9f94e68feda10677a082656b98a47928d7c29968
+      src/provider/gitlab.rs: b9d4954b1db4d1154daf11c59571989ad90f207cb27edca0e88eae9161b03af9
+      src/provider/gitlab_tests.rs: 50c9249493b54ffa378ba76ed8515130a913836c42eba36aebbf4f7f94260757
+      src/provider/http.rs: e377770b0fa693480da819a0f24b448c34ac2d4801a9d29ef8d851977bab288a
+      src/provider/mod.rs: a3e5f440f39f6dc93b547bbf75d8c801bfa5152cc21f3087facc29caa31f333e
       src/provider/repology.rs: 6f2bd5a0ecbb86dc5377e9e0185ed3b847883348378d086bcf63b4609d334394
       src/provider/repology_tests.rs: 183e64251d4e15eef813be6f7fe314c646fa4c1938092fc029462f6a3247e081
-      src/refs.rs: 6b5f720fc04d72d7074e1756af1b5b0240fb45944a35a346ecc1b936f4abdbb9
-      src/refs_tests.rs: 8744c344ab19e8352ecb606d850abd2e95fa97ef5489dbfb6908df119d9a4aa1
+      src/refs.rs: cfc3184ce31d1df11d5317f3526b4d547f436135c8ff1e23bdaf51c356e669a9
+      src/refs_tests.rs: 3d32470334deab847f367599e2f1f9d02249a7158d2ae1d69ad4d095513b1a8f
       src/report.rs: dee6e1e55133502c7c68d7245051ba00d7def628dd54a98f0ea9fac8336a7da7
       src/run.rs: b444ee93fdac4e9a906f6ba176b68907847592bbbea302106ed74ba0bbe51568
       src/version.rs: 5143da0e832df416b0b2e0980aa4528a913917095bd0e819de54a3fbeaf1d3c5
       src/version_tests.rs: 7261cedc441f28749d932cc3a87aca31758f4e80aefb4f95a25ebce6d3deaf32
     dependents:
-      README.md: 2d67ad8c6cbe0c278a2da5382582dbf3a639a27a744e6196d70e7cbd71bda739
+      README.md: e697eec896afe06d7a26aecc5068c213c2dd3bb5c747ec7317db07ac629af961
       www/index.html: 733e8f241f271be1d0db949f62f8c6045378afe8d1146918d09179dc9cd52f91
   dev-docs:
     source:
@@ -49,6 +51,6 @@ groups:
       CONTRIBUTING.md: 3f6231f554ff73872a31608892b9f2b10833f8b4bd712567647202b9ce3025cd
   release-notes:
     source:
-      Cargo.toml: 2cb42078bd76efce3955abc48a8d60c7f1c87efc2c1f395cd8025c6e99fb9871
+      Cargo.toml: c829f897e4149505df9cef0262cce1925d249799fb5232b7967d9b1c8bb600b6
     dependents:
-      CHANGELOG.md: 9540f71aea13036d64166f2f8576579e0384d229394ef2ac5e1089a2f130875f
+      CHANGELOG.md: 6e1876ec358156e3b5c9bda82bc8d7008b24352023035a5bcaeb7b33169df5dd

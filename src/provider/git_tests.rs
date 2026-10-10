@@ -1,6 +1,7 @@
 use gix::refs::transaction::PreviousValue;
 
 use super::*;
+use crate::refs::ItemKind;
 
 /// A source repo: c1 - c2 (v0.1.0) - c3 (v0.2.0) on main, c4 on side off c2.
 struct Upstream {
@@ -111,6 +112,7 @@ async fn a_git_remote_has_no_merge_commits() {
             url: "x".to_owned(),
         },
         number: 1,
+        kind: ItemKind::Issue,
     };
     assert!(matches!(
         remotes.merge_commit(&item).await,
