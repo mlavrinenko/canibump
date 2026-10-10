@@ -1,0 +1,25 @@
+# Upstream fixes our workarounds wait on. `canibump` here says which can go.
+# https://github.com/mlavrinenko/canibump
+
+[[blocker]]
+id = "llama-blocking-sync"
+note = "apps/llama-cpp-16gb.nix: drop the GGML_CUDA_BLOCKING_SYNC postPatch (keep the env var)"
+
+# The PR merges...
+[[blocker.all]]
+id = "merged"
+state = "github:ggml-org/llama.cpp#26487"
+
+# ...a semver release carries it (the b-builds are a separate stream)...
+[[blocker.all]]
+id = "released"
+reached = "github:ggml-org/llama.cpp#26487"
+in = { tags = "v*" }
+
+# ...and nixos-unstable packages at least that release.
+[[blocker.all]]
+id = "packaged"
+version = "repology:llama.cpp"
+repo = "nix_unstable"
+srcname = "llama-cpp"
+at-least = { step = "released" }

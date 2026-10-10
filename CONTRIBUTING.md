@@ -31,14 +31,11 @@ coverage, so anything there is untested by default.
   [`assert_cmd`](https://docs.rs/assert_cmd) + [`predicates`](https://docs.rs/predicates)
   (see `tests/cli.rs`).
 - Run the full suite with `just test`: `cargo nextest run --status-level fail`
-  (one process per test, so a panic or hang is isolated; a green run prints only
-  the summary, a failure prints the full output) plus `cargo test --doc` for
-  doctests, which [cargo-nextest](https://nexte.st) does not run. `just cover`
-  instruments the same nextest runner, so the gate and coverage can't disagree
-  about whether a test passes. The output level lives in
-  [.config/nextest.toml](.config/nextest.toml), not in the recipe: `cargo
-  llvm-cov nextest` accepts `--status-level fail` and ignores it, so a coverage
-  run printed one `PASS` line per test until the profile moved there.
+  (one process per test; a green run prints only the summary, a failure its full
+  output) plus `cargo test --doc`, which [cargo-nextest](https://nexte.st) does not
+  run. `just cover` instruments the same runner, so the gate and coverage can't
+  disagree. The output level lives in [.config/nextest.toml](.config/nextest.toml):
+  `cargo llvm-cov nextest` accepts `--status-level` and ignores it.
 - As a file approaches the linecop limit, `just fix-check` ejects its inline
   `#[cfg(test)]` module into a sibling `_tests.rs` file via
   [ejectest](https://github.com/mlavrinenko/ejectest), driven by `linecop --baseline`.
@@ -49,10 +46,9 @@ coverage, so anything there is untested by default.
 Minimum 70% line coverage enforced via `cargo-llvm-cov`. Run `just cover` to check.
 llvm-cov merges the profraw of child processes, so subprocess-based e2e tests
 attribute correctly — unlike tarpaulin, which misses them. It starts with
-`cargo llvm-cov clean --workspace`, and that line is not tidiness: `--no-report`
-deliberately keeps the profraw pile so runs can be merged, so without the clean
-a long-lived checkout scores binaries that no longer exist. Never trade it for
-speed — it fails toward pessimism, which no floor complains about.
+`cargo llvm-cov clean --workspace`: `--no-report` keeps old profraw, so without
+the clean a long-lived checkout scores binaries that no longer exist. Never trade
+it for speed.
 `main.rs` is excluded from coverage — keep it thin and move testable logic to `lib.rs`.
 
 ## CRAP Gate
@@ -118,11 +114,9 @@ worth knowing:
   delete its record under `.mmz/cache/` (gitignored via `.mmz/.gitignore`).
 - `just status` (`mmz --status`) prints every rule's freshness as a table — what
   a `just check` would re-run, and whether the pre-commit hook would pass now.
-- In a brand-new clone there is no `Cargo.lock` yet; cargo writes it during the
-  first `just check`, so the arms that declare it record a pre-lock digest and
-  miss once more on the second run. "A no-op re-run is a full hit" holds from
-  the third run onward. Nothing to fix — just do not read that first miss as a
-  broken cache.
+- A brand-new clone has no `Cargo.lock`: the first `just check` writes it, so
+  arms declaring it miss once more on the second run. A full no-op hit holds from
+  the third run; that first miss is not a broken cache.
 
 ## Copy-Paste Gate
 
@@ -130,6 +124,13 @@ worth knowing:
 and `tests/` and fails on any duplicated Rust block of >=70 tokens. Fix a
 finding by extracting a shared helper — never by shuffling tokens until the
 detector loses the scent.
+
+## JSON Schema
+
+`schema/canibump.schema.json` is generated from the manifest types by
+`canibump schema` and never edited by hand. `tests/schema.rs` fails while the
+committed file differs from the generated one; `just schema` regenerates it.
+`just install` also copies it to `~/.config/canibump/`.
 
 ## Dependency Audits
 

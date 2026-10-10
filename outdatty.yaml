@@ -20,6 +20,7 @@ require_tracked:
   - "AGENTS.md"
   - "Cargo.toml"
   - "Justfile"
+  - "schema/**"
   - "flake.nix"
 groups:
   # The CLI, the manifest format, the output and the targets are documented
@@ -31,6 +32,16 @@ groups:
       - README.md
       - docs/manifest.md
       - www/index.html
+
+  # The JSON schema is generated from the manifest types, so a source change
+  # flags the committed file and the docs that show how to wire it in.
+  - name: schema
+    source:
+      - "src/**"
+    dependents:
+      - schema/canibump.schema.json
+      - README.md
+      - docs/manifest.md
 
   # A package change (version, dependencies, metadata) should land in the
   # changelog.

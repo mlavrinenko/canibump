@@ -59,3 +59,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   on whole words, so `Abandoned` reads dead rather than done. Credentials:
   `REDMINE_API_KEY` for `REDMINE_URL`; `JIRA_TOKEN`, or `JIRA_USER` with
   `JIRA_API_TOKEN`, for `JIRA_URL`.
+- `canibump schema` prints a JSON Schema for `canibump.toml`, generated from the
+  manifest types and committed as `schema/canibump.schema.json`. Point taplo or
+  tombi at it with a `#:schema` first line; `just install` also writes it to
+  `~/.config/canibump/`.

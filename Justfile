@@ -293,10 +293,20 @@ deny:
 outdated:
     cargo outdated --workspace
 
-# Put this checkout's binary on PATH (~/.cargo/bin). The contract ~/.nix's
-# `just install canibump` calls.
+# Regenerate schema/canibump.schema.json from the manifest types. A test fails
+# while the committed file differs from what `canibump schema` prints.
+# Written through a temp file so a failed build never truncates the schema.
+schema:
+    cargo run --quiet -- schema > schema/canibump.schema.json.tmp
+    mv schema/canibump.schema.json.tmp schema/canibump.schema.json
+
+# Put this checkout's binary on PATH (~/.cargo/bin) and its JSON schema in
+# ~/.config/canibump/, for `#:schema` lines in canibump.toml. The contract
+# ~/.nix's `just install canibump` calls.
 install:
     cargo install --path . --locked --quiet
+    mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/canibump"
+    "${CARGO_HOME:-$HOME/.cargo}/bin/canibump" schema > "${XDG_CONFIG_HOME:-$HOME/.config}/canibump/canibump.schema.json"
 
 # Point git at the tracked pre-commit hook (`.githooks/pre-commit` asserts
 # `mmz --is-fresh --tag gate` against the worktree, running nothing of its

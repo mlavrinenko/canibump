@@ -120,3 +120,11 @@ GitLab takes glab's config per host and `GITLAB_TOKEN` for `GITLAB_HOST`
 `JIRA_TOKEN`, or `JIRA_USER` with `JIRA_API_TOKEN`, for `JIRA_URL`. A token
 only ever goes to its own host.
 
+
+## Schema
+
+`canibump schema` prints a JSON Schema for the manifest, generated from the
+types that parse it and committed as
+[schema/canibump.schema.json](../schema/canibump.schema.json). A test fails
+when the two differ; `just schema` regenerates the file. The README shows the
+`#:schema` line that wires it into taplo and tombi.

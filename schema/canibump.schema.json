@@ -1,0 +1,436 @@
+{
+  "$defs": {
+    "Blocker": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Blocker_StateCondition",
+          "description": "Waits on an issue, PR or MR."
+        },
+        {
+          "$ref": "#/$defs/Blocker_ReachedCondition",
+          "description": "Waits for a commit to land in a branch or tag."
+        },
+        {
+          "$ref": "#/$defs/Blocker_VersionCondition",
+          "description": "Waits for a package version."
+        },
+        {
+          "$ref": "#/$defs/Blocker_AllCondition",
+          "description": "Every step holds, checked in order."
+        },
+        {
+          "$ref": "#/$defs/Blocker_AnyCondition",
+          "description": "Some step holds, checked in order."
+        }
+      ],
+      "description": "One workaround waiting on something upstream: an `id`, a `note` and\nexactly one condition.\n\nOne variant per condition key. The condition's own type forbids unknown\nkeys, so `id` and `note` join it per variant instead of beside an `anyOf`\nthat would reject them."
+    },
+    "Blocker_AllCondition": {
+      "additionalProperties": false,
+      "description": "A blocker with its condition `C`.",
+      "properties": {
+        "all": {
+          "description": "The steps, checked in order.",
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "type": "array"
+        },
+        "id": {
+          "description": "Unique name.",
+          "type": "string"
+        },
+        "note": {
+          "description": "What workaround it guards, and where.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "note",
+        "all"
+      ],
+      "type": "object"
+    },
+    "Blocker_AnyCondition": {
+      "additionalProperties": false,
+      "description": "A blocker with its condition `C`.",
+      "properties": {
+        "any": {
+          "description": "The steps, checked in order.",
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "type": "array"
+        },
+        "id": {
+          "description": "Unique name.",
+          "type": "string"
+        },
+        "note": {
+          "description": "What workaround it guards, and where.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "note",
+        "any"
+      ],
+      "type": "object"
+    },
+    "Blocker_ReachedCondition": {
+      "additionalProperties": false,
+      "description": "A blocker with its condition `C`.",
+      "properties": {
+        "id": {
+          "description": "Unique name.",
+          "type": "string"
+        },
+        "in": {
+          "$ref": "#/$defs/Within",
+          "description": "Where it has to arrive."
+        },
+        "note": {
+          "description": "What workaround it guards, and where.",
+          "type": "string"
+        },
+        "reached": {
+          "description": "The commit or PR: `github:owner/repo#N`, `github:owner/repo@<sha>` or\n`git:<remote url>@<sha>`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "note",
+        "reached",
+        "in"
+      ],
+      "type": "object"
+    },
+    "Blocker_StateCondition": {
+      "additionalProperties": false,
+      "description": "A blocker with its condition `C`.",
+      "properties": {
+        "id": {
+          "description": "Unique name.",
+          "type": "string"
+        },
+        "note": {
+          "description": "What workaround it guards, and where.",
+          "type": "string"
+        },
+        "state": {
+          "description": "The item: `github:owner/repo#N`, `gitlab:group/project!N`, `codeberg:owner/repo#N`,\n`gitea:host/owner/repo#N`, `forgejo:host/owner/repo#N`, `redmine:host#N` or\n`jira:host#KEY-N`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "note",
+        "state"
+      ],
+      "type": "object"
+    },
+    "Blocker_VersionCondition": {
+      "additionalProperties": false,
+      "description": "A blocker with its condition `C`.",
+      "properties": {
+        "at-least": {
+          "$ref": "#/$defs/Bound",
+          "description": "The lowest version that resolves the blocker."
+        },
+        "id": {
+          "description": "Unique name.",
+          "type": "string"
+        },
+        "note": {
+          "description": "What workaround it guards, and where.",
+          "type": "string"
+        },
+        "repo": {
+          "description": "The Repology repo to read, e.g. `nix_unstable`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "srcname": {
+          "description": "The package name in that repo, when it ships several.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "description": "The package: `repology:<project>` or `deps.dev:<system>/<name>`, where\nthe system is cargo, npm, pypi, go, maven, nuget or rubygems.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "note",
+        "version",
+        "at-least"
+      ],
+      "type": "object"
+    },
+    "Bound": {
+      "anyOf": [
+        {
+          "description": "A literal version.",
+          "type": "string"
+        },
+        {
+          "description": "The tag an earlier `reached` step with `in = { tags = ... }` found.",
+          "properties": {
+            "step": {
+              "description": "The `id` of that step.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "step"
+          ],
+          "type": "object"
+        }
+      ],
+      "description": "The lowest version that resolves a `version` condition."
+    },
+    "Settings": {
+      "additionalProperties": false,
+      "description": "`[settings]`.",
+      "properties": {
+        "cache": {
+          "description": "Where the cache file lives, relative to the manifest. Defaults to a file\nunder the user cache dir.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ttl": {
+          "description": "How long a result stays fresh before `canibump` re-checks it, like\n`\"6h\"` or `\"30m\"`. Defaults to 6 hours.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    },
+    "Step": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Step_StateCondition",
+          "description": "Waits on an issue, PR or MR."
+        },
+        {
+          "$ref": "#/$defs/Step_ReachedCondition",
+          "description": "Waits for a commit to land in a branch or tag."
+        },
+        {
+          "$ref": "#/$defs/Step_VersionCondition",
+          "description": "Waits for a package version."
+        },
+        {
+          "$ref": "#/$defs/Step_AllCondition",
+          "description": "Every step holds, checked in order."
+        },
+        {
+          "$ref": "#/$defs/Step_AnyCondition",
+          "description": "Some step holds, checked in order."
+        }
+      ],
+      "description": "One step of an `all` or `any`: an optional `id` and exactly one condition."
+    },
+    "Step_AllCondition": {
+      "additionalProperties": false,
+      "description": "A step with its condition `C`.",
+      "properties": {
+        "all": {
+          "description": "The steps, checked in order.",
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "type": "array"
+        },
+        "id": {
+          "description": "A name later steps refer to, e.g. `at-least = { step = \"released\" }`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "all"
+      ],
+      "type": "object"
+    },
+    "Step_AnyCondition": {
+      "additionalProperties": false,
+      "description": "A step with its condition `C`.",
+      "properties": {
+        "any": {
+          "description": "The steps, checked in order.",
+          "items": {
+            "$ref": "#/$defs/Step"
+          },
+          "type": "array"
+        },
+        "id": {
+          "description": "A name later steps refer to, e.g. `at-least = { step = \"released\" }`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "any"
+      ],
+      "type": "object"
+    },
+    "Step_ReachedCondition": {
+      "additionalProperties": false,
+      "description": "A step with its condition `C`.",
+      "properties": {
+        "id": {
+          "description": "A name later steps refer to, e.g. `at-least = { step = \"released\" }`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "in": {
+          "$ref": "#/$defs/Within",
+          "description": "Where it has to arrive."
+        },
+        "reached": {
+          "description": "The commit or PR: `github:owner/repo#N`, `github:owner/repo@<sha>` or\n`git:<remote url>@<sha>`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "reached",
+        "in"
+      ],
+      "type": "object"
+    },
+    "Step_StateCondition": {
+      "additionalProperties": false,
+      "description": "A step with its condition `C`.",
+      "properties": {
+        "id": {
+          "description": "A name later steps refer to, e.g. `at-least = { step = \"released\" }`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "state": {
+          "description": "The item: `github:owner/repo#N`, `gitlab:group/project!N`, `codeberg:owner/repo#N`,\n`gitea:host/owner/repo#N`, `forgejo:host/owner/repo#N`, `redmine:host#N` or\n`jira:host#KEY-N`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "state"
+      ],
+      "type": "object"
+    },
+    "Step_VersionCondition": {
+      "additionalProperties": false,
+      "description": "A step with its condition `C`.",
+      "properties": {
+        "at-least": {
+          "$ref": "#/$defs/Bound",
+          "description": "The lowest version that resolves the blocker."
+        },
+        "id": {
+          "description": "A name later steps refer to, e.g. `at-least = { step = \"released\" }`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "repo": {
+          "description": "The Repology repo to read, e.g. `nix_unstable`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "srcname": {
+          "description": "The package name in that repo, when it ships several.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "version": {
+          "description": "The package: `repology:<project>` or `deps.dev:<system>/<name>`, where\nthe system is cargo, npm, pypi, go, maven, nuget or rubygems.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "at-least"
+      ],
+      "type": "object"
+    },
+    "Within": {
+      "additionalProperties": false,
+      "description": "Where a `reached` commit has to arrive: exactly one of `branch`, `tag` or\n`tags`.",
+      "properties": {
+        "branch": {
+          "description": "A branch name.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "since": {
+          "description": "With `tags`, ignore tags below this version.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tag": {
+          "description": "An exact tag name.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "tags": {
+          "description": "A glob such as `v*`; the first matching tag, in version order, counts.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "A `canibump.toml`: settings, and the blockers a repo waits on.",
+  "properties": {
+    "blocker": {
+      "default": [],
+      "description": "One `[[blocker]]` per workaround waiting on something upstream.",
+      "items": {
+        "$ref": "#/$defs/Blocker"
+      },
+      "type": "array"
+    },
+    "settings": {
+      "$ref": "#/$defs/Settings",
+      "description": "Tuning for the whole run."
+    }
+  },
+  "title": "canibump.toml",
+  "type": "object"
+}

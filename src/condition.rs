@@ -4,6 +4,7 @@
 //! that condition's own type, so an unknown key or a bad reference is an
 //! error naming it.
 
+use schemars::JsonSchema;
 use serde::Deserialize;
 use toml::{Table, Value};
 
@@ -88,42 +89,73 @@ pub enum Within {
     },
 }
 
-#[derive(Deserialize)]
+/// Waits on an issue, PR or MR. Merged, or closed as completed, is bumpable.
+#[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
-struct RawState {
+#[schemars(rename = "StateCondition")]
+pub(crate) struct RawState {
+    /// The item: `github:owner/repo#N`, `gitlab:group/project!N`, `codeberg:owner/repo#N`,
+    /// `gitea:host/owner/repo#N`, `forgejo:host/owner/repo#N`, `redmine:host#N` or
+    /// `jira:host#KEY-N`.
     state: String,
 }
 
-#[derive(Deserialize)]
+/// Waits for a commit, or a PR's merge commit, to land in a branch or tag.
+#[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
-struct RawReached {
+#[schemars(rename = "ReachedCondition")]
+pub(crate) struct RawReached {
+    /// The commit or PR: `github:owner/repo#N`, `github:owner/repo@<sha>` or
+    /// `git:<remote url>@<sha>`.
     reached: String,
+    /// Where it has to arrive.
     #[serde(rename = "in")]
     within: RawWithin,
 }
 
-#[derive(Deserialize)]
+/// Waits for a package to reach a version.
+#[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields, rename_all = "kebab-case")]
-struct RawVersion {
+#[schemars(rename = "VersionCondition")]
+pub(crate) struct RawVersion {
+    /// The package: `repology:<project>` or `deps.dev:<system>/<name>`, where
+    /// the system is cargo, npm, pypi, go, maven, nuget or rubygems.
     version: String,
+    /// The Repology repo to read, e.g. `nix_unstable`.
     repo: Option<String>,
+    /// The package name in that repo, when it ships several.
     srcname: Option<String>,
+    /// The lowest version that resolves the blocker.
     at_least: RawBound,
 }
 
-#[derive(Deserialize)]
+/// The lowest version that resolves a `version` condition.
+#[derive(Deserialize, JsonSchema)]
 #[serde(untagged)]
-enum RawBound {
+#[schemars(rename = "Bound")]
+pub(crate) enum RawBound {
+    /// A literal version.
     Version(String),
-    Step { step: String },
+    /// The tag an earlier `reached` step with `in = { tags = ... }` found.
+    Step {
+        /// The `id` of that step.
+        step: String,
+    },
 }
 
-#[derive(Deserialize)]
+/// Where a `reached` commit has to arrive: exactly one of `branch`, `tag` or
+/// `tags`.
+#[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
-struct RawWithin {
+#[schemars(rename = "Within")]
+pub(crate) struct RawWithin {
+    /// A branch name.
     branch: Option<String>,
+    /// An exact tag name.
     tag: Option<String>,
+    /// A glob such as `v*`; the first matching tag, in version order, counts.
     tags: Option<String>,
+    /// With `tags`, ignore tags below this version.
     since: Option<String>,
 }
 

@@ -51,6 +51,8 @@ pub enum Command {
         #[arg(long)]
         path: bool,
     },
+    /// Print the JSON Schema for canibump.toml and exit.
+    Schema,
 }
 
 /// Runs the CLI and returns the exit code.
@@ -59,6 +61,10 @@ pub enum Command {
 ///
 /// When the manifest, the state file or stdout cannot be used.
 pub fn run(cli: &Cli) -> Result<u8> {
+    if matches!(cli.command, Some(Command::Schema)) {
+        print(&crate::schema::render())?;
+        return Ok(report::EXIT_OK);
+    }
     let manifest = Manifest::load(&cli.manifest)?;
     let cache_path = cache::resolve(
         &cli.manifest,
@@ -71,6 +77,7 @@ pub fn run(cli: &Cli) -> Result<u8> {
             Ok(report::EXIT_OK)
         }
         Some(Command::Status { path: false }) => status(cli, &cache_path),
+        Some(Command::Schema) => Ok(report::EXIT_OK),
         Some(Command::Check { refresh }) => {
             check(cli, &manifest, &cache_path, refresh || cli.refresh)
         }

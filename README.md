@@ -82,7 +82,25 @@ canibump --refresh       # check everything now
 canibump --json          # same, as JSON
 canibump status          # last results from the cache, no network
 canibump status --path   # where the cache lives
+canibump schema          # print the JSON Schema for canibump.toml
 canibump -m path/to/canibump.toml
+```
+
+### Editor support
+
+The manifest has a JSON Schema, generated from the same Rust types that parse it, so it
+can't go stale. taplo and tombi give you completion, hover docs and squiggles on typos
+once the first line of `canibump.toml` points at it.
+
+```toml
+#:schema https://raw.githubusercontent.com/mlavrinenko/canibump/main/schema/canibump.schema.json
+```
+
+Prefer a local copy that works offline? `just install` writes one next to the binary
+and `canibump schema > FILE` makes one anywhere.
+
+```toml
+#:schema file:///home/<you>/.config/canibump/canibump.schema.json
 ```
 
 ## Development

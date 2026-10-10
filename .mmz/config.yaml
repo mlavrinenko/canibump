@@ -31,6 +31,7 @@ scopes:
   rust:
     - "src/**"
     - "tests/**"
+    - "schema/**"
     - "Cargo.toml"
     - "Cargo.lock"
     - "rust-toolchain.toml"

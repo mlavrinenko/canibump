@@ -9,11 +9,13 @@ use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 use jiff::SignedDuration;
+use schemars::JsonSchema;
 use serde::Deserialize;
 use thiserror::Error;
 use toml::{Table, Value};
 
 use crate::condition::{Condition, check_steps, parse_condition};
+use crate::schema::BlockerSchema;
 
 const DEFAULT_TTL: SignedDuration = SignedDuration::from_hours(6);
 
@@ -85,19 +87,30 @@ pub enum ManifestError {
     DuplicateId(String),
 }
 
-#[derive(Deserialize)]
+/// A `canibump.toml`: settings, and the blockers a repo waits on.
+#[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
-struct RawManifest {
+#[schemars(title = "canibump.toml")]
+pub(crate) struct RawManifest {
+    /// Tuning for the whole run.
     #[serde(default)]
     settings: RawSettings,
+    /// One `[[blocker]]` per workaround waiting on something upstream.
     #[serde(default, rename = "blocker")]
+    #[schemars(with = "Vec<BlockerSchema>")]
     blockers: Vec<Table>,
 }
 
-#[derive(Default, Deserialize)]
+/// `[settings]`.
+#[derive(Default, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
-struct RawSettings {
+#[schemars(rename = "Settings")]
+pub(crate) struct RawSettings {
+    /// How long a result stays fresh before `canibump` re-checks it, like
+    /// `"6h"` or `"30m"`. Defaults to 6 hours.
     ttl: Option<String>,
+    /// Where the cache file lives, relative to the manifest. Defaults to a file
+    /// under the user cache dir.
     cache: Option<PathBuf>,
 }
 

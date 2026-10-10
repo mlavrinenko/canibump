@@ -28,6 +28,10 @@
 - `just check-dry` (jscpd) flags duplicated Rust blocks of >=70 tokens. Fix
   a finding by extracting a shared helper — never by shuffling tokens until
   the detector loses the scent.
+- `schema/canibump.schema.json` is generated from the manifest types
+  (`canibump schema`), never hand-edited. After changing a manifest type or a
+  doc comment on one, run `just schema`; a test fails while the file is stale.
+  `just install` also writes it to `~/.config/canibump/`.
 - `just deny` (cargo-deny: advisories, licenses, bans) is not in `just check` —
   it needs network. Run it after touching dependencies. Widen `deny.toml`'s
   allow-list deliberately; never to silence a finding. `just outdated`
