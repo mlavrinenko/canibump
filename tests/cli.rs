@@ -138,6 +138,42 @@ fn reuses_a_fresh_result_and_rechecks_on_refresh() {
 }
 
 #[test]
+fn refresh_works_on_check_and_bare_but_status_refuses_it() {
+    let repo = Repo::new(&blocker("waits", 1));
+    let mock = repo.issue(1, 200, &open());
+    repo.cmd().arg("check").assert().code(0);
+    repo.cmd().args(["check", "--refresh"]).assert().code(0);
+    mock.assert_calls(2);
+    repo.cmd().arg("--refresh").assert().code(0);
+    mock.assert_calls(3);
+    repo.cmd().args(["--refresh", "check"]).assert().code(0);
+    mock.assert_calls(4);
+    repo.cmd()
+        .args(["--refresh", "status"])
+        .assert()
+        .code(1)
+        .stderr("canibump: --refresh goes with check, not status\n");
+    mock.assert_calls(4);
+}
+
+#[test]
+fn global_flags_work_before_a_subcommand() {
+    let repo = Repo::new(&blocker("waits", 1));
+    repo.issue(1, 200, &open());
+    repo.cmd().assert().code(0);
+    repo.cmd()
+        .args(["--json", "status"])
+        .assert()
+        .code(0)
+        .stdout(predicate::str::contains("\"status\": \"waiting\""));
+    repo.cmd()
+        .args(["-m", "canibump.toml", "status"])
+        .assert()
+        .code(0)
+        .stdout("waiting   waits  github:o/r#1 is open\n");
+}
+
+#[test]
 fn never_caches_a_failure_as_fresh() {
     let repo = Repo::new(&blocker("gone", 3));
     let mock = repo.issue(3, 500, &json!({"message": "boom"}));

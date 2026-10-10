@@ -1,7 +1,7 @@
 //! Command-line interface.
 
 use anyhow::{Context as _, Result, bail};
-use clap::{Parser, Subcommand};
+use clap::{Args, Parser, Subcommand};
 use jiff::Timestamp;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
@@ -28,23 +28,27 @@ pub struct Cli {
     /// Print JSON instead of lines.
     #[arg(long, global = true)]
     pub json: bool,
-    /// Re-check every blocker, even fresh ones.
-    #[arg(long)]
-    pub refresh: bool,
+    /// The check flags, for a bare `canibump` or ahead of `check`.
+    #[command(flatten)]
+    pub check: CheckArgs,
     /// What to do; `check` when omitted.
     #[command(subcommand)]
     pub command: Option<Command>,
+}
+
+/// What `check` takes, bare or as a subcommand.
+#[derive(Debug, Clone, Copy, Args)]
+pub struct CheckArgs {
+    /// Re-check every blocker, even fresh ones.
+    #[arg(long)]
+    pub refresh: bool,
 }
 
 /// Subcommands.
 #[derive(Debug, Subcommand)]
 pub enum Command {
     /// Check every blocker, reusing results younger than the TTL.
-    Check {
-        /// Re-check every blocker, even fresh ones.
-        #[arg(long)]
-        refresh: bool,
-    },
+    Check(CheckArgs),
     /// Print the last results from the state file, without network.
     Status {
         /// Print the state file's path and exit.
@@ -55,38 +59,64 @@ pub enum Command {
     Schema,
 }
 
+impl Command {
+    /// The word that selects it.
+    const fn name(&self) -> &'static str {
+        match self {
+            Self::Check(_) => "check",
+            Self::Status { .. } => "status",
+            Self::Schema => "schema",
+        }
+    }
+}
+
 /// Runs the CLI and returns the exit code.
 ///
 /// # Errors
 ///
-/// When the manifest, the state file or stdout cannot be used.
+/// When the manifest, the state file or stdout cannot be used, or a check
+/// flag comes ahead of another subcommand.
 pub fn run(cli: &Cli) -> Result<u8> {
-    if matches!(cli.command, Some(Command::Schema)) {
-        print(&crate::schema::render())?;
-        return Ok(report::EXIT_OK);
+    match &cli.command {
+        None => check(cli, cli.check),
+        Some(Command::Check(args)) => check(
+            cli,
+            CheckArgs {
+                refresh: cli.check.refresh || args.refresh,
+            },
+        ),
+        Some(other) if cli.check.refresh => {
+            bail!("--refresh goes with check, not {}", other.name())
+        }
+        Some(Command::Schema) => {
+            print(&crate::schema::render())?;
+            Ok(report::EXIT_OK)
+        }
+        Some(Command::Status { path }) => {
+            let (_, cache_path) = load(cli)?;
+            if *path {
+                print(&format!("{}\n", cache_path.display()))?;
+                return Ok(report::EXIT_OK);
+            }
+            status(cli, &cache_path)
+        }
     }
+}
+
+/// The manifest, and the state file its results live in.
+fn load(cli: &Cli) -> Result<(Manifest, PathBuf)> {
     let manifest = Manifest::load(&cli.manifest)?;
     let cache_path = cache::resolve(
         &cli.manifest,
         manifest.settings.cache.as_deref(),
         cli.cache.as_deref(),
     )?;
-    match cli.command {
-        Some(Command::Status { path: true }) => {
-            print(&format!("{}\n", cache_path.display()))?;
-            Ok(report::EXIT_OK)
-        }
-        Some(Command::Status { path: false }) => status(cli, &cache_path),
-        Some(Command::Schema) => Ok(report::EXIT_OK),
-        Some(Command::Check { refresh }) => {
-            check(cli, &manifest, &cache_path, refresh || cli.refresh)
-        }
-        None => check(cli, &manifest, &cache_path, cli.refresh),
-    }
+    Ok((manifest, cache_path))
 }
 
-fn check(cli: &Cli, manifest: &Manifest, cache_path: &Path, refresh: bool) -> Result<u8> {
-    let previous = match cache::read(cache_path) {
+fn check(cli: &Cli, args: CheckArgs) -> Result<u8> {
+    let (manifest, cache_path) = load(cli)?;
+    let previous = match cache::read(&cache_path) {
         Ok(previous) => previous,
         Err(error) => {
             eprintln!("canibump: warning: ignoring {error}");
@@ -97,11 +127,11 @@ fn check(cli: &Cli, manifest: &Manifest, cache_path: &Path, refresh: bool) -> Re
     let runtime = tokio::runtime::Runtime::new().context("starting the async runtime")?;
     let registry = defaults::registry();
     let entries = runtime.block_on(run::check(
-        manifest,
+        &manifest,
         previous.as_ref(),
         &registry,
         now,
-        refresh,
+        args.refresh,
     ));
     let absolute = std::path::absolute(&cli.manifest).unwrap_or_else(|_| cli.manifest.clone());
     let state = StateFile {
@@ -109,8 +139,8 @@ fn check(cli: &Cli, manifest: &Manifest, cache_path: &Path, refresh: bool) -> Re
         manifest: absolute,
         entries,
     };
-    cache::write(cache_path, &state)?;
-    output(cli, cache_path, &state, now)
+    cache::write(&cache_path, &state)?;
+    output(cli, &cache_path, &state, now)
 }
 
 fn status(cli: &Cli, cache_path: &Path) -> Result<u8> {
