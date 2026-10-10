@@ -329,6 +329,33 @@ install-hooks:
     chmod +x .githooks/pre-commit
     echo "installed .githooks"
 
+# Stand up a worktree for delegated work: a new branch off BASE (default `HEAD`)
+# at `../canibump-<slug>`, `direnv allow`-ed with its dev shell loaded, and the
+# base read back out of the created worktree and compared to the sha it was made
+# from. Refuses a dirty `HEAD` (`git worktree add` copies commits, never the
+# working tree) and reports, without refusing, a base behind or diverged from
+# this checkout. What the assertion can and cannot prove, and why the worktree
+# is a sibling, are argued in place in .just/scripts/fork.sh.
+# Fork a ready worktree on a new branch (usage: just fork <slug> [base])
+[no-exit-message]
+[positional-arguments]
+fork SLUG BASE='HEAD':
+    bash .just/scripts/fork.sh "$@"
+
+# Take a delegated worktree back down, the inverse of `fork`. Refuses unless
+# BRANCH's worktree reports `mmz --is-fresh --tag gate`, then fast-forwards this
+# checkout onto it, carries its gate records and lcov over, and removes the
+# worktree. A fast-forward writes no commit, so the pre-commit hook never fires
+# on the merge and this assertion is the only gate it meets. Also refuses a
+# dirty worktree, a branch that is not a fast-forward and a task left `wip`; it
+# never runs the gate and has no waiver flag, as argued in place in
+# .just/scripts/integrate.sh.
+# Assert a branch's gate, fast-forward onto it, drop its worktree
+[no-exit-message]
+[positional-arguments]
+integrate BRANCH:
+    bash .just/scripts/integrate.sh "$@"
+
 # The tag push is the only publish path: never `cargo publish` by hand, since a
 # version already on crates.io used to fail the tag's workflow and leave the
 # release half-done. One command does the whole release, so the push of main
