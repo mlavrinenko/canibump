@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::*;
 
 #[test]
@@ -64,4 +66,29 @@ fn gitlab_tokens_come_from_glab_and_the_env_by_host() {
         Some("e")
     );
     assert!(gitlab_tokens_from(env(&[]), Some("not: [yaml")).is_empty());
+}
+
+#[test]
+fn gitea_tokens_come_from_tea_and_the_env_by_host() {
+    let config = "logins:\n    - name: home\n      url: https://git.example.org\n      token: from-tea\n    - name: empty\n      url: https://empty.example.org\n      token: \"\"\n";
+    let env = |vars: &'static [(&'static str, &'static str)]| {
+        move |key: &str| {
+            vars.iter()
+                .find(|(name, _)| *name == key)
+                .map(|(_, value)| (*value).to_owned())
+        }
+    };
+    let tokens = gitea_tokens_from(env(&[("GITEA_TOKEN", "lost")]), Some(config));
+    assert_eq!(
+        tokens,
+        HashMap::from([("git.example.org".to_owned(), "from-tea".to_owned())])
+    );
+    let tokens = gitea_tokens_from(
+        env(&[("GITEA_TOKEN", "e"), ("GITEA_HOST", "codeberg.org")]),
+        None,
+    );
+    assert_eq!(
+        tokens,
+        HashMap::from([("codeberg.org".to_owned(), "e".to_owned())])
+    );
 }

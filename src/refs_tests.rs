@@ -151,3 +151,35 @@ fn rejects_a_merge_request_off_gitlab_and_a_bare_project() {
         assert!(error.contains(text), "{error}");
     }
 }
+
+#[test]
+fn parses_gitea_forgejo_and_codeberg_items() {
+    let gitea = |host: &str| Source::Gitea {
+        host: host.to_owned(),
+        owner: "o".to_owned(),
+        repo: "r".to_owned(),
+    };
+    for (text, host, shown) in [
+        (
+            "gitea:git.example.org/o/r#5",
+            "git.example.org",
+            "gitea:git.example.org/o/r#5",
+        ),
+        (
+            "forgejo:git.example.org/o/r#5",
+            "git.example.org",
+            "gitea:git.example.org/o/r#5",
+        ),
+        ("codeberg:o/r#5", "codeberg.org", "codeberg:o/r#5"),
+        ("gitea:codeberg.org/o/r#5", "codeberg.org", "codeberg:o/r#5"),
+    ] {
+        let item: ItemRef = text.parse().expect(text);
+        assert_eq!(item.source, gitea(host), "{text}");
+        assert_eq!(item.to_string(), shown);
+        assert_eq!(item.source.kind(), SourceKind::Gitea);
+    }
+    for text in ["gitea:o/r#1", "codeberg:o#1", "codeberg:o/r!1"] {
+        let error = text.parse::<ItemRef>().expect_err(text).to_string();
+        assert!(error.contains(text), "{error}");
+    }
+}

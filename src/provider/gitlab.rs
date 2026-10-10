@@ -7,7 +7,7 @@ use reqwest::{Client, Url};
 use serde::Deserialize;
 use serde::de::IgnoredAny;
 
-use super::http::{base, client, send_json};
+use super::http::{base, client, host_url, send_json};
 use super::{CheckError, ItemState, Tracker};
 use crate::refs::{ItemKind, ItemRef, Source};
 
@@ -49,10 +49,7 @@ impl GitLab {
         tail: &[&str],
         what: &str,
     ) -> Result<T, CheckError> {
-        let mut url = match &self.base {
-            Some(base) => base.clone(),
-            None => base(&format!("https://{host}"))?,
-        };
+        let mut url = host_url(self.base.as_ref(), host)?;
         url.path_segments_mut()
             .map_err(|()| CheckError::Unsupported(format!("GitLab URL for {host}")))?
             .pop_if_empty()

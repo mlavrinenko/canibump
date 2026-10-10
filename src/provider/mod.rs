@@ -6,6 +6,7 @@
 pub mod defaults;
 pub mod depsdev;
 pub mod git;
+pub mod gitea;
 pub mod github;
 pub mod gitlab;
 mod http;

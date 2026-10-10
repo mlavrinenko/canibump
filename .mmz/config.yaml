@@ -63,6 +63,7 @@ scopes:
   # If CLAUDE.md is a symlink to AGENTS.md, that is one inode — list it once.
   docs:
     - "README.md"
+    - "docs/**"
     - "CONTRIBUTING.md"
     - "AGENTS.md"
     - "CHANGELOG.md"

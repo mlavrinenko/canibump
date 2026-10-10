@@ -50,3 +50,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `gitlab:host/group/proj`. A closed issue is completed only when an MR
   closed it. Tokens come from glab's config and `GITLAB_TOKEN` for
   `GITLAB_HOST`, each sent only to its own host.
+- Gitea and Forgejo items: `gitea:host/owner/repo#N`, `forgejo:...` and
+  `codeberg:owner/repo#N`. A PR reads merged or closed unmerged; a closed
+  issue reads closed without a reason, since Gitea keeps none. Tokens come
+  from tea's config logins and `GITEA_TOKEN` for `GITEA_HOST`.

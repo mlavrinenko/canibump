@@ -53,15 +53,21 @@ pub fn gitlab_tokens() -> HashMap<String, String> {
     gitlab_tokens_from(|key| std::env::var(key).ok(), config.as_deref())
 }
 
-fn glab_config_path() -> Option<PathBuf> {
-    let env = |key| std::env::var_os(key).filter(|value| !value.is_empty());
-    if let Some(dir) = env("GLAB_CONFIG_DIR") {
-        return Some(PathBuf::from(dir).join("config.yml"));
-    }
-    let config = env("XDG_CONFIG_HOME")
+fn env_path(key: &str) -> Option<PathBuf> {
+    std::env::var_os(key)
+        .filter(|value| !value.is_empty())
         .map(PathBuf::from)
-        .or_else(|| env("HOME").map(|home| PathBuf::from(home).join(".config")))?;
-    Some(config.join("glab-cli").join("config.yml"))
+}
+
+/// `$XDG_CONFIG_HOME`, else `~/.config`.
+fn config_dir() -> Option<PathBuf> {
+    env_path("XDG_CONFIG_HOME").or_else(|| env_path("HOME").map(|home| home.join(".config")))
+}
+
+fn glab_config_path() -> Option<PathBuf> {
+    let dir =
+        env_path("GLAB_CONFIG_DIR").or_else(|| config_dir().map(|dir| dir.join("glab-cli")))?;
+    Some(dir.join("config.yml"))
 }
 
 #[derive(Deserialize)]
@@ -103,6 +109,51 @@ fn gitlab_tokens_from(
             |host| bare_host(&host),
         );
         tokens.insert(host, token);
+    }
+    tokens
+}
+
+/// Gitea tokens by host: tea's config logins, then `GITEA_TOKEN` for
+/// `GITEA_HOST`. Without `GITEA_HOST`, `GITEA_TOKEN` goes nowhere.
+#[must_use]
+pub fn gitea_tokens() -> HashMap<String, String> {
+    let config = config_dir()
+        .map(|dir| dir.join("tea").join("config.yml"))
+        .and_then(|path| std::fs::read_to_string(path).ok());
+    gitea_tokens_from(|key| std::env::var(key).ok(), config.as_deref())
+}
+
+#[derive(Deserialize)]
+struct TeaConfig {
+    #[serde(default)]
+    logins: Vec<TeaLogin>,
+}
+
+#[derive(Deserialize)]
+struct TeaLogin {
+    url: String,
+    #[serde(default)]
+    token: String,
+}
+
+fn gitea_tokens_from(
+    env: impl Fn(&str) -> Option<String>,
+    tea_config: Option<&str>,
+) -> HashMap<String, String> {
+    let mut tokens: HashMap<String, String> = tea_config
+        .and_then(|text| serde_yaml_ng::from_str::<TeaConfig>(text).ok())
+        .map(|config| {
+            config
+                .logins
+                .into_iter()
+                .filter(|login| !login.token.is_empty())
+                .map(|login| (bare_host(&login.url), login.token))
+                .collect()
+        })
+        .unwrap_or_default();
+    let token = env("GITEA_TOKEN").filter(|token| !token.is_empty());
+    if let (Some(token), Some(host)) = (token, env("GITEA_HOST")) {
+        tokens.insert(bare_host(&host), token);
     }
     tokens
 }

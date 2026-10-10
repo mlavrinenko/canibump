@@ -16,6 +16,8 @@ pub enum SourceKind {
     Git,
     /// gitlab.com or a self-hosted GitLab.
     GitLab,
+    /// Gitea, Forgejo or Codeberg.
+    Gitea,
 }
 
 /// Where an item lives.
@@ -35,6 +37,15 @@ pub enum Source {
         /// `group/sub/project`.
         project: String,
     },
+    /// A Gitea or Forgejo repository (Codeberg included).
+    Gitea {
+        /// The instance host.
+        host: String,
+        /// The user or organisation.
+        owner: String,
+        /// The repository name.
+        repo: String,
+    },
     /// A git remote by URL (or local path).
     Git {
         /// What `git clone` would take.
@@ -50,6 +61,7 @@ impl Source {
             Self::GitHub { .. } => SourceKind::GitHub,
             Self::Git { .. } => SourceKind::Git,
             Self::GitLab { .. } => SourceKind::GitLab,
+            Self::Gitea { .. } => SourceKind::Gitea,
         }
     }
 }
@@ -175,7 +187,10 @@ fn is_sha(text: &str) -> bool {
 }
 
 /// Schemes an item or commit reference may start with.
-const SCHEMES: &[&str] = &["github", "gitlab", "git"];
+const SCHEMES: &[&str] = &["github", "gitlab", "gitea", "forgejo", "codeberg", "git"];
+
+/// Codeberg's host, which `codeberg:` stands for.
+pub const CODEBERG: &str = "codeberg.org";
 
 /// The default GitLab host.
 pub const GITLAB_COM: &str = "gitlab.com";
@@ -188,8 +203,22 @@ fn source_of(scheme: &str, path: &str) -> Option<Source> {
             url: path.to_owned(),
         }),
         "gitlab" => gitlab_project(path),
+        "gitea" | "forgejo" => {
+            let (host, rest) = path.split_once('/')?;
+            gitea_repo(host, rest)
+        }
+        "codeberg" => gitea_repo(CODEBERG, path),
         _ => None,
     }
+}
+
+fn gitea_repo(host: &str, path: &str) -> Option<Source> {
+    let (owner, repo) = owner_repo(path)?;
+    (!host.is_empty()).then(|| Source::Gitea {
+        host: host.to_owned(),
+        owner,
+        repo,
+    })
 }
 
 /// `[host/]group/.../project`: a first segment with a dot is the host when
@@ -221,7 +250,7 @@ fn parse(text: &str, expected: &'static str) -> Result<Reachable, RefError> {
         return Err(RefError::UnknownScheme {
             scheme: scheme.to_owned(),
             text: text.to_owned(),
-            known: "github, gitlab, git",
+            known: "github, gitlab, gitea, forgejo, codeberg, git",
         });
     }
     if let Some((path, sha)) = locator.rsplit_once('@') {
@@ -263,6 +292,10 @@ impl fmt::Display for Source {
                 write!(formatter, "gitlab:{project}")
             }
             Self::GitLab { host, project } => write!(formatter, "gitlab:{host}/{project}"),
+            Self::Gitea { host, owner, repo } if host == CODEBERG => {
+                write!(formatter, "codeberg:{owner}/{repo}")
+            }
+            Self::Gitea { host, owner, repo } => write!(formatter, "gitea:{host}/{owner}/{repo}"),
         }
     }
 }

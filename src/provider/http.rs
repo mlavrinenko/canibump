@@ -29,6 +29,14 @@ pub fn base(text: &str) -> Result<Url, CheckError> {
     Url::parse(text).map_err(|error| CheckError::Unsupported(format!("API URL `{text}`: {error}")))
 }
 
+/// `base` when given (a mock, a mirror), else `https://<host>`.
+pub fn host_url(base_url: Option<&Url>, host: &str) -> Result<Url, CheckError> {
+    match base_url {
+        Some(url) => Ok(url.clone()),
+        None => base(&format!("https://{host}")),
+    }
+}
+
 /// GETs `url` and decodes its JSON, naming `what` in any error.
 pub async fn get_json<T: DeserializeOwned>(
     client: &Client,

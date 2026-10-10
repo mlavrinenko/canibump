@@ -1,6 +1,6 @@
 //! The real providers, wired from the environment.
 //!
-//! `CANIBUMP_<PROVIDER>_API` (GITHUB, GITLAB, REPOLOGY, DEPSDEV) points a
+//! `CANIBUMP_<PROVIDER>_API` (GITHUB, GITLAB, GITEA, REPOLOGY, DEPSDEV) points a
 //! provider elsewhere: a mock in tests, GitHub Enterprise, a mirror.
 
 use std::sync::Arc;
@@ -8,6 +8,7 @@ use std::sync::Arc;
 use super::Registry;
 use super::depsdev::{self, DepsDev};
 use super::git::GitRemotes;
+use super::gitea::Gitea;
 use super::github::GitHub;
 use super::gitlab::GitLab;
 use super::repology::{self, Repology};
@@ -40,6 +41,11 @@ pub fn registry() -> Registry {
     let gitlab_api = std::env::var("CANIBUMP_GITLAB_API").ok();
     match GitLab::new(gitlab_api.as_deref(), crate::auth::gitlab_tokens()) {
         Ok(gitlab) => registry = registry.with_tracker(SourceKind::GitLab, Arc::new(gitlab)),
+        Err(error) => log::warn!("{error}"),
+    }
+    let gitea_api = std::env::var("CANIBUMP_GITEA_API").ok();
+    match Gitea::new(gitea_api.as_deref(), crate::auth::gitea_tokens()) {
+        Ok(gitea) => registry = registry.with_tracker(SourceKind::Gitea, Arc::new(gitea)),
         Err(error) => log::warn!("{error}"),
     }
     let repology_api = env_or("CANIBUMP_REPOLOGY_API", repology::API);
