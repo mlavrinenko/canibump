@@ -68,6 +68,13 @@ scopes:
     - "CHANGELOG.md"
     - "www/**"
 
+  # The backlog and what decides a valid task: a task can go invalid by being
+  # edited, or by the config, templates or goals changing under it.
+  tasks:
+    - "truth/**"
+    - ".mindtape/config.toml"
+    - ".mindtape/templates/**"
+
   # `just crap` reads the lcov `just cover` wrote. It is gitignored (it lives
   # under target/), which is exactly why it is spelled as a LITERAL path: mmz's
   # gitignore filter applies to glob matches only, and explicitly listed
@@ -136,6 +143,10 @@ commands:
   - name: just check-dry
     tags: [gate]
     inputs: [rust, gates-meta]
+
+  - name: just check-tasks
+    tags: [gate]
+    inputs: [tasks, gates-meta]
 
   # outdatty re-reads every dependent's current content and compares it to the
   # lock; `outdatty-config` covers the lock and the group definitions directly.

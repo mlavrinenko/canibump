@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# `[[commits.rules]]` from .mindtape/config.toml: a work commit names its task
+# in a `Refs: <stem>` footer, and a status flip rides with its work.
+set -eo pipefail
+root="$(git rev-parse --show-toplevel)"
+if command -v mt >/dev/null 2>&1; then
+  exec mt -w "$root" check --commit-msg "$1"
+fi
+exec direnv exec "$root" mt -w "$root" check --commit-msg "$1"

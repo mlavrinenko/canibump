@@ -49,5 +49,11 @@
   is finished on the same tag with `gh workflow run <release workflow> -f
   tag=vX.Y.Z`; a pushed tag never moves.
 - Eating your own dog food: the tool should use itself if applicable.
+- Work is tracked with [MindTape](https://github.com/mlavrinenko/mindtape) in
+  `truth/tasks/` (load the `mindtape` skill; `mt ls @agent` lists open agent work).
+  Commits follow Conventional Commits; a work commit names its task in a
+  `Refs: <stem>` footer, flips it `wip`/`done` in the same commit, and a
+  `feat`/`fix`/`perf` touching `src/` adds a CHANGELOG entry. The
+  `commit-msg` hook runs `mt check --commit-msg` to hold all of that.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for project conventions and code standards.

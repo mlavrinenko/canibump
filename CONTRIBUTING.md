@@ -187,3 +187,13 @@ Bypass a single commit with `git commit --no-verify`.
 1. Run `just check` before submitting — it runs clippy, tests, file size, and drift checks
 2. Run `just fmt` to format code
 3. Ensure `just cover` meets the 70% threshold
+
+## Task Backlog
+
+Tasks are [MindTape](https://github.com/mlavrinenko/mindtape) files under
+`truth/tasks/`, configured in `.mindtape/config.toml` (rationale lives in
+mindtape's own config). `just check-tasks` (`mt check`) is a `just check` arm;
+the `commit-msg` hook runs `mt check --commit-msg`, so a work commit carries a
+`Refs: <stem>` footer and the task's `wip`/`done` flip rides with the work.
+Goals every open task rates itself against live in `truth/goals.typ` and
+`truth/process-goals.typ`.

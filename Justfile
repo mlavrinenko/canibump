@@ -25,12 +25,12 @@ default:
 fix-check: eject clippy-fix fmt check
 
 # Run all checks in parallel (fmt + clippy + tests + unused deps + file size +
-# drift + copy-paste). Each arm is `just mmz <subgate>` — mmz wraps it, so a
+# drift + copy-paste + task backlog). Each arm is `just mmz <subgate>` — mmz wraps it, so a
 # no-op `just check` re-run skips every arm whose declared inputs are unchanged,
 # and `mmz --is-fresh --tag gate` asserts they all passed without running any.
 # Per-rule scopes and the `gate` tag live in .mmz/config.yaml.
 [parallel]
-check: (mmz "fmt-check") (mmz "clippy") (mmz "test") (mmz "machete") (mmz "check-file-size") (mmz "check-dry") (mmz "outdatty-check")
+check: (mmz "fmt-check") (mmz "clippy") (mmz "test") (mmz "machete") (mmz "check-file-size") (mmz "check-dry") (mmz "check-tasks") (mmz "outdatty-check")
 
 # Wrap a just recipe in mmz: `just mmz fmt-check` runs `mmz just fmt-check`. The
 # double hop makes mmz the cache identity (rule name `just <recipe>` in
@@ -51,6 +51,11 @@ mmz *ARGS:
 # gate` would pass right now. Reads mmz's records; runs no gate.
 status:
     mmz --status
+
+# Validate the MindTape backlog (truth/tasks), its templates and config.
+# Fix a finding by repairing the task, never by loosening .mindtape/config.toml.
+check-tasks:
+    mt check -q
 
 # Fail if a source changed without its dependents being re-confirmed
 outdatty-check:
