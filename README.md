@@ -89,7 +89,8 @@ The full grammar, chains, the cache format and auth live in
 | --- | --- |
 | 0 | nothing counted showed up, every check ran |
 | 9 to 15 | 8 plus 1 for bumpable, 2 for dead, 4 for failed, summed |
-| 1 | bad manifest, cache or arguments |
+| 1 | bad manifest or cache |
+| 2 | bad arguments |
 
 So bumpable alone exits 9, dead alone 10, bumpable and dead 11, a failed check 12 and all
 three 15. A script tests one bit, as in `(( code & 2 ))` for dead.

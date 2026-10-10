@@ -18,7 +18,7 @@ use crate::run;
 ///
 /// Exit codes: 0 when nothing counted showed up, else 8 plus 1 for bumpable, 2
 /// for dead and 4 for failed, summed (bumpable and dead is 11). 1 is an unusable
-/// manifest, cache or arguments. `--fail-on` picks what counts. `status <id>`
+/// manifest or cache, 2 a bad argument. `--fail-on` picks what counts. `status <id>`
 /// answers for one blocker instead: 0 bumpable, 1 waiting, 2 anything else.
 #[derive(Debug, Parser)]
 #[command(version, about, long_about)]

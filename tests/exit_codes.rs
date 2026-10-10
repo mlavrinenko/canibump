@@ -135,6 +135,9 @@ fn help_states_the_table_and_the_default() {
         .assert()
         .success()
         .stdout(predicate::str::contains("8 plus 1 for bumpable"))
+        .stdout(predicate::str::contains(
+            "1 is an unusable manifest or cache, 2 a bad argument",
+        ))
         .stdout(predicate::str::contains("else bumpable, dead and failed"))
         .stdout(predicate::str::contains(
             "`status <id>` answers for one blocker",
