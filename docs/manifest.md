@@ -13,11 +13,15 @@ state = "github:serde-rs/serde#2590"
 # state = "gitlab:group/project!12"                    # MR on gitlab.com; #12 is an issue
 # state = "gitlab:gitlab.example.org/group/project#3" # self-hosted
 # state = "codeberg:owner/repo#5"                     # or gitea:host/owner/repo, forgejo:host/owner/repo
+# state = "redmine:redmine.example.org#123"
+# state = "jira:issues.apache.org/jira#KAFKA-42"       # a path when Jira lives under one
 ```
 
 GitLab keeps no close reason, so a closed GitLab issue counts only when an MR
 closed it. Gitea keeps none either, so a closed Gitea issue reads `dead`;
-point at the PR instead.
+point at the PR instead. Redmine and Jira say why by status or resolution
+name, matched on whole words, so `Rejected`, `Won't Fix`, `Invalid` or
+`Abandoned` read dead and `Fixed` or `Done` read bumpable.
 
 `reached` waits for a commit, or a PR's merge commit, to land in a branch, a tag, or
 any tag matching a pattern. With a pattern, canibump names the first tag
@@ -112,5 +116,7 @@ GitHub takes `GITHUB_TOKEN`, then `GH_TOKEN`, then whatever `gh auth token`
 says. No token works too, just with GitHub's tighter rate limit.
 GitLab takes glab's config per host and `GITLAB_TOKEN` for `GITLAB_HOST`
 (default gitlab.com). Gitea takes tea's config logins and `GITEA_TOKEN` for
-`GITEA_HOST`. A token only ever goes to its own host.
+`GITEA_HOST`. Redmine takes `REDMINE_API_KEY` for `REDMINE_URL`. Jira takes
+`JIRA_TOKEN`, or `JIRA_USER` with `JIRA_API_TOKEN`, for `JIRA_URL`. A token
+only ever goes to its own host.
 

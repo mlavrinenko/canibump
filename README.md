@@ -54,7 +54,7 @@ Three conditions and two combinators cover every target in one manifest.
 
 | Condition | Waits for | Targets |
 | --- | --- | --- |
-| `state` | an issue fixed, a PR or MR merged | GitHub, GitLab, Gitea/Forgejo/Codeberg |
+| `state` | an issue fixed, a PR or MR merged | GitHub, GitLab, Gitea/Forgejo/Codeberg, Redmine, Jira |
 | `reached` | a commit or merged PR in a branch, a tag, or the first tag matching `v*` | GitHub, any git remote |
 | `version` | a package at least some version | Repology (distros, nixpkgs), deps.dev (crates.io, npm, PyPI, Go, Maven, NuGet, RubyGems) |
 | `all` / `any` | a chain of the above, e.g. merged AND released AND packaged | |

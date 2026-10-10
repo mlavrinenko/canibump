@@ -3,8 +3,8 @@ algorithm: blake3
 groups:
   cli-docs:
     source:
-      src/auth.rs: 6991f957a368b37ec9cc3a39264c6cea3c1402ce2aada12ac0d5dd7b8e6711f2
-      src/auth_tests.rs: e764ad452ef2dd1c4b854077f9431a0c77f760f3f3cef28c56526383447f78bd
+      src/auth.rs: 13b2e1d778b5a76ebddbfeca85533ced64a9ab6c0eb84cea1438e0631be1bb21
+      src/auth_tests.rs: 8f5e20b47c8c1d34cad8d63ffc63de43d8334a0c0ea06fd4e19b28942c265eb5
       src/cache.rs: 0f4b27fdeb4ca28a0163706414836ab36a3c30e2956021ad17f90454408be794
       src/cache_tests.rs: 0da019aeb791df9f6ffeb2bd2dfe7462683dee1db02e1597e4fe691563e2efaf
       src/cli.rs: d9e2f55c317cd657a8e8af960521b34fc1acc7f8126a4c1b73bacd6eff00050e
@@ -18,7 +18,7 @@ groups:
       src/outcome.rs: e4571c63d7efeaa959281d956d66f731d2ff403b9fccfef6a61bf3ad163a1c92
       src/package.rs: 075b8ba117612287b38bb3a301d061bd657c884946fd622ab509472366be00b4
       src/package_tests.rs: 19500c6de1897919b94374ddcc6e16e59917eea95e9427be9fef04dda4876db7
-      src/provider/defaults.rs: 46873d8017adfdbef07a5506e18e78987e2ec5c7a16965612ab759b12b4695b1
+      src/provider/defaults.rs: e791874f77338f8b65470f9e600ed055e236359b930653ba2fa3678ea8f02cd3
       src/provider/depsdev.rs: 4a28482e40f193c927c8205526be3a829e30340347c7737ca74c486ef7a220f0
       src/provider/depsdev_tests.rs: 05e0e2cbfb8a9eea4a93d57a9ce3d0e78bd9de0dd401578f08057233a68fe5a7
       src/provider/git.rs: f5f9edc1a87961be71419fd48b7d4e63d10b1505ce40206fdc75d9d9323a53b1
@@ -30,18 +30,22 @@ groups:
       src/provider/gitlab.rs: 4f621999c7e432433df32a63fe1c312aac452e9d3344f7b58b9fd0e1b4144f3f
       src/provider/gitlab_tests.rs: 50c9249493b54ffa378ba76ed8515130a913836c42eba36aebbf4f7f94260757
       src/provider/http.rs: e90e46b64c1815e8c2e183a1863b426c886fced933e76811cb98d689ae9242d9
-      src/provider/mod.rs: 7d2801b4e0db8f60b3b29d1bd5080b471fb9333af1bec5db35d21efb655965bb
+      src/provider/jira.rs: 071d9c8d5cca99bb96caa2ce8b976ac0c3cd71de1093229f59f9cf664a0334ac
+      src/provider/jira_tests.rs: d2533f4fa1aabf7477dc250ae212e966d28b9fa1385e8baca9b9dd6f30e49e04
+      src/provider/mod.rs: f8390a549ddce2ca8603fc2e445c5ada2f3dfa82ff013b2979379fa7f4022b6a
+      src/provider/redmine.rs: 0117a8686cc3764ed822c114da186f857da6af96575ce56e5142e6d693d8bbf3
+      src/provider/redmine_tests.rs: db2ded0a62a86569040e84386804fb83b1b76cf76866f235e7e0595a85753c0b
       src/provider/repology.rs: 6f2bd5a0ecbb86dc5377e9e0185ed3b847883348378d086bcf63b4609d334394
       src/provider/repology_tests.rs: 183e64251d4e15eef813be6f7fe314c646fa4c1938092fc029462f6a3247e081
-      src/refs.rs: 202583b02e4fe950d1ac20d7c2b7423439a1fe38257fdec790c9a541c3b08863
-      src/refs_tests.rs: c8fa1d742abb90a64e7f7e7f46c8c3881c7c93b9914bfef7175d3382d6684e78
+      src/refs.rs: ff46f4d47c21c0aceb86a90073424515d2f6566035f601340c6d39c3edf4a8b8
+      src/refs_tests.rs: 062b375c1f8b6221fdab5635ff9b6970059f6f8fec864f192d911190f1e7ae18
       src/report.rs: dee6e1e55133502c7c68d7245051ba00d7def628dd54a98f0ea9fac8336a7da7
       src/run.rs: b444ee93fdac4e9a906f6ba176b68907847592bbbea302106ed74ba0bbe51568
       src/version.rs: 5143da0e832df416b0b2e0980aa4528a913917095bd0e819de54a3fbeaf1d3c5
       src/version_tests.rs: 7261cedc441f28749d932cc3a87aca31758f4e80aefb4f95a25ebce6d3deaf32
     dependents:
-      README.md: 9731757b890bc170418caaf63418b9c18f535f691e0839a74acff8f9c8c50387
-      docs/manifest.md: aa5a00b189eedd3ce3f269558f07981ea000a58826c12c22704a95937cdb79ad
+      README.md: c28f2e52a018829726c3451bdf354336cfa2e117b46ada6cb2d14e9c7bd3eff2
+      docs/manifest.md: 41e7ae43bb3516d15cd154acd1684fc46754bc45c2cec78a8111a52bc3366bcf
       www/index.html: 733e8f241f271be1d0db949f62f8c6045378afe8d1146918d09179dc9cd52f91
   dev-docs:
     source:
@@ -56,4 +60,4 @@ groups:
     source:
       Cargo.toml: c829f897e4149505df9cef0262cce1925d249799fb5232b7967d9b1c8bb600b6
     dependents:
-      CHANGELOG.md: 0646aa79d7183b6791d7113006cc62c2169f442c5d47562cc98dc28e793b70b1
+      CHANGELOG.md: 80af57d7f036747e34cf928b56e26bb1605e75476118784f7e513b8637572ec9

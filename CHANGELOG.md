@@ -54,3 +54,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `codeberg:owner/repo#N`. A PR reads merged or closed unmerged; a closed
   issue reads closed without a reason, since Gitea keeps none. Tokens come
   from tea's config logins and `GITEA_TOKEN` for `GITEA_HOST`.
+- Redmine (`redmine:host#N`) and Jira (`jira:host#KEY-N`) issues, with a
+  path when the instance lives under one. Status and resolution names match
+  on whole words, so `Abandoned` reads dead rather than done. Credentials:
+  `REDMINE_API_KEY` for `REDMINE_URL`; `JIRA_TOKEN`, or `JIRA_USER` with
+  `JIRA_API_TOKEN`, for `JIRA_URL`.

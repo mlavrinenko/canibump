@@ -183,3 +183,38 @@ fn parses_gitea_forgejo_and_codeberg_items() {
         assert!(error.contains(text), "{error}");
     }
 }
+
+#[test]
+fn parses_redmine_and_jira_items() {
+    let redmine: ItemRef = "redmine:redmine.example.org#123".parse().expect("valid");
+    assert_eq!(
+        redmine.source,
+        Source::Redmine {
+            host: "redmine.example.org".to_owned()
+        }
+    );
+    assert_eq!(redmine.number, 123);
+    assert_eq!(redmine.to_string(), "redmine:redmine.example.org#123");
+    assert_eq!(redmine.source.kind(), SourceKind::Redmine);
+    let jira: ItemRef = "jira:issues.example.org#CORE-42".parse().expect("valid");
+    assert_eq!(
+        jira.source,
+        Source::Jira {
+            host: "issues.example.org".to_owned(),
+            project: "CORE".to_owned(),
+        }
+    );
+    assert_eq!(jira.number, 42);
+    assert_eq!(jira.to_string(), "jira:issues.example.org#CORE-42");
+    assert_eq!(jira.source.kind(), SourceKind::Jira);
+    for text in [
+        "redmine:a/#1",
+        "redmine:#1",
+        "jira:host#42",
+        "jira:host#-42",
+        "jira:host#CORE-x",
+    ] {
+        let error = text.parse::<ItemRef>().expect_err(text).to_string();
+        assert!(error.contains(text), "{error}");
+    }
+}

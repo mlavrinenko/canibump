@@ -158,6 +158,48 @@ fn gitea_tokens_from(
     tokens
 }
 
+/// Redmine API keys by host: `REDMINE_API_KEY` for `REDMINE_URL`'s host.
+#[must_use]
+pub fn redmine_keys() -> HashMap<String, String> {
+    redmine_keys_from(|key| std::env::var(key).ok())
+}
+
+fn redmine_keys_from(env: impl Fn(&str) -> Option<String>) -> HashMap<String, String> {
+    let set = |key: &str| env(key).filter(|value| !value.is_empty());
+    match (set("REDMINE_URL"), set("REDMINE_API_KEY")) {
+        (Some(url), Some(key)) => HashMap::from([(bare_host(&url), key)]),
+        _ => HashMap::new(),
+    }
+}
+
+/// How to sign in to a Jira host.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum JiraAuth {
+    /// A personal access token (Jira Data Center).
+    Bearer(String),
+    /// An email and API token (Jira Cloud).
+    Basic(String, String),
+}
+
+/// Jira credentials by host: `JIRA_TOKEN`, or `JIRA_USER` with
+/// `JIRA_API_TOKEN`, for `JIRA_URL`'s host.
+#[must_use]
+pub fn jira_auth() -> HashMap<String, JiraAuth> {
+    jira_auth_from(|key| std::env::var(key).ok())
+}
+
+fn jira_auth_from(env: impl Fn(&str) -> Option<String>) -> HashMap<String, JiraAuth> {
+    let set = |key: &str| env(key).filter(|value| !value.is_empty());
+    let Some(host) = set("JIRA_URL").map(|url| bare_host(&url)) else {
+        return HashMap::new();
+    };
+    let auth = set("JIRA_TOKEN")
+        .map(JiraAuth::Bearer)
+        .or_else(|| Some(JiraAuth::Basic(set("JIRA_USER")?, set("JIRA_API_TOKEN")?)));
+    auth.map(|auth| HashMap::from([(host, auth)]))
+        .unwrap_or_default()
+}
+
 #[cfg(test)]
 #[path = "auth_tests.rs"]
 mod tests;

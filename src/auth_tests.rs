@@ -92,3 +92,41 @@ fn gitea_tokens_come_from_tea_and_the_env_by_host() {
         HashMap::from([("codeberg.org".to_owned(), "e".to_owned())])
     );
 }
+
+#[test]
+fn redmine_and_jira_credentials_go_to_their_own_host() {
+    let env = |vars: &'static [(&'static str, &'static str)]| {
+        move |key: &str| {
+            vars.iter()
+                .find(|(name, _)| *name == key)
+                .map(|(_, value)| (*value).to_owned())
+        }
+    };
+    assert_eq!(
+        redmine_keys_from(env(&[
+            ("REDMINE_URL", "https://rm.example.org/"),
+            ("REDMINE_API_KEY", "k")
+        ])),
+        HashMap::from([("rm.example.org".to_owned(), "k".to_owned())])
+    );
+    assert!(redmine_keys_from(env(&[("REDMINE_API_KEY", "k")])).is_empty());
+    assert_eq!(
+        jira_auth_from(env(&[
+            ("JIRA_URL", "https://j.example.org"),
+            ("JIRA_TOKEN", "t")
+        ])),
+        HashMap::from([("j.example.org".to_owned(), JiraAuth::Bearer("t".to_owned()))])
+    );
+    assert_eq!(
+        jira_auth_from(env(&[
+            ("JIRA_URL", "j.example.org"),
+            ("JIRA_USER", "me"),
+            ("JIRA_API_TOKEN", "s"),
+        ])),
+        HashMap::from([(
+            "j.example.org".to_owned(),
+            JiraAuth::Basic("me".to_owned(), "s".to_owned())
+        )])
+    );
+    assert!(jira_auth_from(env(&[("JIRA_TOKEN", "t")])).is_empty());
+}

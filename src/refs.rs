@@ -18,6 +18,10 @@ pub enum SourceKind {
     GitLab,
     /// Gitea, Forgejo or Codeberg.
     Gitea,
+    /// A Redmine instance.
+    Redmine,
+    /// A Jira instance.
+    Jira,
 }
 
 /// Where an item lives.
@@ -46,6 +50,18 @@ pub enum Source {
         /// The repository name.
         repo: String,
     },
+    /// A Redmine instance.
+    Redmine {
+        /// The instance host, with a path when it is served under one.
+        host: String,
+    },
+    /// A Jira project.
+    Jira {
+        /// The instance host, with a path when it is served under one.
+        host: String,
+        /// The project key, e.g. `CORE`.
+        project: String,
+    },
     /// A git remote by URL (or local path).
     Git {
         /// What `git clone` would take.
@@ -62,6 +78,8 @@ impl Source {
             Self::Git { .. } => SourceKind::Git,
             Self::GitLab { .. } => SourceKind::GitLab,
             Self::Gitea { .. } => SourceKind::Gitea,
+            Self::Redmine { .. } => SourceKind::Redmine,
+            Self::Jira { .. } => SourceKind::Jira,
         }
     }
 }
@@ -187,7 +205,9 @@ fn is_sha(text: &str) -> bool {
 }
 
 /// Schemes an item or commit reference may start with.
-const SCHEMES: &[&str] = &["github", "gitlab", "gitea", "forgejo", "codeberg", "git"];
+const SCHEMES: &[&str] = &[
+    "github", "gitlab", "gitea", "forgejo", "codeberg", "redmine", "jira", "git",
+];
 
 /// Codeberg's host, which `codeberg:` stands for.
 pub const CODEBERG: &str = "codeberg.org";
@@ -208,8 +228,37 @@ fn source_of(scheme: &str, path: &str) -> Option<Source> {
             gitea_repo(host, rest)
         }
         "codeberg" => gitea_repo(CODEBERG, path),
+        "redmine" => bare(path).map(|host| Source::Redmine { host }),
         _ => None,
     }
+}
+
+/// An instance: a host, maybe with a path for one served under it
+/// (`issues.apache.org/jira`).
+fn bare(host: &str) -> Option<String> {
+    let valid = !host.is_empty()
+        && !host.starts_with('/')
+        && !host.ends_with('/')
+        && !host.contains(char::is_whitespace);
+    valid.then(|| host.to_owned())
+}
+
+/// `jira:host#KEY-N`.
+fn parse_jira(locator: &str) -> Option<ItemRef> {
+    let (host, key) = locator.split_once('#')?;
+    let (project, number) = key.rsplit_once('-')?;
+    let valid = !project.is_empty()
+        && project
+            .chars()
+            .all(|char| char.is_ascii_alphanumeric() || char == '_');
+    Some(ItemRef {
+        source: Source::Jira {
+            host: bare(host)?,
+            project: valid.then(|| project.to_owned())?,
+        },
+        number: number.parse().ok()?,
+        kind: ItemKind::Issue,
+    })
 }
 
 fn gitea_repo(host: &str, path: &str) -> Option<Source> {
@@ -250,8 +299,13 @@ fn parse(text: &str, expected: &'static str) -> Result<Reachable, RefError> {
         return Err(RefError::UnknownScheme {
             scheme: scheme.to_owned(),
             text: text.to_owned(),
-            known: "github, gitlab, gitea, forgejo, codeberg, git",
+            known: "github, gitlab, gitea, forgejo, codeberg, redmine, jira, git",
         });
+    }
+    if scheme == "jira" {
+        return parse_jira(locator)
+            .map(Reachable::Item)
+            .ok_or_else(malformed);
     }
     if let Some((path, sha)) = locator.rsplit_once('@') {
         let source = source_of(scheme, path).ok_or_else(malformed)?;
@@ -296,6 +350,8 @@ impl fmt::Display for Source {
                 write!(formatter, "codeberg:{owner}/{repo}")
             }
             Self::Gitea { host, owner, repo } => write!(formatter, "gitea:{host}/{owner}/{repo}"),
+            Self::Redmine { host } => write!(formatter, "redmine:{host}"),
+            Self::Jira { host, project } => write!(formatter, "jira:{host} {project}"),
         }
     }
 }
@@ -306,6 +362,9 @@ impl fmt::Display for ItemRef {
             ItemKind::Issue => '#',
             ItemKind::MergeRequest => '!',
         };
+        if let Source::Jira { host, project } = &self.source {
+            return write!(formatter, "jira:{host}#{project}-{}", self.number);
+        }
         write!(formatter, "{}{separator}{}", self.source, self.number)
     }
 }

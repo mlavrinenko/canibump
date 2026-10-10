@@ -10,6 +10,8 @@ pub mod gitea;
 pub mod github;
 pub mod gitlab;
 mod http;
+pub mod jira;
+pub mod redmine;
 pub mod repology;
 
 use std::collections::HashMap;
@@ -196,4 +198,25 @@ impl Registry {
             .map(AsRef::as_ref)
             .ok_or_else(|| CheckError::Unsupported(format!("no provider for {kind:?} items")))
     }
+}
+
+/// Whether a tracker's status or resolution `name` is one of `phrases`,
+/// matched on whole words, case-insensitively: `Won't Fix` matches
+/// `won't fix`, while `Abandoned` does not match `done`.
+pub(crate) fn names_any(name: &str, phrases: &[&str]) -> bool {
+    let words = |text: &str| {
+        text.to_lowercase()
+            .split(|char: char| !char.is_alphanumeric() && char != '\'')
+            .filter(|word| !word.is_empty())
+            .map(str::to_owned)
+            .collect::<Vec<_>>()
+    };
+    let name = words(name);
+    phrases.iter().any(|phrase| {
+        let phrase = words(phrase);
+        !phrase.is_empty()
+            && name
+                .windows(phrase.len())
+                .any(|window| window == phrase.as_slice())
+    })
 }
