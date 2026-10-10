@@ -6,7 +6,7 @@ name = "canibump"
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.85"
-description = "Check whether upstream fixes you wait on have landed, so you know when to bump"
+description = "Can I bump yet? Checks the upstream fixes your workarounds wait on and says which landed"
 license = "MIT"
 repository = "https://github.com/mlavrinenko/canibump"
 keywords = []
@@ -34,12 +34,14 @@ jiff = { version = "0.2.38", features = ["serde"] }
 async-trait = "0.1.92"
 tokio = { version = "1.53.2", features = ["rt-multi-thread", "macros", "time", "sync"] }
 octocrab = { version = "0.54.3", default-features = false, features = ["default-client", "rustls", "rustls-aws-lc-rs", "retry", "timeout", "follow-redirect"] }
+serde_json = "1.0.151"
 
 [dev-dependencies]
 assert_cmd = "2"
 httpmock = "0.8.2"
 predicates = "3"
 serde_json = "1.0.151"
+tempfile = "3.27.0"
 
 [profile.release]
 strip = true

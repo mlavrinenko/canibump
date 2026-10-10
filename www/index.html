@@ -13,7 +13,7 @@
 </head>
 <body>
   <h1>canibump</h1>
-  <p>Check whether upstream fixes you wait on have landed, so you know when to bump</p>
+  <p>Can I bump yet? List the upstream fixes your workarounds wait on in <code>canibump.toml</code>, run <code>canibump</code>, and see which ones you can drop.</p>
 
   <h2>Install</h2>
   <pre><code>cargo install canibump</code></pre>
@@ -21,6 +21,14 @@
   <p>Or download a binary from the
     <a href="https://github.com/mlavrinenko/canibump/releases/latest">latest release</a>.
   </p>
+
+  <h2>Use</h2>
+  <pre><code>[[blocker]]
+id = "serde-pin"
+note = "Cargo.toml: unpin serde"
+state = "github:serde-rs/serde#2590"</code></pre>
+  <pre><code>$ canibump
+bumpable  serde-pin  github:serde-rs/serde#2590 merged (Cargo.toml: unpin serde)</code></pre>
 
   <footer>
     <p><a href="https://github.com/mlavrinenko/canibump">GitHub</a></p>

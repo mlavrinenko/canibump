@@ -1,20 +1,15 @@
-use anyhow::Result;
+use std::process::ExitCode;
+
 use clap::Parser;
 
-/// Check whether upstream fixes you wait on have landed, so you know when to bump
-#[derive(Parser)]
-#[command(version, about)]
-struct Cli {
-    /// Name to greet
-    #[arg(default_value = "canibump")]
-    name: String,
-}
-
-fn main() -> Result<()> {
+fn main() -> ExitCode {
     env_logger::init();
-
-    let cli = Cli::parse();
-    canibump::greet(&cli.name)?;
-
-    Ok(())
+    let cli = canibump::cli::Cli::parse();
+    match canibump::cli::run(&cli) {
+        Ok(code) => ExitCode::from(code),
+        Err(error) => {
+            eprintln!("canibump: {error:#}");
+            ExitCode::from(canibump::report::EXIT_ERROR)
+        }
+    }
 }

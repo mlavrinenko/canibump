@@ -18,3 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub issues and PRs through octocrab. The token comes from `GITHUB_TOKEN`,
   `GH_TOKEN` or `gh auth token`, else requests go unauthenticated. 401, 403,
   404 and rate limits fail the check, saying which.
+- `canibump` checks every blocker and prints one line each; `--json` prints a
+  document. Exit codes: 0 nothing bumpable, 10 bumpable, 11 a check failed,
+  12 both, 1 unusable manifest.
+- Results land in `$XDG_CACHE_HOME/canibump/state/<manifest path>.json` with
+  `checked_at` and `fresh_until`; fresh ones are reused unless `--refresh`.
+  `canibump status` reads only that file, and `status --path` prints it.

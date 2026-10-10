@@ -1,39 +1,13 @@
+//! canibump: can I bump yet? Checks the upstream blockers a repo's
+//! workarounds wait on and says which became resolved.
+
 pub mod auth;
+pub mod cache;
+pub mod cli;
 pub mod eval;
 pub mod manifest;
 pub mod outcome;
 pub mod provider;
 pub mod refs;
-
-use thiserror::Error;
-
-/// Errors that can occur in this library.
-#[derive(Debug, Error)]
-pub enum AppError {
-    /// An I/O operation failed.
-    #[error("i/o error: {0}")]
-    Io(#[from] std::io::Error),
-}
-
-/// Greets the given name.
-///
-/// # Errors
-///
-/// Returns [`AppError::Io`] if writing to stdout fails.
-pub fn greet(name: &str) -> Result<(), AppError> {
-    use std::io::Write;
-    log::info!("greeting {name}");
-    writeln!(std::io::stdout(), "Hello from {name}!")?;
-    Ok(())
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_greet() {
-        // greet writes to stdout; just ensure it doesn't error
-        greet("test").expect("greet should succeed");
-    }
-}
+pub mod report;
+pub mod run;
