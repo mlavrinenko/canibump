@@ -18,11 +18,14 @@ struct Fake {
     tags: Vec<String>,
     host_error: Option<CheckError>,
     contains_calls: AtomicUsize,
+    state_calls: AtomicUsize,
+    merge_calls: AtomicUsize,
 }
 
 #[async_trait]
 impl Tracker for Fake {
     async fn item_state(&self, item: &ItemRef) -> Result<ItemState, CheckError> {
+        self.state_calls.fetch_add(1, Ordering::SeqCst);
         self.states
             .get(&item.number)
             .cloned()
@@ -33,6 +36,7 @@ impl Tracker for Fake {
 #[async_trait]
 impl CodeHost for Fake {
     async fn merge_commit(&self, item: &ItemRef) -> Result<Option<String>, CheckError> {
+        self.merge_calls.fetch_add(1, Ordering::SeqCst);
         Ok(self.merge_commits.get(&item.number).cloned())
     }
 
@@ -400,6 +404,22 @@ async fn an_all_of_resolves_only_when_every_step_holds() {
             "step 3: repology:x in nix_unstable is at 0.12.0, waiting for v0.13.0"
         )
     );
+}
+
+#[tokio::test]
+async fn a_chain_naming_one_item_in_two_steps_asks_about_it_once() {
+    let (registry, fake) = registry(released_from(13));
+    let released = ReachedCondition {
+        target: "github:o/r#1".parse().expect("valid"),
+        within: tags("v*", None),
+    };
+    let chain = Condition::All(vec![
+        state_step(Some("merged"), 1),
+        step(Some("released"), Condition::Reached(released)),
+    ]);
+    assert_eq!(evaluate(&chain, &registry).await.status, Status::Bumpable);
+    assert_eq!(fake.state_calls.load(Ordering::SeqCst), 1);
+    assert_eq!(fake.merge_calls.load(Ordering::SeqCst), 1);
 }
 
 #[tokio::test]

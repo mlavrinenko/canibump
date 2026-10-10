@@ -105,6 +105,12 @@ A dead or failed step never lets the chain read bumpable. In an any-of, a
 failed step beats a waiting one, and the whole thing is dead only when every
 step is.
 
+A run asks each question once. Name the same PR in three steps, or in three
+blockers, and its state and its merge commit are fetched once, even when the
+asks overlap. That chain costs GitHub two calls before the tag search:
+`/issues/26487` for the state, `/pulls/26487` for the merge commit. A failed
+fetch is kept too, so every asker hears the same reason.
+
 ## Cache
 
 Every run writes `$XDG_CACHE_HOME/canibump/state/<absolute manifest path>.json`

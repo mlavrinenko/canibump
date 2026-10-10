@@ -75,6 +75,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - A run starts a provider only when a blocker needs it, once. A manifest
   with no GitHub blocker never runs `gh auth token`, and a fully cached run
   starts nothing.
+- A run fetches each item's state and each PR's merge commit once, however
+  many steps or blockers ask, and askers that overlap share one request. A
+  failed fetch is kept too. GitHub reads a PR's state from `/issues/N` alone
+  (`pull_request.merged_at`) and fetches `/pulls/N` only for the merge commit,
+  so a chain that waits on a PR, then on its release, spends two calls before
+  the tag search instead of five.
 
 ### Fixed
 

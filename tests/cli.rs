@@ -332,6 +332,34 @@ fn a_github_state_and_a_reached_blocker_ask_gh_once() {
 }
 
 #[test]
+fn a_chain_on_one_pr_spends_two_calls_before_its_tag_search() {
+    let repo = Repo::new(
+        "[[blocker]]\nid = \"chain\"\nnote = \"n\"\n\n\
+[[blocker.all]]\nid = \"merged\"\nstate = \"github:o/r#1\"\n\n\
+[[blocker.all]]\nid = \"released\"\nreached = \"github:o/r#1\"\nin = { tags = \"v*\" }\n",
+    );
+    let merged = json!({"state": "closed", "pull_request": {"merged_at": "2025-11-02T10:30:00Z"}});
+    let issue = repo.issue(1, 200, &merged);
+    let pull = repo.server.mock(|when, then| {
+        when.method(GET).path("/repos/o/r/pulls/1");
+        then.status(200)
+            .json_body(json!({"merged": true, "merge_commit_sha": "abc1234"}));
+    });
+    let tags = repo.server.mock(|when, then| {
+        when.method(GET).path("/repos/o/r/git/matching-refs/tags/v");
+        then.status(200).json_body(json!([]));
+    });
+    repo.cmd().assert().code(0);
+    assert_eq!(
+        issue.calls(),
+        1,
+        "the state step and the reached step share it"
+    );
+    assert_eq!(pull.calls(), 1, "only the merge commit needs the pull");
+    assert_eq!(tags.calls(), 1);
+}
+
+#[test]
 fn a_manifest_setting_moves_the_cache() {
     let repo =
         Repo::new(&("[settings]\ncache = \"state.json\"\n".to_owned() + &blocker("waits", 1)));

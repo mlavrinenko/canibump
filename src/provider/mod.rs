@@ -12,6 +12,7 @@ pub mod gitlab;
 mod http;
 pub mod jira;
 mod lazy;
+mod memo;
 pub mod redmine;
 pub mod repology;
 
@@ -142,6 +143,10 @@ pub trait PackageIndex: Send + Sync {
 /// A provider starts when first asked for, at most once. One that fails to
 /// start is kept as its [`CheckError`], so every blocker that needs it fails
 /// with the reason; the others are not affected.
+///
+/// Every tracker and code host is handed out memoized: within one registry,
+/// an item's state and a PR's merge commit are fetched once, however many
+/// steps or blockers ask.
 #[derive(Clone, Default)]
 pub struct Registry {
     trackers: HashMap<SourceKind, Arc<Lazy<dyn Tracker>>>,
@@ -164,6 +169,7 @@ impl Registry {
         kind: SourceKind,
         start: impl Fn() -> Result<Arc<dyn Tracker>, CheckError> + Send + Sync + 'static,
     ) -> Self {
+        let start = move || start().map(memo::tracker);
         self.trackers.insert(kind, Arc::new(Lazy::new(start)));
         self
     }
@@ -182,6 +188,7 @@ impl Registry {
         kind: SourceKind,
         start: impl Fn() -> Result<Arc<dyn CodeHost>, CheckError> + Send + Sync + 'static,
     ) -> Self {
+        let start = move || start().map(memo::code_host);
         self.code_hosts.insert(kind, Arc::new(Lazy::new(start)));
         self
     }

@@ -10,7 +10,7 @@ groups:
       src/cli.rs: 11613647ab7d1cce7e077ccf7a64b0015d0e8b6341b20e90a5ccd9302a217e59
       src/condition.rs: ef77d42a13d23e95a735b650d299268e66c6ffe6c1dc3b84102990565fe93664
       src/eval.rs: ccfc8e69bf6659258ae8de87154b4599418d5c3bbb479e3712f4fb02c9fc85e7
-      src/eval_tests.rs: 30c5c256cb3e2e03f196409979eb7292683da1c22ef4e6f5179955aa5adcb3f3
+      src/eval_tests.rs: 7209938d8de1bca8860f0699b2d48133c76c096299fc7d0d43972044d86aea11
       src/lib.rs: 93d775de6b62b417ec6993d186c9ca84b514baa1b234216a7181720f49119d43
       src/main.rs: b0a7238e0e218ba57b5b2119e9add8e3a81bdb6d92d46413bd138b33c0f0bb95
       src/manifest.rs: c73962c0f2e3b6f292ca05417707d1ee752fedbb323b85719867f5abcd63e16d
@@ -25,15 +25,16 @@ groups:
       src/provider/git_tests.rs: 9532f3c8da9e30cbf73d7f78e24b5d2da2dd7009803d2da8208035312b0be102
       src/provider/gitea.rs: f0c5551fbbb7cb81b702d4ff976a2656b2cca3b119ab78ad9229dd27b9c69826
       src/provider/gitea_tests.rs: c43da5a3bae39fbf48fc239a02f1031a6d016eed73ebc21c3dd27c0951d1e042
-      src/provider/github.rs: b714240540fbac4ad2888649e772ae755f466d264259b859785e1fe36d450e0f
-      src/provider/github_tests.rs: 85119432f8c2cdfde3f3b5a00d0001ed423d202dd96d095eb037e16956c4f820
+      src/provider/github.rs: 780bbddce10f31b57b3533bcddeb0c40be6074ce0610b4828c32a298a908bfc3
+      src/provider/github_tests.rs: f64fe7e0f9160229a7f192b4ba9e3cc53803e3774bf5636fff8c8f6781c668cf
       src/provider/gitlab.rs: 4f621999c7e432433df32a63fe1c312aac452e9d3344f7b58b9fd0e1b4144f3f
       src/provider/gitlab_tests.rs: 50c9249493b54ffa378ba76ed8515130a913836c42eba36aebbf4f7f94260757
       src/provider/http.rs: e90e46b64c1815e8c2e183a1863b426c886fced933e76811cb98d689ae9242d9
       src/provider/jira.rs: 071d9c8d5cca99bb96caa2ce8b976ac0c3cd71de1093229f59f9cf664a0334ac
       src/provider/jira_tests.rs: d2533f4fa1aabf7477dc250ae212e966d28b9fa1385e8baca9b9dd6f30e49e04
       src/provider/lazy.rs: 817837bceb2dc6c47334a080140c57f5f85693182b67089c47274e70ca845b21
-      src/provider/mod.rs: b5e726d69a09f8d7597d2551bf3fc5d34af2ec0619978f98511004e35ef45276
+      src/provider/memo.rs: 0d3770c9b68e611d4f56e2bec07707d90c30e611a4754202f74339f4cc77cba9
+      src/provider/mod.rs: c1d127315b09e43c437dac406d312a61eb2a29e84052b4b16c7e56c1f76cfb36
       src/provider/redmine.rs: 0117a8686cc3764ed822c114da186f857da6af96575ce56e5142e6d693d8bbf3
       src/provider/redmine_tests.rs: db2ded0a62a86569040e84386804fb83b1b76cf76866f235e7e0595a85753c0b
       src/provider/repology.rs: 6f2bd5a0ecbb86dc5377e9e0185ed3b847883348378d086bcf63b4609d334394
@@ -47,7 +48,7 @@ groups:
       src/version_tests.rs: b1e44538b2ca6e4a20ef46b83c51c8e2cfa285ff3c64b9541ceb8dc598da6f82
     dependents:
       README.md: b811d63327cb5bfa973ba171ad6eb616518c9eb6f4af29cb3b7ca6e2ad6c409a
-      docs/manifest.md: b3148b10263fb38d64cb9927449d7a5308f9553fc3b94b50ce0574b02fab62a7
+      docs/manifest.md: ee23527e7beb375a513317a99b474e7ec2841e7bfbada04a304d371350231604
       www/index.html: 733e8f241f271be1d0db949f62f8c6045378afe8d1146918d09179dc9cd52f91
   dev-docs:
     source:
@@ -63,7 +64,7 @@ groups:
     source:
       Cargo.toml: a43852372f9e6af4031af37bc96940155ed2975577077fb1fcda735e6066e249
     dependents:
-      CHANGELOG.md: e31d8ba2acaff891a75f8617b1f64a4309c74edb0f063833a19aa0dc8f664d86
+      CHANGELOG.md: b56b22ccf3c3642ed8825546f32bcab81a64e0b58c9788b0e7a8f3761be8ed9e
   schema:
     source:
       src/auth.rs: 13b2e1d778b5a76ebddbfeca85533ced64a9ab6c0eb84cea1438e0631be1bb21
@@ -73,7 +74,7 @@ groups:
       src/cli.rs: 11613647ab7d1cce7e077ccf7a64b0015d0e8b6341b20e90a5ccd9302a217e59
       src/condition.rs: ef77d42a13d23e95a735b650d299268e66c6ffe6c1dc3b84102990565fe93664
       src/eval.rs: ccfc8e69bf6659258ae8de87154b4599418d5c3bbb479e3712f4fb02c9fc85e7
-      src/eval_tests.rs: 30c5c256cb3e2e03f196409979eb7292683da1c22ef4e6f5179955aa5adcb3f3
+      src/eval_tests.rs: 7209938d8de1bca8860f0699b2d48133c76c096299fc7d0d43972044d86aea11
       src/lib.rs: 93d775de6b62b417ec6993d186c9ca84b514baa1b234216a7181720f49119d43
       src/main.rs: b0a7238e0e218ba57b5b2119e9add8e3a81bdb6d92d46413bd138b33c0f0bb95
       src/manifest.rs: c73962c0f2e3b6f292ca05417707d1ee752fedbb323b85719867f5abcd63e16d
@@ -88,15 +89,16 @@ groups:
       src/provider/git_tests.rs: 9532f3c8da9e30cbf73d7f78e24b5d2da2dd7009803d2da8208035312b0be102
       src/provider/gitea.rs: f0c5551fbbb7cb81b702d4ff976a2656b2cca3b119ab78ad9229dd27b9c69826
       src/provider/gitea_tests.rs: c43da5a3bae39fbf48fc239a02f1031a6d016eed73ebc21c3dd27c0951d1e042
-      src/provider/github.rs: b714240540fbac4ad2888649e772ae755f466d264259b859785e1fe36d450e0f
-      src/provider/github_tests.rs: 85119432f8c2cdfde3f3b5a00d0001ed423d202dd96d095eb037e16956c4f820
+      src/provider/github.rs: 780bbddce10f31b57b3533bcddeb0c40be6074ce0610b4828c32a298a908bfc3
+      src/provider/github_tests.rs: f64fe7e0f9160229a7f192b4ba9e3cc53803e3774bf5636fff8c8f6781c668cf
       src/provider/gitlab.rs: 4f621999c7e432433df32a63fe1c312aac452e9d3344f7b58b9fd0e1b4144f3f
       src/provider/gitlab_tests.rs: 50c9249493b54ffa378ba76ed8515130a913836c42eba36aebbf4f7f94260757
       src/provider/http.rs: e90e46b64c1815e8c2e183a1863b426c886fced933e76811cb98d689ae9242d9
       src/provider/jira.rs: 071d9c8d5cca99bb96caa2ce8b976ac0c3cd71de1093229f59f9cf664a0334ac
       src/provider/jira_tests.rs: d2533f4fa1aabf7477dc250ae212e966d28b9fa1385e8baca9b9dd6f30e49e04
       src/provider/lazy.rs: 817837bceb2dc6c47334a080140c57f5f85693182b67089c47274e70ca845b21
-      src/provider/mod.rs: b5e726d69a09f8d7597d2551bf3fc5d34af2ec0619978f98511004e35ef45276
+      src/provider/memo.rs: 0d3770c9b68e611d4f56e2bec07707d90c30e611a4754202f74339f4cc77cba9
+      src/provider/mod.rs: c1d127315b09e43c437dac406d312a61eb2a29e84052b4b16c7e56c1f76cfb36
       src/provider/redmine.rs: 0117a8686cc3764ed822c114da186f857da6af96575ce56e5142e6d693d8bbf3
       src/provider/redmine_tests.rs: db2ded0a62a86569040e84386804fb83b1b76cf76866f235e7e0595a85753c0b
       src/provider/repology.rs: 6f2bd5a0ecbb86dc5377e9e0185ed3b847883348378d086bcf63b4609d334394
@@ -110,5 +112,5 @@ groups:
       src/version_tests.rs: b1e44538b2ca6e4a20ef46b83c51c8e2cfa285ff3c64b9541ceb8dc598da6f82
     dependents:
       README.md: b811d63327cb5bfa973ba171ad6eb616518c9eb6f4af29cb3b7ca6e2ad6c409a
-      docs/manifest.md: b3148b10263fb38d64cb9927449d7a5308f9553fc3b94b50ce0574b02fab62a7
+      docs/manifest.md: ee23527e7beb375a513317a99b474e7ec2841e7bfbada04a304d371350231604
       schema/canibump.schema.json: 42232c63b652c406bab5b10cf94bd4bef01a61f123f4e225036106ce5a3dd1b3

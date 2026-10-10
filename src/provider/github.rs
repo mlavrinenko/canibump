@@ -6,7 +6,7 @@ use std::time::Duration;
 use async_trait::async_trait;
 use octocrab::Octocrab;
 use serde::Deserialize;
-use serde::de::{DeserializeOwned, IgnoredAny};
+use serde::de::DeserializeOwned;
 
 use super::{CheckError, CodeHost, GitRef, ItemState, Tracker};
 use crate::refs::{ItemRef, Source};
@@ -27,18 +27,25 @@ enum ApiState {
     Closed,
 }
 
+/// The pull request an issue stands for, as the issues API folds it in.
+#[derive(Debug, Deserialize)]
+struct PullLink {
+    /// Set once the PR merged, null before.
+    #[serde(default)]
+    merged_at: Option<String>,
+}
+
 #[derive(Debug, Deserialize)]
 struct IssueDto {
     state: ApiState,
     #[serde(default)]
     state_reason: Option<String>,
     #[serde(default)]
-    pull_request: Option<IgnoredAny>,
+    pull_request: Option<PullLink>,
 }
 
 #[derive(Debug, Deserialize)]
 struct PullDto {
-    state: ApiState,
     #[serde(default)]
     merged: bool,
     #[serde(default)]
@@ -132,25 +139,29 @@ fn issue_state(state: &ApiState, reason: Option<&str>) -> ItemState {
     }
 }
 
+/// A PR's state from its issue alone: `merged_at` tells merged from closed.
+fn pull_state(state: &ApiState, link: &PullLink) -> ItemState {
+    match (state, &link.merged_at) {
+        (_, Some(_)) => ItemState::Merged,
+        (ApiState::Open, None) => ItemState::Open,
+        (ApiState::Closed, None) => ItemState::ClosedUnmerged,
+    }
+}
+
 #[async_trait]
 impl Tracker for GitHub {
     async fn item_state(&self, item: &ItemRef) -> Result<ItemState, CheckError> {
         let (owner, repo) = repo_path(&item.source)?;
-        let what = item.to_string();
         let number = item.number;
         let issue: IssueDto = self
-            .get(format!("/repos/{owner}/{repo}/issues/{number}"), &what)
+            .get(
+                format!("/repos/{owner}/{repo}/issues/{number}"),
+                &item.to_string(),
+            )
             .await?;
-        if issue.pull_request.is_none() {
-            return Ok(issue_state(&issue.state, issue.state_reason.as_deref()));
-        }
-        let pull: PullDto = self
-            .get(format!("/repos/{owner}/{repo}/pulls/{number}"), &what)
-            .await?;
-        Ok(match (pull.state, pull.merged) {
-            (_, true) => ItemState::Merged,
-            (ApiState::Open, false) => ItemState::Open,
-            (ApiState::Closed, false) => ItemState::ClosedUnmerged,
+        Ok(match &issue.pull_request {
+            Some(link) => pull_state(&issue.state, link),
+            None => issue_state(&issue.state, issue.state_reason.as_deref()),
         })
     }
 }
