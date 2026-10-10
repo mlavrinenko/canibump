@@ -233,7 +233,7 @@ async fn evaluate_version(
     let versions = registry.index(package.index())?.versions(package).await?;
     let highest = versions
         .iter()
-        .max_by(|left, right| version::compare(left, right));
+        .max_by_key(|version| version::Key::new(version));
     Ok(match highest {
         None => Outcome::new(Status::Waiting, format!("{package} has no version yet")),
         Some(found) if version::compare(found, bound).is_ge() => Outcome::new(

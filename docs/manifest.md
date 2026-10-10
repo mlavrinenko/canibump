@@ -25,7 +25,14 @@ name, matched on whole words, so `Rejected`, `Won't Fix`, `Invalid` or
 
 `reached` waits for a commit, or a PR's merge commit, to land in a branch, a tag, or
 any tag matching a pattern. With a pattern, canibump names the first tag
-that has it, in version order (semver, or lenient for stuff like `b7012`).
+that has it, in version order. One order covers semver, `v`-tags, dates and
+builds like `b7012`:
+
+```
+v1.0.0 = 1.0.0 = 1.0.0+build     # a letter prefix and +build drop
+b999 < b1000                     # numbers compare as numbers
+1.0.0-rc9 < 1.0.0-rc10 < 1.0.0   # letters after the numbers mean pre-release
+```
 
 ```toml
 reached = "github:serde-rs/serde#2590"     # or "github:owner/repo@<sha>"

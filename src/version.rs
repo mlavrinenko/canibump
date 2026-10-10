@@ -1,43 +1,42 @@
-//! Version order: semver when both sides parse, else a lenient order that
-//! copes with tags like llama.cpp's `b7012`.
+//! Version order: one total order for semver, `v`-tags, dates and builds like
+//! llama.cpp's `b7012` alike.
 //!
-//! Lenient order drops a leading letter prefix (`v`, `b`), splits the rest
-//! into runs of digits and runs of letters, and compares run by run: numbers
-//! numerically, letters alphabetically, and a number above letters at the
-//! same position. When one side runs out, a letter run left on the other
-//! side marks a pre-release (`1.0rc1` < `1.0`), a number run a later release
-//! (`1.2` < `1.2.1`).
+//! A version string becomes a [`Key`] once: build metadata after `+` is
+//! ignored, a leading letter prefix (`v`, `b`) drops, and the rest splits into
+//! runs of digits and runs of letters. Keys compare run by run: numbers
+//! numerically, letters alphabetically, a number above letters at the same
+//! position. Every key ends in a sentinel that ranks above letters and below
+//! numbers, so a letter run left over on the longer side marks a pre-release
+//! (`1.0rc1` < `1.0`) and a number run a later release (`1.2` < `1.2.1`).
+//! Because the order is lexicographic over one sequence type, it is total:
+//! no mix of tags can make a sort or a binary search disagree with itself.
 
 use std::cmp::Ordering;
 
-#[derive(Debug, PartialEq, Eq)]
-enum Part<'a> {
+/// One run of a version. The variant order is the rank order.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+enum Part {
+    Letters(String),
+    End,
     Number(u128),
-    Letters(&'a str),
 }
 
-impl Ord for Part<'_> {
-    fn cmp(&self, other: &Self) -> Ordering {
-        match (self, other) {
-            (Self::Number(left), Self::Number(right)) => left.cmp(right),
-            (Self::Letters(left), Self::Letters(right)) => left.cmp(right),
-            (Self::Number(_), Self::Letters(_)) => Ordering::Greater,
-            (Self::Letters(_), Self::Number(_)) => Ordering::Less,
-        }
+/// A version string parsed once into a totally ordered key.
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
+pub struct Key(Vec<Part>);
+
+impl Key {
+    /// Builds the key of a version string.
+    #[must_use]
+    pub fn new(text: &str) -> Self {
+        let release = text.split_once('+').map_or(text, |(release, _)| release);
+        let mut parts = parts(release);
+        parts.push(Part::End);
+        Self(parts)
     }
 }
 
-impl PartialOrd for Part<'_> {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
-        Some(self.cmp(other))
-    }
-}
-
-fn semver(text: &str) -> Option<semver::Version> {
-    semver::Version::parse(text.strip_prefix('v').unwrap_or(text)).ok()
-}
-
-fn parts(text: &str) -> Vec<Part<'_>> {
+fn parts(text: &str) -> Vec<Part> {
     let start = text
         .find(|char: char| char.is_ascii_digit())
         .unwrap_or(text.len());
@@ -61,44 +60,21 @@ fn parts(text: &str) -> Vec<Part<'_>> {
         parts.push(if digits {
             Part::Number(run.parse().unwrap_or(u128::MAX))
         } else {
-            Part::Letters(run)
+            Part::Letters(run.to_owned())
         });
     }
     parts
 }
 
-fn lenient(left: &str, right: &str) -> Ordering {
-    let (left, right) = (parts(left), parts(right));
-    for (one, two) in left.iter().zip(&right) {
-        let order = one.cmp(two);
-        if order != Ordering::Equal {
-            return order;
-        }
-    }
-    let tail = |longer: &[Part<'_>], shorter: usize| match longer.get(shorter) {
-        Some(Part::Letters(_)) => Ordering::Less,
-        Some(Part::Number(_)) => Ordering::Greater,
-        None => Ordering::Equal,
-    };
-    match left.len().cmp(&right.len()) {
-        Ordering::Equal => Ordering::Equal,
-        Ordering::Greater => tail(&left, right.len()),
-        Ordering::Less => tail(&right, left.len()).reverse(),
-    }
-}
-
 /// Orders two version strings.
 #[must_use]
 pub fn compare(left: &str, right: &str) -> Ordering {
-    match (semver(left), semver(right)) {
-        (Some(left), Some(right)) => left.cmp(&right),
-        _ => lenient(left, right),
-    }
+    Key::new(left).cmp(&Key::new(right))
 }
 
 /// Sorts version strings ascending.
 pub fn sort<T: AsRef<str>>(versions: &mut [T]) {
-    versions.sort_by(|left, right| compare(left.as_ref(), right.as_ref()));
+    versions.sort_by_cached_key(|version| Key::new(version.as_ref()));
 }
 
 #[cfg(test)]

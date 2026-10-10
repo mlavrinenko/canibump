@@ -28,8 +28,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `{ tag = ... }` or `{ tags = "v*", since = "0.5.0" }`: bumpable once the
   commit, or the PR's merge commit, is there. A pattern names the first tag
   that has it, found by binary search over tags in version order.
-- Versions compare as semver when both parse, else leniently: a letter
-  prefix drops (`b7012` = `7012`) and a letter suffix is a pre-release.
+- Versions compare by one total order, so a mixed tag list sorts the same
+  whatever the input order: a letter prefix drops (`b7012` = `7012`), a letter
+  suffix is a pre-release, `+build` metadata is ignored and `1.0.0-rc9` sorts
+  before `1.0.0-rc10`. Numbers rank above letters at the same position, so
+  `1.0.0-1` is later than `1.0.0-rc` and `1.0.0-alpha.1` later than
+  `1.0.0-alpha.beta`, which semver ranks the other way round. The `semver`
+  dependency is gone.
 - GitHub answers `reached` through the compare API and lists tags through
   `git/matching-refs`, so no clone is needed.
 - `reached = "git:<url>@sha"` works on any git remote: gix fetches only the
