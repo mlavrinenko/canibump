@@ -393,3 +393,80 @@ fn rejects_bad_composites() {
         assert!(error.contains(message), "{body}: {error}");
     }
 }
+
+const RELEASED: &str = "id = \"released\"\nreached = \"github:o/r#1\"\nin = { tags = \"v*\" }\n";
+const AT_LEAST_RELEASED: &str =
+    "version = \"deps.dev:cargo/x\"\nat-least = { step = \"released\" }\n";
+const WAITING: &str = "state = \"github:o/r#2\"\n";
+
+/// One `[[path]]` table per body.
+fn tables(path: &str, bodies: &[&str]) -> String {
+    bodies
+        .iter()
+        .map(|body| format!("[[{path}]]\n{body}"))
+        .collect()
+}
+
+fn with_blocker(steps: &str) -> String {
+    format!("[[blocker]]\nid = \"a\"\nnote = \"n\"\n{steps}")
+}
+
+#[test]
+fn refuses_a_step_reference_that_may_not_have_held() {
+    let may_not_have_held = "`at-least` names step `released`, which sits in an `any` and may not have held; put both in one `all`";
+    for steps in [
+        // Both steps of one any: the first may not have held.
+        tables("blocker.any", &[RELEASED, AT_LEAST_RELEASED]),
+        // An earlier any inside an all: it may have resolved through another step.
+        tables("blocker.all", &[""])
+            + &tables("blocker.all.any", &[RELEASED, WAITING])
+            + &tables("blocker.all", &[AT_LEAST_RELEASED]),
+        // A sibling branch of an any.
+        tables("blocker.any", &[""])
+            + &tables("blocker.any.all", &[RELEASED])
+            + &tables("blocker.any", &[""])
+            + &tables("blocker.any.all", &[AT_LEAST_RELEASED]),
+    ] {
+        let error = first_error(&with_blocker(&steps));
+        assert!(error.starts_with("blocker `a`: "), "{steps}: {error}");
+        assert!(error.contains(may_not_have_held), "{steps}: {error}");
+    }
+}
+
+#[test]
+fn accepts_a_step_reference_that_surely_held() {
+    for steps in [
+        // The all-chain.
+        tables("blocker.all", &[RELEASED, AT_LEAST_RELEASED]),
+        // A nested all under an any.
+        tables("blocker.any", &[WAITING, ""])
+            + &tables("blocker.any.all", &[RELEASED, AT_LEAST_RELEASED]),
+        // An any under an all sees what the all already ran.
+        tables("blocker.all", &[RELEASED, ""])
+            + &tables("blocker.all.any", &[AT_LEAST_RELEASED, WAITING]),
+        // An earlier nested all hands its ids on.
+        tables("blocker.all", &[""])
+            + &tables("blocker.all.all", &[RELEASED])
+            + &tables("blocker.all", &[AT_LEAST_RELEASED]),
+    ] {
+        let manifest = Manifest::parse(&with_blocker(&steps));
+        assert!(manifest.is_ok(), "{steps}: {:?}", manifest.err());
+    }
+}
+
+#[test]
+fn keeps_step_ids_unique_across_the_whole_blocker() {
+    for steps in [
+        tables("blocker.any", &[RELEASED, RELEASED]),
+        tables("blocker.any", &[RELEASED, ""]) + &tables("blocker.any.all", &[RELEASED]),
+        tables("blocker.all", &[""])
+            + &tables("blocker.all.any", &[RELEASED])
+            + &tables("blocker.all", &[RELEASED]),
+    ] {
+        let error = first_error(&with_blocker(&steps));
+        assert!(
+            error.contains("duplicate step id `released`"),
+            "{steps}: {error}"
+        );
+    }
+}

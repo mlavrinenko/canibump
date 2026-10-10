@@ -222,6 +222,8 @@ async fn evaluate_version(
         Bound::Version(version) => version,
         Bound::Step(step) => match outputs.get(step) {
             Some(found) => found,
+            // A loaded manifest cannot reach this: `check_steps` refuses a
+            // reference to a step that may not have held.
             None => {
                 return Ok(Outcome::new(
                     Status::Failed,

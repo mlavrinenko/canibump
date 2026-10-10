@@ -4,6 +4,8 @@
 //! that condition's own type, so an unknown key or a bad reference is an
 //! error naming it.
 
+use std::collections::HashSet;
+
 use schemars::JsonSchema;
 use serde::Deserialize;
 use toml::{Table, Value};
@@ -266,43 +268,74 @@ fn parse_steps(mut table: Table, key: &str) -> Result<Vec<Step>, String> {
         .collect()
 }
 
-/// Checks that step ids are unique and every `at-least = { step = ... }`
-/// names an earlier `reached` step that finds a tag.
+/// Checks that step ids are unique across the blocker and every
+/// `at-least = { step = ... }` names a step that surely held when the reference
+/// runs, and that finds a tag.
+///
+/// A step surely held when it is an earlier step of the same `all`, or of an
+/// enclosing `all` reached through `all`s alone. An `any` may resolve through
+/// another step, so what one of its steps registers is visible within that
+/// step only.
 pub(crate) fn check_steps(condition: &Condition) -> Result<(), String> {
-    check_in(condition, &mut Vec::new())
+    Walk::default().condition(condition)
 }
 
-fn check_in(condition: &Condition, known: &mut Vec<(String, bool)>) -> Result<(), String> {
-    match condition {
-        Condition::All(steps) | Condition::Any(steps) => {
-            for step in steps {
-                check_in(&step.condition, known)?;
-                if let Some(id) = &step.id {
-                    if known.iter().any(|(seen, _)| seen == id) {
-                        return Err(format!("duplicate step id `{id}`"));
-                    }
-                    let finds_tag = matches!(
-                        &step.condition,
-                        Condition::Reached(ReachedCondition {
-                            within: Within::Tags { .. },
-                            ..
-                        })
-                    );
-                    known.push((id.clone(), finds_tag));
-                }
-            }
-            Ok(())
+/// The state of the walk over a blocker's steps.
+#[derive(Default)]
+struct Walk {
+    /// Every step id met so far, wherever it sits.
+    seen: HashSet<String>,
+    /// The steps that surely held where the walk stands, each with whether it
+    /// finds a tag.
+    held: Vec<(String, bool)>,
+}
+
+impl Walk {
+    fn condition(&mut self, condition: &Condition) -> Result<(), String> {
+        match condition {
+            Condition::All(steps) => steps.iter().try_for_each(|step| self.step(step)),
+            Condition::Any(steps) => steps.iter().try_for_each(|step| {
+                let mark = self.held.len();
+                let result = self.step(step);
+                self.held.truncate(mark);
+                result
+            }),
+            Condition::Version(VersionCondition {
+                at_least: Bound::Step(name),
+                ..
+            }) => self.reference(name),
+            Condition::State(_) | Condition::Reached(_) | Condition::Version(_) => Ok(()),
         }
-        Condition::Version(VersionCondition {
-            at_least: Bound::Step(name),
-            ..
-        }) => match known.iter().find(|(seen, _)| seen == name) {
-            None => Err(format!("`at-least` names no earlier step `{name}`")),
+    }
+
+    fn step(&mut self, step: &Step) -> Result<(), String> {
+        self.condition(&step.condition)?;
+        if let Some(id) = &step.id {
+            if !self.seen.insert(id.clone()) {
+                return Err(format!("duplicate step id `{id}`"));
+            }
+            let finds_tag = matches!(
+                &step.condition,
+                Condition::Reached(ReachedCondition {
+                    within: Within::Tags { .. },
+                    ..
+                })
+            );
+            self.held.push((id.clone(), finds_tag));
+        }
+        Ok(())
+    }
+
+    fn reference(&self, name: &str) -> Result<(), String> {
+        match self.held.iter().find(|(held, _)| held == name) {
+            Some((_, true)) => Ok(()),
             Some((_, false)) => Err(format!(
                 "step `{name}` finds no tag; point `at-least` at a `reached` step with `in = {{ tags = ... }}`"
             )),
-            Some((_, true)) => Ok(()),
-        },
-        Condition::State(_) | Condition::Reached(_) | Condition::Version(_) => Ok(()),
+            None if self.seen.contains(name) => Err(format!(
+                "`at-least` names step `{name}`, which sits in an `any` and may not have held; put both in one `all`"
+            )),
+            None => Err(format!("`at-least` names no earlier step `{name}`")),
+        }
     }
 }

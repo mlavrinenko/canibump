@@ -53,7 +53,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `[[blocker.all]]` and `[[blocker.any]]` chain steps, nested as deep as you
   like. An all-of stops at its first step that does not hold; an any-of
   resolves on its first that does. `at-least = { step = "<id>" }` uses the
-  tag an earlier `reached` step found, checked when the manifest loads.
+  tag an earlier `reached` step found. Loading refuses a reference to a step
+  that may not have held, such as one inside an `any`.
 - GitLab issues (`gitlab:group/proj#N`) and MRs (`!N`), self-hosted with
   `gitlab:host/group/proj`. A closed issue is completed only when an MR
   closed it. Tokens come from glab's config and `GITLAB_TOKEN` for

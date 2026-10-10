@@ -67,7 +67,11 @@ a User-Agent naming itself, as Repology's API rules ask.
 
 Real blockers come in chains. `[[blocker.all]]` holds when every step does,
 stopping at the first that doesn't; `[[blocker.any]]` when one does. Steps
-nest, and an `id` hands the tag a `reached` step found to a later step.
+nest, and an `id` hands the tag a `reached` step found to a later step. A
+`step` reference may only point at a step that surely held by then: an earlier
+step of the same `all`, or of an enclosing `all`. An `any` may resolve through
+another step, so ids inside it are out of reach after it; canibump refuses such
+a manifest at load. Put both steps in one `all`.
 
 ```toml
 [[blocker]]
