@@ -22,7 +22,7 @@
       typed-not-scripted: neutral,
     ),
     process: (
-      sound-codebase: helps[one copy of the delegation hooks, in ~/.nix, instead of a per-repo port that drifts],
+      sound-codebase: helps[the worktree tooling is worktrunk plus a short in-repo config, not a 301-line port that drifts from mindtape's],
       docs-match-code: neutral,
     ),
   ),
@@ -32,22 +32,24 @@
 
 == Problem
 
-+ `.just/scripts/fork.sh` and `integrate.sh` (301 lines) plus two recipes ported mindtape's delegation here on 2026-10-10.
-+ 🔴 ~/.nix now ships worktrunk with user hooks doing the same (`apps/worktrunk.nix`), and mindtape already deleted its copy, so this port is a second copy that drifts.
++ `.just/scripts/fork.sh` and `integrate.sh` (301 lines), plus the `fork` and `integrate` recipes, ported mindtape's delegation here on 2026-10-10.
++ 🔴 mindtape replaced its copy with worktrunk (commit deacb817). Its task `configure-worktrunk-in-the-repo-so-a-fresh-clone-needs-no-host-setup` moves every hook into the repo, because hooks in ~/.nix don't travel with a clone. This port is now a second copy that drifts.
 
 
 == TO-BE
 
-- 🟢 `wt switch --create <slug>` and `wt merge` delegate and land work here; the scripts and recipes are gone.
-- 🟢 AGENTS.md says so; nothing names a specific agent tool.
+- 🟢 Same shape as mindtape's result. Finish that task first and copy its files.
+- 🟢 `worktrunk` is in the dev shell, `.config/wt.toml` holds the hooks, and `just fork <slug>` / `just land` wrap `wt` with `--no-squash --no-commit --yes`.
+- 🟢 The pre-merge gate is `just check`, then the wip check. pre-remove carries `.mmz/cache/*.yaml` and a fresh lcov into the primary checkout.
+- 🟢 Nothing names a specific agent tool, and a clone with nix and direnv alone works.
 
 
 == Changes
 
-- `.just/scripts/fork.sh`, `.just/scripts/integrate.sh`: deleted.
-- `Justfile`: the `fork` and `integrate` recipes removed.
-- `outdatty.yaml`: `.just/scripts/**` out of `dev-docs`, if nothing else lives there.
-- AGENTS.md: the delegation bullet.
+- `.just/scripts/fork.sh`, `.just/scripts/integrate.sh`: deleted. mindtape's `wt-tasks-done.sh` and `wt-carry-gate.sh` replace them.
+- `.config/wt.toml`, `flake.nix`: as in mindtape, minus `just build-mt`. canibump has no dev `mt` build.
+- `Justfile`: `fork` and `land` replace `fork` and `integrate`.
+- `outdatty.yaml`: `dev-docs` sources follow the scripts. AGENTS.md says how to delegate.
 
 
 == Rollback
@@ -57,10 +59,9 @@ Revert the commit; the scripts come back unchanged.
 
 == Out of scope
 
-- The user hooks themselves, which live in ~/.nix.
+- Doing this before mindtape's task lands: copying a design that hasn't been tested yet means two repos to fix.
 
 
 == Dogfood
 
-The next delegated task here forks with `wt switch --create` and lands with `wt merge`.
-
+The next delegated task here forks with `just fork` and lands with `just land`.

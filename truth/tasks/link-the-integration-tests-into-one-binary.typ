@@ -44,10 +44,12 @@
 
 == Changes
 
-- `tests/*.rs`: moved under `tests/it/`, `mod common;` lines become `use` of the shared module.
-- `Cargo.toml`: only if autodiscovery needs a `[[test]]` entry.
-- `mmz`, `outdatty`, `linecop` and coverage ignore paths that name `tests/*.rs`: updated.
-
+- `tests/{cli,color,completions,exit_codes,package,schema,status_id}.rs`: moved to `tests/it/`. A new `tests/it/main.rs` declares them, plus `mod common;`, and cargo autodiscovers it as the `it` target.
+- `tests/common/mod.rs`: moved to `tests/it/common/mod.rs`. The four files with their own `mod common;` switch to `use crate::common::...`.
+- `tests/fixtures/`: stays put. `tests/schema.rs` reaches it through the manifest dir, so it needs no change.
+- CONTRIBUTING.md: `tests/cli.rs` becomes `tests/it/cli.rs`.
+- The `tests/**` globs in `.mmz/config.yaml`, the `crap` excludes in the Justfile and `.mindtape/config.toml` still match, so leave them.
+- Check: 203 tests before and after (`just test`), and 1 integration executable instead of 7 from `cargo test --no-run`.
 
 == Rollback
 
