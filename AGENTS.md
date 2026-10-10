@@ -37,12 +37,12 @@
   allow-list deliberately; never to silence a finding. `just outdated`
   (cargo-outdated) is network-bound too and reports newer upstream releases;
   it is a dev aid, never a gate.
-- `just test` gates the suite on cargo-nextest with `--status-level fail` — a
-  green run prints only the summary, a red one prints each failure's full
-  output — plus a `cargo test --doc` pass, because nextest does not run
-  doctests. `just cover` instruments that same runner via `cargo llvm-cov
-  nextest`, so a test cannot pass under the gate and fail under coverage (or
-  the reverse) with nothing saying so.
+- `just test` gates the suite on cargo-nextest, whose output level lives in
+  `.config/nextest.toml` — a green run prints only the summary, a red one
+  prints each failure's full output — plus a `cargo test --doc` pass, because
+  nextest does not run doctests. `just cover` instruments that same runner via
+  `cargo llvm-cov nextest`, so a test cannot pass under the gate and fail under
+  coverage (or the reverse) with nothing saying so.
 - Release only with `just release X.Y.Z`, after `just release X.Y.Z --dry-run`
   passes; never `cargo publish` by hand, and don't push main first. The recipe
   refuses a dirty tree, an origin/main that main lacks commits of, an existing

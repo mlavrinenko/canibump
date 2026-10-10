@@ -54,14 +54,14 @@ groups:
       www/index.html: b539fe17e933204eaddf2f411c8d6474c5f42f8d610ce5361261d2a9226a1309
   dev-docs:
     source:
-      .config/nextest.toml: e2eda0853a3c73ff4422e4d9a5f670c1aef1705b2281379dfdffdab04e837a79
-      .mmz/config.yaml: 3eb84a051ace0213ad7f74bed77eab76fc536cb921032dce77a792f84bee6820
-      Justfile: db4b40358699cee46cbdd539ddf4380977ff4de1a7ef760a32497e56d8b141f7
+      .config/nextest.toml: ec97d2444d9bf38aae8499d53eac3ffbbab47593637e3a324452ee72bec0ef0b
+      .mmz/config.yaml: 2b2d84d67e442228d0608c5a740c52e3e2cc4055445d84b7358fc92e14a49d7b
+      Justfile: b9f4d8dc6b089a722ec0e161f441efe423a29e1cb405d271dcc49a41caac684c
       flake.nix: c823c1bf916d012c0c51f00988f87c6fc28f864357b63f668a01612b11ccb33e
     dependents:
-      AGENTS.md: 808aa88b4033aed6350282726a7bfff1329bee5acac2c98a08fb7f0aaedef7ba
-      CONTRIBUTING.md: ed9b5199fd87a1cc2fa7976f1fecf474977c5c6a8f8566152c1cb2ae595d971a
-      canibump.toml: b557264250b530cd08e86f629846054b7efa2c82f4031e44416ca7a85e2f3780
+      AGENTS.md: 4314c4bac95bdd7f99998f4816a3282c80074f8798f5e007aacd1f74359adcac
+      CONTRIBUTING.md: 4be81df860a81a76ae645d1567d94b93c6fb78c324ea642db3be081703b0159c
+      canibump.toml: 0c45ed38be3c847dcf7b9548c687709d05685dfd466a2653a01297dce7a188a7
   release-notes:
     source:
       Cargo.toml: ee75eaa636b331fed70cc2d022bc8d0f1ec15cfe5197a8e7b0592fed5adec9f3

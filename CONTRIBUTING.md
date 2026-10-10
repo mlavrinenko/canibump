@@ -30,12 +30,12 @@ coverage, so anything there is untested by default.
 - CLI and integration tests live in `tests/` and drive the built binary with
   [`assert_cmd`](https://docs.rs/assert_cmd) + [`predicates`](https://docs.rs/predicates)
   (see `tests/cli.rs`).
-- Run the full suite with `just test`: `cargo nextest run --status-level fail`
-  (one process per test; a green run prints only the summary, a failure its full
-  output) plus `cargo test --doc`, which [cargo-nextest](https://nexte.st) does not
-  run. `just cover` instruments the same runner, so the gate and coverage can't
-  disagree. The output level lives in [.config/nextest.toml](.config/nextest.toml):
-  `cargo llvm-cov nextest` accepts `--status-level` and ignores it.
+- Run the full suite with `just test`: `cargo nextest run` (one process per test;
+  a green run prints only the summary, a failure its full output) plus
+  `cargo test --doc`, which [cargo-nextest](https://nexte.st) does not run.
+  `just cover` instruments the same runner, so the gate and coverage can't
+  disagree. Both read the output level from
+  [.config/nextest.toml](.config/nextest.toml).
 - As a file approaches the linecop limit, `just fix-check` ejects its inline
   `#[cfg(test)]` module into a sibling `_tests.rs` file via
   [ejectest](https://github.com/mlavrinenko/ejectest), driven by `linecop --baseline`.

@@ -66,17 +66,18 @@ outdatty-update:
     outdatty update
 
 # Run tests only. The gate runs the suite through cargo-nextest — one process
-# per test, so a panicking or hanging test is isolated — with `--status-level
-# fail`: a green run prints only the run header and the summary line, a red one
-# prints every failure's full output. nextest does not run doctests, so a second
-# pass covers them: a project with none pays a fast `running 0 tests` no-op.
+# per test, so a panicking or hanging test is isolated. The output level is
+# `.config/nextest.toml`'s `fail`: a green run prints only the run header and
+# the summary line, a red one prints every failure's full output. nextest does
+# not run doctests, so a second pass covers them: a project with none pays a
+# fast `running 0 tests` no-op.
 #
 # `[positional-arguments]` + `"$@"`: ARGS still reach both passes (a plain
 # substring filter works for both), but interpolating the variadic would
 # re-split a filter containing spaces and re-glob a wildcard.
 [positional-arguments]
 test *ARGS:
-    cargo nextest run --workspace --status-level fail "$@"
+    cargo nextest run --workspace "$@"
     cargo test --workspace --doc "$@"
 
 # Run clippy only
@@ -107,11 +108,8 @@ cover_ignore := 'src/main\.rs|/registry/src/'
 # they exercise. Instrument once (--no-report), then render both reports from
 # that profdata.
 #
-# It carries no `--status-level fail`, and that absence is deliberate:
-# `cargo llvm-cov nextest` accepts the flag and ignores it. The setting lives in
-# `.config/nextest.toml` instead, where both runners read it — a flag that is
-# accepted and ignored is worse than one that is absent, because the recipe then
-# claims something the output disproves.
+# The output level is no flag here or in `test`: `.config/nextest.toml` sets it
+# once for both runners.
 #
 # `clean --workspace` first, and it is not tidiness. The `--no-report` +
 # separate `report` split does NOT discard earlier profraw, so a long-lived

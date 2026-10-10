@@ -55,8 +55,8 @@ groups:
   # files that define them: the dev shell, the recipes, the test runner's own
   # profile, and the gate memoization rules that decide when a recipe re-runs.
   # `.config/nextest.toml` is a recipe body in practice — `status-level` lives
-  # there because `cargo llvm-cov nextest` accepts the flag and ignores it — so
-  # an edit to it changes what CONTRIBUTING.md and AGENTS.md describe.
+  # there once, for `just test` and `just cover` — so an edit to it changes what
+  # CONTRIBUTING.md and AGENTS.md describe.
   # canibump.toml is a dependent too: each note cites a line of flake.nix or
   # the Justfile, so moving that line flags the note.
   - name: dev-docs
