@@ -13,10 +13,10 @@ use serde::Deserialize;
 use thiserror::Error;
 use toml::{Table, Value};
 
-use crate::refs::{ItemRef, Reachable};
+use crate::refs::{ItemRef, PackageRef, Reachable};
 
 /// Condition keys a blocker may carry, one per blocker.
-pub const CONDITION_KEYS: &[&str] = &["state", "reached"];
+pub const CONDITION_KEYS: &[&str] = &["state", "reached", "version"];
 
 const DEFAULT_TTL: SignedDuration = SignedDuration::from_hours(6);
 
@@ -59,6 +59,8 @@ pub enum Condition {
     State(StateCondition),
     /// A commit, or a merged PR's merge commit, is in a branch or tag.
     Reached(ReachedCondition),
+    /// A package version is at least a bound.
+    Version(VersionCondition),
 }
 
 /// `state = "<item>"`.
@@ -75,6 +77,15 @@ pub struct ReachedCondition {
     pub target: Reachable,
     /// Where it has to arrive.
     pub within: Within,
+}
+
+/// `version = "<package>"` with `at-least = "<version>"`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VersionCondition {
+    /// The package and where to look.
+    pub package: PackageRef,
+    /// The lowest version that resolves it.
+    pub at_least: String,
 }
 
 /// The `in` of a `reached` condition.
@@ -158,6 +169,15 @@ struct RawReached {
     reached: String,
     #[serde(rename = "in")]
     within: RawWithin,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "kebab-case")]
+struct RawVersion {
+    version: String,
+    repo: Option<String>,
+    srcname: Option<String>,
+    at_least: String,
 }
 
 #[derive(Deserialize)]
@@ -290,6 +310,15 @@ fn parse_condition(table: Table) -> Result<Condition, String> {
             let raw: RawState = typed(table)?;
             let item = raw.state.parse().map_err(|error| format!("{error}"))?;
             Ok(Condition::State(StateCondition { item }))
+        }
+        ["version"] => {
+            let raw: RawVersion = typed(table)?;
+            let package = PackageRef::parse(&raw.version, raw.repo, raw.srcname)
+                .map_err(|error| format!("{error}"))?;
+            Ok(Condition::Version(VersionCondition {
+                package,
+                at_least: raw.at_least,
+            }))
         }
         ["reached"] => {
             let raw: RawReached = typed(table)?;

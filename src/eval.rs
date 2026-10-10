@@ -1,6 +1,6 @@
 //! Turns a blocker's condition into an [`Outcome`].
 
-use crate::manifest::{Condition, ReachedCondition, StateCondition, Within};
+use crate::manifest::{Condition, ReachedCondition, StateCondition, VersionCondition, Within};
 use crate::outcome::{Outcome, Status};
 use crate::provider::{CheckError, CodeHost, GitRef, ItemState, Registry};
 use crate::refs::{ItemRef, Reachable, Source};
@@ -14,6 +14,7 @@ pub async fn evaluate(condition: &Condition, registry: &Registry) -> Outcome {
     let result = match condition {
         Condition::State(state) => evaluate_state(state, registry).await,
         Condition::Reached(reached) => evaluate_reached(reached, registry).await,
+        Condition::Version(version) => evaluate_version(version, registry).await,
     };
     result.unwrap_or_else(|error| Outcome::new(Status::Failed, error.to_string()))
 }
@@ -129,6 +130,29 @@ impl Found<'_> {
             },
         )
     }
+}
+
+async fn evaluate_version(
+    condition: &VersionCondition,
+    registry: &Registry,
+) -> Result<Outcome, CheckError> {
+    let package = &condition.package;
+    let versions = registry.index(package.index())?.versions(package).await?;
+    let bound = &condition.at_least;
+    let highest = versions
+        .iter()
+        .max_by(|left, right| version::compare(left, right));
+    Ok(match highest {
+        None => Outcome::new(Status::Waiting, format!("{package} has no version yet")),
+        Some(found) if version::compare(found, bound).is_ge() => Outcome::new(
+            Status::Bumpable,
+            format!("{package} is at {found}, at least {bound}"),
+        ),
+        Some(found) => Outcome::new(
+            Status::Waiting,
+            format!("{package} is at {found}, waiting for {bound}"),
+        ),
+    })
 }
 
 /// Tags matching `pattern`, at or after `since`, in ascending version order.

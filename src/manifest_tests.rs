@@ -1,5 +1,5 @@
 use super::*;
-use crate::refs::{ItemRef, Reachable, Source};
+use crate::refs::{ItemRef, PackageRef, Reachable, Source};
 
 fn first_error(text: &str) -> String {
     match Manifest::parse(text) {
@@ -198,4 +198,35 @@ fn rejects_two_conditions_in_one_blocker() {
         error.contains("several conditions (state, reached)"),
         "{error}"
     );
+}
+
+#[test]
+fn parses_a_version_condition() {
+    let manifest = Manifest::parse(
+        "[[blocker]]\nid = \"a\"\nnote = \"n\"\nversion = \"repology:llama.cpp\"\nrepo = \"nix_unstable\"\nsrcname = \"llama-cpp\"\nat-least = \"0.6.0\"\n",
+    )
+    .expect("valid");
+    let condition = manifest
+        .blockers
+        .into_iter()
+        .next()
+        .map(|blocker| blocker.condition);
+    assert_eq!(
+        condition,
+        Some(Condition::Version(VersionCondition {
+            package: PackageRef::Repology {
+                project: "llama.cpp".to_owned(),
+                repo: "nix_unstable".to_owned(),
+                srcname: Some("llama-cpp".to_owned()),
+            },
+            at_least: "0.6.0".to_owned(),
+        }))
+    );
+    let error = first_error(
+        "[[blocker]]\nid = \"a\"\nnote = \"n\"\nversion = \"repology:x\"\nat-least = \"1\"\n",
+    );
+    assert!(error.contains("needs `repo`"), "{error}");
+    let error =
+        first_error("[[blocker]]\nid = \"a\"\nnote = \"n\"\nversion = \"deps.dev:cargo/x\"\n");
+    assert!(error.contains("at-least"), "{error}");
 }

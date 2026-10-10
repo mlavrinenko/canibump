@@ -35,3 +35,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `reached = "git:<url>@sha"` works on any git remote: gix fetches only the
   refs asked about into a bare repo under `~/.cache/canibump/git/` and walks
   history in-process.
+- `version = "repology:<project>"` (with `repo`, optional `srcname`) or
+  `version = "deps.dev:<system>/<name>"` with `at-least = "<version>"`:
+  bumpable once the highest version there reaches the bound.

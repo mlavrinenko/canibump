@@ -12,7 +12,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use thiserror::Error;
 
-use crate::refs::{ItemRef, Source, SourceKind};
+use crate::refs::{IndexKind, ItemRef, PackageRef, Source, SourceKind};
 
 /// What an issue, PR or MR is now.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -113,11 +113,23 @@ pub trait CodeHost: Send + Sync {
     async fn tags(&self, source: &Source, prefix: &str) -> Result<Vec<String>, CheckError>;
 }
 
+/// Lists the versions a package index knows.
+#[async_trait]
+pub trait PackageIndex: Send + Sync {
+    /// Every version of the package; empty when the repo lacks it.
+    ///
+    /// # Errors
+    ///
+    /// A [`CheckError`] when the index cannot say, or knows no such project.
+    async fn versions(&self, package: &PackageRef) -> Result<Vec<String>, CheckError>;
+}
+
 /// The providers a run may use, keyed by source kind.
 #[derive(Clone, Default)]
 pub struct Registry {
     trackers: HashMap<SourceKind, Arc<dyn Tracker>>,
     code_hosts: HashMap<SourceKind, Arc<dyn CodeHost>>,
+    indexes: HashMap<IndexKind, Arc<dyn PackageIndex>>,
 }
 
 impl Registry {
@@ -145,6 +157,25 @@ impl Registry {
             .get(&kind)
             .map(AsRef::as_ref)
             .ok_or_else(|| CheckError::Unsupported(format!("no provider for {kind:?} history")))
+    }
+
+    /// Registers a package index, replacing any earlier one.
+    #[must_use]
+    pub fn with_index(mut self, kind: IndexKind, index: Arc<dyn PackageIndex>) -> Self {
+        self.indexes.insert(kind, index);
+        self
+    }
+
+    /// The package index of a kind.
+    ///
+    /// # Errors
+    ///
+    /// [`CheckError::Unsupported`] when none is registered.
+    pub fn index(&self, kind: IndexKind) -> Result<&dyn PackageIndex, CheckError> {
+        self.indexes
+            .get(&kind)
+            .map(AsRef::as_ref)
+            .ok_or_else(|| CheckError::Unsupported(format!("no provider for {kind:?} packages")))
     }
 
     /// The tracker for a source kind.

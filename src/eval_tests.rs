@@ -5,9 +5,9 @@ use std::sync::atomic::{AtomicUsize, Ordering};
 use async_trait::async_trait;
 
 use super::*;
-use crate::manifest::{ReachedCondition, StateCondition, Within};
-use crate::provider::{CheckError, CodeHost, GitRef, ItemState, Registry, Tracker};
-use crate::refs::{ItemRef, Source, SourceKind};
+use crate::manifest::{ReachedCondition, StateCondition, VersionCondition, Within};
+use crate::provider::{CheckError, CodeHost, GitRef, ItemState, PackageIndex, Registry, Tracker};
+use crate::refs::{IndexKind, ItemRef, PackageRef, Source, SourceKind};
 
 #[derive(Default)]
 struct Fake {
@@ -274,4 +274,57 @@ async fn a_host_error_fails_the_reach() {
     };
     let (outcome, _) = reach(fake, "github:o/r#1", tags("v*", None)).await;
     assert_eq!(outcome, Outcome::new(Status::Failed, "boom"));
+}
+
+struct FakeIndex(Result<Vec<String>, CheckError>);
+
+#[async_trait]
+impl PackageIndex for FakeIndex {
+    async fn versions(&self, _package: &PackageRef) -> Result<Vec<String>, CheckError> {
+        self.0.clone()
+    }
+}
+
+async fn version_outcome(versions: Result<Vec<&str>, CheckError>, at_least: &str) -> Outcome {
+    let versions = versions.map(|list| list.into_iter().map(str::to_owned).collect());
+    let registry =
+        Registry::default().with_index(IndexKind::Repology, Arc::new(FakeIndex(versions)));
+    let package = PackageRef::parse("repology:llama.cpp", Some("nix_unstable".to_owned()), None)
+        .expect("valid");
+    let condition = Condition::Version(VersionCondition {
+        package,
+        at_least: at_least.to_owned(),
+    });
+    evaluate(&condition, &registry).await
+}
+
+#[tokio::test]
+async fn a_version_at_or_above_the_bound_is_bumpable() {
+    assert_eq!(
+        version_outcome(Ok(vec!["0.5.0", "0.6.0"]), "0.6.0").await,
+        Outcome::new(
+            Status::Bumpable,
+            "repology:llama.cpp in nix_unstable is at 0.6.0, at least 0.6.0"
+        )
+    );
+    assert_eq!(
+        version_outcome(Ok(vec!["b6981"]), "b7012").await,
+        Outcome::new(
+            Status::Waiting,
+            "repology:llama.cpp in nix_unstable is at b6981, waiting for b7012"
+        )
+    );
+}
+
+#[tokio::test]
+async fn a_package_missing_from_the_repo_waits() {
+    assert_eq!(
+        version_outcome(Ok(vec![]), "1").await,
+        Outcome::new(
+            Status::Waiting,
+            "repology:llama.cpp in nix_unstable has no version yet"
+        )
+    );
+    let failed = version_outcome(Err(CheckError::NotFound("x".to_owned())), "1").await;
+    assert_eq!(failed.status, Status::Failed);
 }
