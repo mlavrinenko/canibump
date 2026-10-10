@@ -98,12 +98,12 @@ pub enum Within {
 #[derive(Debug, Error)]
 pub enum ManifestError {
     /// The file cannot be read.
-    #[error("cannot read {path}: {source}")]
+    #[error("cannot read {path}: {reason}")]
     Read {
         /// The manifest path.
         path: PathBuf,
         /// Why.
-        source: std::io::Error,
+        reason: std::io::Error,
     },
     /// The file is not valid TOML, or a top-level key is wrong.
     #[error("{0}")]
@@ -196,9 +196,9 @@ impl Manifest {
     /// [`ManifestError::Read`] when the file cannot be read, else whatever
     /// [`Manifest::parse`] returns.
     pub fn load(path: &Path) -> Result<Self, ManifestError> {
-        let text = std::fs::read_to_string(path).map_err(|source| ManifestError::Read {
+        let text = std::fs::read_to_string(path).map_err(|reason| ManifestError::Read {
             path: path.to_owned(),
-            source,
+            reason,
         })?;
         Self::parse(&text)
     }

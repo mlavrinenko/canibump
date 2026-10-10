@@ -54,6 +54,32 @@ One line per blocker, and the status is one of these.
 | `dead` | closed unmerged, wontfix, duplicate, or closed with no reason. Rethink the workaround |
 | `failed` | the check broke (network, auth, rate limit). Never counts as landed |
 
+### Conditions
+
+Each blocker takes exactly one condition.
+
+`state`: an issue or PR. Merged or closed as completed is bumpable.
+
+```toml
+state = "github:serde-rs/serde#2590"
+```
+
+`reached`: a commit, or a PR's merge commit, landed in a branch, a tag, or
+any tag matching a pattern. With a pattern, canibump names the first tag
+that has it, in version order (semver, or lenient for stuff like `b7012`).
+
+```toml
+reached = "github:serde-rs/serde#2590"     # or "github:owner/repo@<sha>"
+in = { branch = "master" }
+# in = { tag = "v1.0.185" }
+# in = { tags = "v*", since = "1.0.180" }
+```
+
+```console
+$ canibump
+bumpable  serde-released  github:serde-rs/serde#2590 (110af31) is in v1.0.185 (Cargo.toml: unpin serde)
+```
+
 ### Exit codes
 
 | Code | Means |

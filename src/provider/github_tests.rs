@@ -3,6 +3,8 @@ use httpmock::MockServer;
 use serde_json::json;
 
 use super::*;
+use crate::provider::{CodeHost, GitRef};
+use crate::refs::Source;
 
 async fn state_of(server: &MockServer, number: u64) -> Result<ItemState, CheckError> {
     let github = GitHub::new(Some(&server.base_url()), Some("t0ken".to_owned())).expect("client");
@@ -135,4 +137,93 @@ async fn an_unreachable_api_is_a_network_error() {
 #[test]
 fn rejects_a_bad_base_url() {
     assert!(GitHub::new(Some("not a url"), None).is_err());
+}
+
+fn github(server: &MockServer) -> GitHub {
+    GitHub::new(Some(&server.base_url()), None).expect("client")
+}
+
+fn source() -> Source {
+    Source::GitHub {
+        owner: "o".to_owned(),
+        repo: "r".to_owned(),
+    }
+}
+
+#[tokio::test]
+async fn reads_the_merge_commit_of_a_merged_pull() {
+    let server = MockServer::start_async().await;
+    for (number, body) in [
+        (
+            1,
+            json!({"state": "closed", "merged": true, "merge_commit_sha": "abc1234"}),
+        ),
+        (
+            2,
+            json!({"state": "open", "merged": false, "merge_commit_sha": "test-merge"}),
+        ),
+    ] {
+        server
+            .mock_async(|when, then| {
+                when.method(GET).path(format!("/repos/o/r/pulls/{number}"));
+                then.status(200).json_body(body);
+            })
+            .await;
+    }
+    let item = |number: u64| -> ItemRef { format!("github:o/r#{number}").parse().expect("ref") };
+    let github = github(&server);
+    assert_eq!(
+        github.merge_commit(&item(1)).await,
+        Ok(Some("abc1234".to_owned()))
+    );
+    assert_eq!(github.merge_commit(&item(2)).await, Ok(None));
+}
+
+#[tokio::test]
+async fn compares_a_commit_against_a_ref() {
+    let server = MockServer::start_async().await;
+    for (head, status) in [
+        ("main", "ahead"),
+        ("v1", "identical"),
+        ("old", "behind"),
+        ("fork", "diverged"),
+    ] {
+        server
+            .mock_async(|when, then| {
+                when.method(GET)
+                    .path(format!("/repos/o/r/compare/abc1234...{head}"));
+                then.status(200).json_body(json!({"status": status}));
+            })
+            .await;
+    }
+    let github = github(&server);
+    let contains = |target: GitRef| {
+        let github = github.clone();
+        async move { github.contains(&source(), "abc1234", &target).await }
+    };
+    assert_eq!(contains(GitRef::Branch("main".to_owned())).await, Ok(true));
+    assert_eq!(contains(GitRef::Tag("v1".to_owned())).await, Ok(true));
+    assert_eq!(contains(GitRef::Tag("old".to_owned())).await, Ok(false));
+    assert_eq!(contains(GitRef::Branch("fork".to_owned())).await, Ok(false));
+    let missing = contains(GitRef::Tag("nope".to_owned())).await;
+    assert!(
+        matches!(missing, Err(CheckError::NotFound(_))),
+        "{missing:?}"
+    );
+}
+
+#[tokio::test]
+async fn lists_tags_by_prefix() {
+    let server = MockServer::start_async().await;
+    server
+        .mock_async(|when, then| {
+            when.method(GET).path("/repos/o/r/git/matching-refs/tags/v");
+            then.status(200).json_body(json!([
+                {"ref": "refs/tags/v0.1.0"},
+                {"ref": "refs/tags/v0.2.0"},
+            ]));
+        })
+        .await;
+    let tags = github(&server).tags(&source(), "v").await;
+    assert_eq!(tags, Ok(vec!["v0.1.0".to_owned(), "v0.2.0".to_owned()]));
 }

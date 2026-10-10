@@ -72,27 +72,27 @@ pub enum CacheError {
     #[error("no cache dir: set XDG_CACHE_HOME or HOME, or pass --cache")]
     NoHome,
     /// File system trouble.
-    #[error("{path}: {source}")]
+    #[error("{path}: {reason}")]
     Io {
         /// The file.
         path: PathBuf,
         /// Why.
-        source: io::Error,
+        reason: io::Error,
     },
     /// Not a state file.
-    #[error("{path}: not a canibump state file: {source}")]
+    #[error("{path}: not a canibump state file: {reason}")]
     Format {
         /// The file.
         path: PathBuf,
         /// Why.
-        source: serde_json::Error,
+        reason: serde_json::Error,
     },
 }
 
 fn io_error(path: &Path) -> impl FnOnce(io::Error) -> CacheError + '_ {
-    move |source| CacheError::Io {
+    move |reason| CacheError::Io {
         path: path.to_owned(),
-        source,
+        reason,
     }
 }
 
@@ -152,9 +152,9 @@ pub fn read(path: &Path) -> Result<Option<StateFile>, CacheError> {
     };
     serde_json::from_str(&text)
         .map(Some)
-        .map_err(|source| CacheError::Format {
+        .map_err(|reason| CacheError::Format {
             path: path.to_owned(),
-            source,
+            reason,
         })
 }
 
@@ -167,9 +167,9 @@ pub fn write(path: &Path, state: &StateFile) -> Result<(), CacheError> {
     if let Some(dir) = path.parent() {
         std::fs::create_dir_all(dir).map_err(io_error(dir))?;
     }
-    let mut text = serde_json::to_string_pretty(state).map_err(|source| CacheError::Format {
+    let mut text = serde_json::to_string_pretty(state).map_err(|reason| CacheError::Format {
         path: path.to_owned(),
-        source,
+        reason,
     })?;
     text.push('\n');
     let mut temp = path.as_os_str().to_owned();

@@ -8,7 +8,7 @@ use octocrab::Octocrab;
 use serde::Deserialize;
 use serde::de::{DeserializeOwned, IgnoredAny};
 
-use super::{CheckError, ItemState, Tracker};
+use super::{CheckError, CodeHost, GitRef, ItemState, Tracker};
 use crate::refs::{ItemRef, Source};
 
 /// The public API root.
@@ -41,6 +41,28 @@ struct PullDto {
     state: ApiState,
     #[serde(default)]
     merged: bool,
+    #[serde(default)]
+    merge_commit_sha: Option<String>,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "lowercase")]
+enum CompareStatus {
+    Ahead,
+    Identical,
+    Behind,
+    Diverged,
+}
+
+#[derive(Debug, Deserialize)]
+struct CompareDto {
+    status: CompareStatus,
+}
+
+#[derive(Debug, Deserialize)]
+struct RefDto {
+    #[serde(rename = "ref")]
+    name: String,
 }
 
 impl GitHub {
@@ -119,6 +141,56 @@ impl Tracker for GitHub {
             (ApiState::Open, false) => ItemState::Open,
             (ApiState::Closed, false) => ItemState::ClosedUnmerged,
         })
+    }
+}
+
+#[async_trait]
+impl CodeHost for GitHub {
+    async fn merge_commit(&self, item: &ItemRef) -> Result<Option<String>, CheckError> {
+        let Source::GitHub { owner, repo } = &item.source;
+        let number = item.number;
+        let pull: PullDto = self
+            .get(
+                format!("/repos/{owner}/{repo}/pulls/{number}"),
+                &item.to_string(),
+            )
+            .await?;
+        Ok(pull.merge_commit_sha.filter(|_| pull.merged))
+    }
+
+    async fn contains(
+        &self,
+        source: &Source,
+        commit: &str,
+        target: &GitRef,
+    ) -> Result<bool, CheckError> {
+        let Source::GitHub { owner, repo } = source;
+        let name = target.name();
+        let what = format!("{source}: {commit}...{name}");
+        let compare: CompareDto = self
+            .get(
+                format!("/repos/{owner}/{repo}/compare/{commit}...{name}?per_page=1"),
+                &what,
+            )
+            .await?;
+        Ok(matches!(
+            compare.status,
+            CompareStatus::Ahead | CompareStatus::Identical
+        ))
+    }
+
+    async fn tags(&self, source: &Source, prefix: &str) -> Result<Vec<String>, CheckError> {
+        let Source::GitHub { owner, repo } = source;
+        let refs: Vec<RefDto> = self
+            .get(
+                format!("/repos/{owner}/{repo}/git/matching-refs/tags/{prefix}"),
+                &format!("{source} tags"),
+            )
+            .await?;
+        Ok(refs
+            .into_iter()
+            .filter_map(|reference| reference.name.strip_prefix("refs/tags/").map(str::to_owned))
+            .collect())
     }
 }
 

@@ -30,3 +30,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   that has it, found by binary search over tags in version order.
 - Versions compare as semver when both parse, else leniently: a letter
   prefix drops (`b7012` = `7012`) and a letter suffix is a pre-release.
+- GitHub answers `reached` through the compare API and lists tags through
+  `git/matching-refs`, so no clone is needed.

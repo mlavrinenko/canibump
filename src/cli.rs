@@ -143,7 +143,12 @@ fn default_registry() -> Registry {
     let mut registry = Registry::default();
     let base = std::env::var("CANIBUMP_GITHUB_API").ok();
     match GitHub::new(base.as_deref(), crate::auth::github_token()) {
-        Ok(github) => registry = registry.with_tracker(SourceKind::GitHub, Arc::new(github)),
+        Ok(github) => {
+            let github = Arc::new(github);
+            registry = registry
+                .with_tracker(SourceKind::GitHub, github.clone())
+                .with_code_host(SourceKind::GitHub, github);
+        }
         Err(error) => log::warn!("{error}"),
     }
     registry
