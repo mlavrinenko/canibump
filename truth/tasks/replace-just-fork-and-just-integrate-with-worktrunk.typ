@@ -46,7 +46,7 @@
 
 == Changes
 
-- `.just/scripts/fork.sh`, `.just/scripts/integrate.sh`: deleted. mindtape's `wt-tasks-done.sh` and `wt-carry-gate.sh` replace them.
+- `.just/scripts/fork.sh`, `.just/scripts/integrate.sh`: deleted. mindtape's `wt-tasks-done.sh` and `wt-carry-gate.sh` replace them, unless `mt check --commits` with a `tip` rule and `mmz --import` have landed (their tasks in mindtape and mmz); then the hooks call those instead.
 - `.config/wt.toml`, `flake.nix`: as in mindtape, minus `just build-mt`. canibump has no dev `mt` build.
 - `Justfile`: `fork` and `land` replace `fork` and `integrate`.
 - `outdatty.yaml`: `dev-docs` sources follow the scripts. AGENTS.md says how to delegate.
