@@ -1,4 +1,7 @@
+pub mod eval;
 pub mod manifest;
+pub mod outcome;
+pub mod provider;
 pub mod refs;
 
 use thiserror::Error;

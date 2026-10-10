@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: proposed(2026, 10, 10),
+  status: done(2026, 10, 10),
   links: parent(
     "check-github-issue-and-pr-state-from-a-canibump-toml-manifest.typ",
   )
