@@ -95,6 +95,14 @@ impl GitHub {
     }
 }
 
+/// The owner and repo of a GitHub source.
+fn repo_path(source: &Source) -> Result<(&str, &str), CheckError> {
+    match source {
+        Source::GitHub { owner, repo } => Ok((owner, repo)),
+        other => Err(CheckError::Unsupported(format!("{other} is not on GitHub"))),
+    }
+}
+
 /// Maps an octocrab error onto what the user can act on.
 fn classify(error: &octocrab::Error, what: &str) -> CheckError {
     let what = what.to_owned();
@@ -124,7 +132,7 @@ fn issue_state(state: &ApiState, reason: Option<&str>) -> ItemState {
 #[async_trait]
 impl Tracker for GitHub {
     async fn item_state(&self, item: &ItemRef) -> Result<ItemState, CheckError> {
-        let Source::GitHub { owner, repo } = &item.source;
+        let (owner, repo) = repo_path(&item.source)?;
         let what = item.to_string();
         let number = item.number;
         let issue: IssueDto = self
@@ -147,7 +155,7 @@ impl Tracker for GitHub {
 #[async_trait]
 impl CodeHost for GitHub {
     async fn merge_commit(&self, item: &ItemRef) -> Result<Option<String>, CheckError> {
-        let Source::GitHub { owner, repo } = &item.source;
+        let (owner, repo) = repo_path(&item.source)?;
         let number = item.number;
         let pull: PullDto = self
             .get(
@@ -164,7 +172,7 @@ impl CodeHost for GitHub {
         commit: &str,
         target: &GitRef,
     ) -> Result<bool, CheckError> {
-        let Source::GitHub { owner, repo } = source;
+        let (owner, repo) = repo_path(source)?;
         let name = target.name();
         let what = format!("{source}: {commit}...{name}");
         let compare: CompareDto = self
@@ -180,7 +188,7 @@ impl CodeHost for GitHub {
     }
 
     async fn tags(&self, source: &Source, prefix: &str) -> Result<Vec<String>, CheckError> {
-        let Source::GitHub { owner, repo } = source;
+        let (owner, repo) = repo_path(source)?;
         let refs: Vec<RefDto> = self
             .get(
                 format!("/repos/{owner}/{repo}/git/matching-refs/tags/{prefix}"),

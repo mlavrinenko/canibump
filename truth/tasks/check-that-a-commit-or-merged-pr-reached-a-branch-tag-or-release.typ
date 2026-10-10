@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: wip(2026, 10, 10),
+  status: done(2026, 10, 10),
   links: depends-on(
     "check-github-issue-and-pr-state-from-a-canibump-toml-manifest.typ",
   ),

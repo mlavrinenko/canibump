@@ -37,6 +37,7 @@ octocrab = { version = "0.54.3", default-features = false, features = ["default-
 serde_json = "1.0.151"
 semver = "1.0.28"
 glob = "0.3.4"
+gix = { version = "0.87.1", default-features = false, features = ["blocking-network-client", "blocking-http-transport-reqwest-rust-tls", "sha1"] }
 
 [dev-dependencies]
 assert_cmd = "2"

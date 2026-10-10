@@ -32,3 +32,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   prefix drops (`b7012` = `7012`) and a letter suffix is a pre-release.
 - GitHub answers `reached` through the compare API and lists tags through
   `git/matching-refs`, so no clone is needed.
+- `reached = "git:<url>@sha"` works on any git remote: gix fetches only the
+  refs asked about into a bare repo under `~/.cache/canibump/git/` and walks
+  history in-process.

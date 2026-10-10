@@ -121,6 +121,12 @@ pub fn resolve(
     Ok(default_path(&home, &canonical))
 }
 
+/// `<cache home>/canibump`, where canibump keeps state files and git clones.
+#[must_use]
+pub fn root() -> Option<PathBuf> {
+    cache_home(|key| std::env::var_os(key)).map(|home| home.join("canibump"))
+}
+
 fn cache_home(env: impl Fn(&str) -> Option<OsString>) -> Option<PathBuf> {
     let set = |key| env(key).filter(|value: &OsString| !value.is_empty());
     set("XDG_CACHE_HOME")

@@ -11,6 +11,7 @@ use jiff::Timestamp;
 use crate::cache::{self, StateFile};
 use crate::manifest::Manifest;
 use crate::provider::Registry;
+use crate::provider::git::GitRemotes;
 use crate::provider::github::GitHub;
 use crate::refs::SourceKind;
 use crate::report::{self, Report};
@@ -142,6 +143,10 @@ fn print(text: &str) -> Result<()> {
 fn default_registry() -> Registry {
     let mut registry = Registry::default();
     let base = std::env::var("CANIBUMP_GITHUB_API").ok();
+    if let Some(root) = cache::root() {
+        let remotes = Arc::new(GitRemotes::new(root.join("git")));
+        registry = registry.with_code_host(SourceKind::Git, remotes);
+    }
     match GitHub::new(base.as_deref(), crate::auth::github_token()) {
         Ok(github) => {
             let github = Arc::new(github);

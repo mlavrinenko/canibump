@@ -70,10 +70,15 @@ that has it, in version order (semver, or lenient for stuff like `b7012`).
 
 ```toml
 reached = "github:serde-rs/serde#2590"     # or "github:owner/repo@<sha>"
+# reached = "git:https://github.com/rust-lang/glob.git@952da29"  # any git remote
 in = { branch = "master" }
 # in = { tag = "v1.0.185" }
 # in = { tags = "v*", since = "1.0.180" }
 ```
+
+GitHub answers through its API, no clone. A `git:` remote gets a bare clone of
+just the refs you ask about under `~/.cache/canibump/git/`, via gix, reused
+across runs.
 
 ```console
 $ canibump

@@ -8,13 +8,15 @@ use std::str::FromStr;
 use thiserror::Error;
 
 /// Schemes a reference may start with.
-pub const SCHEMES: &[&str] = &["github"];
+pub const SCHEMES: &[&str] = &["github", "git"];
 
 /// Which provider answers for a [`Source`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum SourceKind {
     /// github.com.
     GitHub,
+    /// Any git remote.
+    Git,
 }
 
 /// Where an item lives.
@@ -27,6 +29,11 @@ pub enum Source {
         /// The repository name.
         repo: String,
     },
+    /// A git remote by URL (or local path).
+    Git {
+        /// What `git clone` would take.
+        url: String,
+    },
 }
 
 impl Source {
@@ -35,6 +42,7 @@ impl Source {
     pub const fn kind(&self) -> SourceKind {
         match self {
             Self::GitHub { .. } => SourceKind::GitHub,
+            Self::Git { .. } => SourceKind::Git,
         }
     }
 }
@@ -131,7 +139,10 @@ impl FromStr for Reachable {
     type Err = RefError;
 
     fn from_str(text: &str) -> Result<Self, Self::Err> {
-        parse(text, "github:owner/repo#number or github:owner/repo@sha")
+        parse(
+            text,
+            "github:owner/repo#number, github:owner/repo@sha or git:<url>@sha",
+        )
     }
 }
 
@@ -151,6 +162,10 @@ fn parse(text: &str, expected: &'static str) -> Result<Reachable, RefError> {
         "github" => owner_repo(path)
             .map(|(owner, repo)| Source::GitHub { owner, repo })
             .ok_or_else(malformed),
+        "git" if !path.is_empty() => Ok(Source::Git {
+            url: path.to_owned(),
+        }),
+        "git" => Err(malformed()),
         other => Err(RefError::UnknownScheme {
             scheme: other.to_owned(),
             text: text.to_owned(),
@@ -166,6 +181,9 @@ fn parse(text: &str, expected: &'static str) -> Result<Reachable, RefError> {
             sha: sha.to_owned(),
         }));
     }
+    if scheme == "git" {
+        return Err(malformed());
+    }
     let (path, number) = locator
         .rsplit_once('#')
         .ok_or_else(|| source(locator).err().unwrap_or_else(malformed))?;
@@ -178,6 +196,7 @@ impl fmt::Display for Source {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::GitHub { owner, repo } => write!(formatter, "github:{owner}/{repo}"),
+            Self::Git { url } => write!(formatter, "git:{url}"),
         }
     }
 }

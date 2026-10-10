@@ -68,3 +68,32 @@ fn rejects_a_short_or_non_hex_sha() {
         assert!(error.contains(text), "{error}");
     }
 }
+
+#[test]
+fn parses_a_git_remote_commit() {
+    let commit: Reachable = "git:https://example.org/a/b.git@abc1234"
+        .parse()
+        .expect("valid");
+    assert_eq!(
+        commit,
+        Reachable::Commit(CommitRef {
+            source: Source::Git {
+                url: "https://example.org/a/b.git".to_owned(),
+            },
+            sha: "abc1234".to_owned(),
+        })
+    );
+    assert_eq!(
+        commit.to_string(),
+        "git:https://example.org/a/b.git@abc1234"
+    );
+    assert_eq!(commit.source().kind(), SourceKind::Git);
+    let error = "git:https://example.org/a/b.git#1"
+        .parse::<Reachable>()
+        .expect_err("no items")
+        .to_string();
+    assert!(
+        error.contains("git:https://example.org/a/b.git#1"),
+        "{error}"
+    );
+}
