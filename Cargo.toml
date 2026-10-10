@@ -9,7 +9,7 @@ rust-version = "1.86"
 description = "Can I bump yet? Checks the upstream fixes your workarounds wait on and says which landed"
 license = "MIT"
 repository = "https://github.com/mlavrinenko/canibump"
-keywords = []
+keywords = ["upstream", "workaround", "tracker", "bump", "issues"]
 categories = ["command-line-utilities"]
 include = ["/src/", "/schema/", "/LICENSE*", "/README.md", "/CHANGELOG.md"]
 

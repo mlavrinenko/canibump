@@ -8,21 +8,21 @@ groups:
       src/cache.rs: 5cf60c00ce367aecba5bf49db23246ce6c35294c416d3623d940c995576a1744
       src/cache_tests.rs: c49552e2ef56fa54feccee38b6a661cfaf9ca253f2379824b664f14e8bc96cc0
       src/cli.rs: 9fd2944f6f1373f11d9cbfd246fd5b1f5b603d7793a831d7490b57cfdc562ab4
-      src/condition.rs: d5bafea2b27cd1d839abfc66cc8aaae7ca24b14deb01f0a8030bdfe7e04e42eb
-      src/eval.rs: 9e6d6b8ab7e753c44a14bc8dc52e08e38230ec56c0af7118a5301521c58df87b
+      src/condition.rs: ef77d42a13d23e95a735b650d299268e66c6ffe6c1dc3b84102990565fe93664
+      src/eval.rs: ccfc8e69bf6659258ae8de87154b4599418d5c3bbb479e3712f4fb02c9fc85e7
       src/eval_tests.rs: 30c5c256cb3e2e03f196409979eb7292683da1c22ef4e6f5179955aa5adcb3f3
       src/lib.rs: 93d775de6b62b417ec6993d186c9ca84b514baa1b234216a7181720f49119d43
       src/main.rs: 78e10ececd7a8915846c5e34f8edc43a8766632702111b6c23201e09a9c397e5
-      src/manifest.rs: df2b89b3341506c72c1db6ece6f02b2544cec8453f7ad8ed8534c8bfa13834fb
-      src/manifest_tests.rs: 25e29b14b55ab51da30935297a402a131495af5ba32df397791410ceb131459d
+      src/manifest.rs: c73962c0f2e3b6f292ca05417707d1ee752fedbb323b85719867f5abcd63e16d
+      src/manifest_tests.rs: 4bad9ad517b80842f15e0c9fee88b40a4d1b82f29af03c44c16717af3281f1a8
       src/outcome.rs: e4571c63d7efeaa959281d956d66f731d2ff403b9fccfef6a61bf3ad163a1c92
       src/package.rs: 075b8ba117612287b38bb3a301d061bd657c884946fd622ab509472366be00b4
       src/package_tests.rs: 19500c6de1897919b94374ddcc6e16e59917eea95e9427be9fef04dda4876db7
       src/provider/defaults.rs: e791874f77338f8b65470f9e600ed055e236359b930653ba2fa3678ea8f02cd3
       src/provider/depsdev.rs: 4a28482e40f193c927c8205526be3a829e30340347c7737ca74c486ef7a220f0
       src/provider/depsdev_tests.rs: 05e0e2cbfb8a9eea4a93d57a9ce3d0e78bd9de0dd401578f08057233a68fe5a7
-      src/provider/git.rs: f5f9edc1a87961be71419fd48b7d4e63d10b1505ce40206fdc75d9d9323a53b1
-      src/provider/git_tests.rs: 20b98e2e3b89695576a003373fa047fd135ac7de70eb8dd0c6b564591f187282
+      src/provider/git.rs: 9119a52af15704e343f6eeef132669f25266efc007b7a3a220a291310766b436
+      src/provider/git_tests.rs: 9532f3c8da9e30cbf73d7f78e24b5d2da2dd7009803d2da8208035312b0be102
       src/provider/gitea.rs: f0c5551fbbb7cb81b702d4ff976a2656b2cca3b119ab78ad9229dd27b9c69826
       src/provider/gitea_tests.rs: c43da5a3bae39fbf48fc239a02f1031a6d016eed73ebc21c3dd27c0951d1e042
       src/provider/github.rs: 0b94b21774acbfb36df0c2ffa145b9dc5faf585f56a97f6338d727528615edfb
@@ -42,11 +42,11 @@ groups:
       src/report.rs: dee6e1e55133502c7c68d7245051ba00d7def628dd54a98f0ea9fac8336a7da7
       src/run.rs: b444ee93fdac4e9a906f6ba176b68907847592bbbea302106ed74ba0bbe51568
       src/schema.rs: 93947e9fccab2f55a54a1e51185b186857363dc4044ed1a25360bc2f74414f06
-      src/version.rs: 5143da0e832df416b0b2e0980aa4528a913917095bd0e819de54a3fbeaf1d3c5
-      src/version_tests.rs: 7261cedc441f28749d932cc3a87aca31758f4e80aefb4f95a25ebce6d3deaf32
+      src/version.rs: 29e1d00e92d3692e2dfde583b6c4abe3fb728187fec41a6abf55f0badead2148
+      src/version_tests.rs: b1e44538b2ca6e4a20ef46b83c51c8e2cfa285ff3c64b9541ceb8dc598da6f82
     dependents:
       README.md: b811d63327cb5bfa973ba171ad6eb616518c9eb6f4af29cb3b7ca6e2ad6c409a
-      docs/manifest.md: 9c6bd4877b14d2c30296a97b65c85898ab01f299b769e8d724664424d7f27677
+      docs/manifest.md: b0775a02bfd9bb7e53e52ea0c2e7eb0521c5edefa4cacb08696194bce189e4a1
       www/index.html: 733e8f241f271be1d0db949f62f8c6045378afe8d1146918d09179dc9cd52f91
   dev-docs:
     source:
@@ -60,9 +60,9 @@ groups:
       canibump.toml: b836c7d85578e0de6c7b9b55ffe2936f5198fdf2b884d34f192d747e5eb734a2
   release-notes:
     source:
-      Cargo.toml: 497af35d083bae5e9f2ad26b253098ccf21f5938ab17dfee3b645570d3d3ee05
+      Cargo.toml: ced35691d0b07d8097bd07ca8a9bf31b8270905000b56f427b311f9745b3fa10
     dependents:
-      CHANGELOG.md: 17889e74c4687d1341f1ac8a87af21dadef8795b0a81af57d618ab26e9cdd4d8
+      CHANGELOG.md: ed39ed979d7b4d57900766275e150d145c6b28e68d832e630304e3d44e8baf3e
   schema:
     source:
       src/auth.rs: 13b2e1d778b5a76ebddbfeca85533ced64a9ab6c0eb84cea1438e0631be1bb21
@@ -70,21 +70,21 @@ groups:
       src/cache.rs: 5cf60c00ce367aecba5bf49db23246ce6c35294c416d3623d940c995576a1744
       src/cache_tests.rs: c49552e2ef56fa54feccee38b6a661cfaf9ca253f2379824b664f14e8bc96cc0
       src/cli.rs: 9fd2944f6f1373f11d9cbfd246fd5b1f5b603d7793a831d7490b57cfdc562ab4
-      src/condition.rs: d5bafea2b27cd1d839abfc66cc8aaae7ca24b14deb01f0a8030bdfe7e04e42eb
-      src/eval.rs: 9e6d6b8ab7e753c44a14bc8dc52e08e38230ec56c0af7118a5301521c58df87b
+      src/condition.rs: ef77d42a13d23e95a735b650d299268e66c6ffe6c1dc3b84102990565fe93664
+      src/eval.rs: ccfc8e69bf6659258ae8de87154b4599418d5c3bbb479e3712f4fb02c9fc85e7
       src/eval_tests.rs: 30c5c256cb3e2e03f196409979eb7292683da1c22ef4e6f5179955aa5adcb3f3
       src/lib.rs: 93d775de6b62b417ec6993d186c9ca84b514baa1b234216a7181720f49119d43
       src/main.rs: 78e10ececd7a8915846c5e34f8edc43a8766632702111b6c23201e09a9c397e5
-      src/manifest.rs: df2b89b3341506c72c1db6ece6f02b2544cec8453f7ad8ed8534c8bfa13834fb
-      src/manifest_tests.rs: 25e29b14b55ab51da30935297a402a131495af5ba32df397791410ceb131459d
+      src/manifest.rs: c73962c0f2e3b6f292ca05417707d1ee752fedbb323b85719867f5abcd63e16d
+      src/manifest_tests.rs: 4bad9ad517b80842f15e0c9fee88b40a4d1b82f29af03c44c16717af3281f1a8
       src/outcome.rs: e4571c63d7efeaa959281d956d66f731d2ff403b9fccfef6a61bf3ad163a1c92
       src/package.rs: 075b8ba117612287b38bb3a301d061bd657c884946fd622ab509472366be00b4
       src/package_tests.rs: 19500c6de1897919b94374ddcc6e16e59917eea95e9427be9fef04dda4876db7
       src/provider/defaults.rs: e791874f77338f8b65470f9e600ed055e236359b930653ba2fa3678ea8f02cd3
       src/provider/depsdev.rs: 4a28482e40f193c927c8205526be3a829e30340347c7737ca74c486ef7a220f0
       src/provider/depsdev_tests.rs: 05e0e2cbfb8a9eea4a93d57a9ce3d0e78bd9de0dd401578f08057233a68fe5a7
-      src/provider/git.rs: f5f9edc1a87961be71419fd48b7d4e63d10b1505ce40206fdc75d9d9323a53b1
-      src/provider/git_tests.rs: 20b98e2e3b89695576a003373fa047fd135ac7de70eb8dd0c6b564591f187282
+      src/provider/git.rs: 9119a52af15704e343f6eeef132669f25266efc007b7a3a220a291310766b436
+      src/provider/git_tests.rs: 9532f3c8da9e30cbf73d7f78e24b5d2da2dd7009803d2da8208035312b0be102
       src/provider/gitea.rs: f0c5551fbbb7cb81b702d4ff976a2656b2cca3b119ab78ad9229dd27b9c69826
       src/provider/gitea_tests.rs: c43da5a3bae39fbf48fc239a02f1031a6d016eed73ebc21c3dd27c0951d1e042
       src/provider/github.rs: 0b94b21774acbfb36df0c2ffa145b9dc5faf585f56a97f6338d727528615edfb
@@ -104,9 +104,9 @@ groups:
       src/report.rs: dee6e1e55133502c7c68d7245051ba00d7def628dd54a98f0ea9fac8336a7da7
       src/run.rs: b444ee93fdac4e9a906f6ba176b68907847592bbbea302106ed74ba0bbe51568
       src/schema.rs: 93947e9fccab2f55a54a1e51185b186857363dc4044ed1a25360bc2f74414f06
-      src/version.rs: 5143da0e832df416b0b2e0980aa4528a913917095bd0e819de54a3fbeaf1d3c5
-      src/version_tests.rs: 7261cedc441f28749d932cc3a87aca31758f4e80aefb4f95a25ebce6d3deaf32
+      src/version.rs: 29e1d00e92d3692e2dfde583b6c4abe3fb728187fec41a6abf55f0badead2148
+      src/version_tests.rs: b1e44538b2ca6e4a20ef46b83c51c8e2cfa285ff3c64b9541ceb8dc598da6f82
     dependents:
       README.md: b811d63327cb5bfa973ba171ad6eb616518c9eb6f4af29cb3b7ca6e2ad6c409a
-      docs/manifest.md: 9c6bd4877b14d2c30296a97b65c85898ab01f299b769e8d724664424d7f27677
+      docs/manifest.md: b0775a02bfd9bb7e53e52ea0c2e7eb0521c5edefa4cacb08696194bce189e4a1
       schema/canibump.schema.json: 42232c63b652c406bab5b10cf94bd4bef01a61f123f4e225036106ce5a3dd1b3
