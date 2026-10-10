@@ -68,10 +68,13 @@ scopes:
     - "CHANGELOG.md"
     - "www/**"
 
-  # The backlog and what decides a valid task: a task can go invalid by being
-  # edited, or by the config, templates or goals changing under it.
+  # What decides a valid task: the config, templates and goals. The task
+  # files under truth/tasks/ are left out on purpose: `mt flip` writes the
+  # file its close gate asserts on, so a multi-task close would stale itself
+  # mid-command. The commit-msg hook (`mt check --commit-msg`) validates the
+  # staged tasks instead.
   tasks:
-    - "truth/**"
+    - "truth/*.typ"
     - ".mindtape/config.toml"
     - ".mindtape/templates/**"
 

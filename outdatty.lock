@@ -28,7 +28,7 @@ groups:
   dev-docs:
     source:
       .config/nextest.toml: e2eda0853a3c73ff4422e4d9a5f670c1aef1705b2281379dfdffdab04e837a79
-      .mmz/config.yaml: 21f9f3dce08222ade0111ad44975f3a2cedb6e385e6dc7cccd346590d146d17e
+      .mmz/config.yaml: 3b0f22e8147362b850994804c86bf4735056c3da6606f598c2df205143a2a270
       Justfile: d33d38f8979ff08002a25cf9c9d557bf26f52f18e30b095c5193c8d17567fdaa
       flake.nix: f89fe0bd042a080d0dfe2024a8da271365a45430d06b69e9ea6ecab602c69dc0
     dependents:
