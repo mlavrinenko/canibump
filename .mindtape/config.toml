@@ -218,6 +218,7 @@ values = [
   "!CONTRIBUTING.md",
   "!AGENTS.md",
   "!CHANGELOG.md",
+  "!docs/**",
   "!www/**",
   "!outdatty.lock",
   "!Cargo.lock",
