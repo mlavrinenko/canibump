@@ -7,7 +7,8 @@
 use serde::Deserialize;
 use toml::{Table, Value};
 
-use crate::refs::{ItemRef, PackageRef, Reachable};
+use crate::package::PackageRef;
+use crate::refs::{ItemRef, Reachable};
 
 /// Condition keys a blocker may carry, one per blocker.
 pub const CONDITION_KEYS: &[&str] = &["state", "reached", "version", "all", "any"];

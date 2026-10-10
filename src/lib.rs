@@ -8,6 +8,7 @@ pub mod condition;
 pub mod eval;
 pub mod manifest;
 pub mod outcome;
+pub mod package;
 pub mod provider;
 pub mod refs;
 pub mod report;

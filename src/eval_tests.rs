@@ -6,8 +6,9 @@ use async_trait::async_trait;
 
 use super::*;
 use crate::condition::{Bound, ReachedCondition, StateCondition, Step, VersionCondition, Within};
+use crate::package::{IndexKind, PackageRef};
 use crate::provider::{CheckError, CodeHost, GitRef, ItemState, PackageIndex, Registry, Tracker};
-use crate::refs::{IndexKind, ItemRef, PackageRef, Source, SourceKind};
+use crate::refs::{ItemRef, Source, SourceKind};
 
 #[derive(Default)]
 struct Fake {

@@ -2,7 +2,8 @@ use super::*;
 use crate::condition::{
     Bound, Condition, ReachedCondition, StateCondition, Step, VersionCondition, Within,
 };
-use crate::refs::{ItemRef, PackageRef, Reachable, Source};
+use crate::package::PackageRef;
+use crate::refs::{ItemRef, Reachable, Source};
 
 fn first_error(text: &str) -> String {
     match Manifest::parse(text) {

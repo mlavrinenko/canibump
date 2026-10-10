@@ -16,7 +16,8 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use thiserror::Error;
 
-use crate::refs::{IndexKind, ItemRef, PackageRef, Source, SourceKind};
+use crate::package::{IndexKind, PackageRef};
+use crate::refs::{ItemRef, Source, SourceKind};
 
 /// What an issue, PR or MR is now.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

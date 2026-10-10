@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: proposed(2026, 10, 10),
+  status: wip(2026, 10, 10),
   links: parent("add-gitlab-gitea-forgejo-redmine-and-jira-providers.typ"),
 )
 

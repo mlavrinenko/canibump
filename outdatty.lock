@@ -8,27 +8,29 @@ groups:
       src/cache.rs: 0f4b27fdeb4ca28a0163706414836ab36a3c30e2956021ad17f90454408be794
       src/cache_tests.rs: 0da019aeb791df9f6ffeb2bd2dfe7462683dee1db02e1597e4fe691563e2efaf
       src/cli.rs: d9e2f55c317cd657a8e8af960521b34fc1acc7f8126a4c1b73bacd6eff00050e
-      src/condition.rs: 0b4a9958f9999d3d9cdbaddef1f433df1d287af82dbcdfe34ce3cc5bed4df129
+      src/condition.rs: 60e654bbc88aa942ccb06baa95bc7f37ec7e0d88155bc93bebced9c526431133
       src/eval.rs: 9e6d6b8ab7e753c44a14bc8dc52e08e38230ec56c0af7118a5301521c58df87b
-      src/eval_tests.rs: 69dda847b0b02e4dbe6452a36a1e0de2c698ace1a65a00c985c3563460c7b6a4
-      src/lib.rs: a7018063e35ebffae16a6c6932aa3378fddba5adb599929fe009ad90ce713d06
+      src/eval_tests.rs: 30c5c256cb3e2e03f196409979eb7292683da1c22ef4e6f5179955aa5adcb3f3
+      src/lib.rs: 840df8b713a672e59fcdba7c75dfcd877e1028149da31e98cf5aa4a0ff77d2d3
       src/main.rs: 78e10ececd7a8915846c5e34f8edc43a8766632702111b6c23201e09a9c397e5
       src/manifest.rs: e2103fcdc05b7841ce0d47fe8f63b4004b0437c9e9619cdb26be1f50f04ef2af
-      src/manifest_tests.rs: 9019d3a02c6420853c135dabb99ae2bb00d99bb758fe7c1a8dd511ad7f0cd99b
+      src/manifest_tests.rs: b7264c35aeac9e05a7311f042c8239380d69dabdd5b9e3f6193401f35235b762
       src/outcome.rs: e4571c63d7efeaa959281d956d66f731d2ff403b9fccfef6a61bf3ad163a1c92
-      src/provider/defaults.rs: 5b74557bcc28aebcc676156b7c7dc112e42b25064dfac233bfce200c3666dce7
-      src/provider/depsdev.rs: c8c4fa2974dbfbb73c7a2761609ab3f9f0f06843f2a18910f8e46ea06153d78a
+      src/package.rs: 075b8ba117612287b38bb3a301d061bd657c884946fd622ab509472366be00b4
+      src/package_tests.rs: 19500c6de1897919b94374ddcc6e16e59917eea95e9427be9fef04dda4876db7
+      src/provider/defaults.rs: c94dfad66bd9b110afa0a38927f0dfc4794b9264c0c8ab8536a5f1841dff2526
+      src/provider/depsdev.rs: 4a28482e40f193c927c8205526be3a829e30340347c7737ca74c486ef7a220f0
       src/provider/depsdev_tests.rs: 05e0e2cbfb8a9eea4a93d57a9ce3d0e78bd9de0dd401578f08057233a68fe5a7
       src/provider/git.rs: f5f9edc1a87961be71419fd48b7d4e63d10b1505ce40206fdc75d9d9323a53b1
       src/provider/git_tests.rs: c53cc9a67766078c3bff8e30f1eae241a0e8caf36c09cc2800f97a31eeefe8e0
       src/provider/github.rs: 0b94b21774acbfb36df0c2ffa145b9dc5faf585f56a97f6338d727528615edfb
       src/provider/github_tests.rs: 85119432f8c2cdfde3f3b5a00d0001ed423d202dd96d095eb037e16956c4f820
       src/provider/http.rs: c63cf62ee327c36e44b016769e68ff30e42cab8e542d2c1a8a6c46212dceb8d0
-      src/provider/mod.rs: 5518b5fc91ef13080adb82e4afe2dc3ab62896413d7ccab971cd0b7e14b0e35d
-      src/provider/repology.rs: 0d91ce28b70704061e3e3248e57d2bda4d8e13756ea84a430266e1f229c4f61d
+      src/provider/mod.rs: 86d886932ee9b4b5b2d4503f9f94e68feda10677a082656b98a47928d7c29968
+      src/provider/repology.rs: 6f2bd5a0ecbb86dc5377e9e0185ed3b847883348378d086bcf63b4609d334394
       src/provider/repology_tests.rs: 183e64251d4e15eef813be6f7fe314c646fa4c1938092fc029462f6a3247e081
-      src/refs.rs: 32e3672567fb731b1f7da55786ef3f7e26e653caf0cb4e661d70f80a7d5aaffd
-      src/refs_tests.rs: 11ee3451d8d2dce11bbe15bbb2f24a93f56a2b5e6ddd70ea40c06a368d85be45
+      src/refs.rs: 6b5f720fc04d72d7074e1756af1b5b0240fb45944a35a346ecc1b936f4abdbb9
+      src/refs_tests.rs: 8744c344ab19e8352ecb606d850abd2e95fa97ef5489dbfb6908df119d9a4aa1
       src/report.rs: dee6e1e55133502c7c68d7245051ba00d7def628dd54a98f0ea9fac8336a7da7
       src/run.rs: b444ee93fdac4e9a906f6ba176b68907847592bbbea302106ed74ba0bbe51568
       src/version.rs: 5143da0e832df416b0b2e0980aa4528a913917095bd0e819de54a3fbeaf1d3c5

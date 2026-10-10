@@ -7,7 +7,7 @@ use serde::Deserialize;
 
 use super::http::{base, client, get_json};
 use super::{CheckError, PackageIndex};
-use crate::refs::PackageRef;
+use crate::package::PackageRef;
 
 /// The public API root.
 pub const API: &str = "https://api.deps.dev";

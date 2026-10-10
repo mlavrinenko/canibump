@@ -10,7 +10,8 @@ use super::depsdev::{self, DepsDev};
 use super::git::GitRemotes;
 use super::github::GitHub;
 use super::repology::{self, Repology};
-use crate::refs::{IndexKind, SourceKind};
+use crate::package::IndexKind;
+use crate::refs::SourceKind;
 
 fn env_or(key: &str, default: &str) -> String {
     std::env::var(key).unwrap_or_else(|_| default.to_owned())
