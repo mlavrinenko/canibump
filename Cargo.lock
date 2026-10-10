@@ -306,6 +306,7 @@ dependencies = [
  "assert_cmd",
  "async-trait",
  "clap",
+ "futures-util",
  "gix",
  "glob",
  "httpmock",

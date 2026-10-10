@@ -81,6 +81,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (`pull_request.merged_at`) and fetches `/pulls/N` only for the merge commit,
   so a chain that waits on a PR, then on its release, spends two calls before
   the tag search instead of five.
+- A run checks up to eight blockers at once and prints them in manifest
+  order, so it takes about as long as its slowest blocker, not the sum of
+  them. Steps inside one `all`/`any` still run in turn. Blockers asking
+  Repology about one project share a single request, and requests stay a
+  second apart; blockers on one git remote take turns at its clone and
+  fetch.
 
 ### Fixed
 

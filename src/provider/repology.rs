@@ -4,12 +4,13 @@
 //! once per run.
 
 use std::collections::HashMap;
+use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use async_trait::async_trait;
 use reqwest::{Client, Url};
 use serde::Deserialize;
-use tokio::sync::Mutex;
+use tokio::sync::{Mutex, OnceCell};
 
 use super::http::{base, client, get_json};
 use super::{CheckError, PackageIndex};
@@ -28,8 +29,11 @@ pub struct Repology {
     base: Url,
     interval: Duration,
     last: Mutex<Option<Instant>>,
-    projects: Mutex<HashMap<String, Vec<PackageDto>>>,
+    projects: Mutex<HashMap<String, Arc<OnceCell<Project>>>>,
 }
+
+/// What Repology knows of one project, or why it could not say.
+type Project = Result<Vec<PackageDto>, CheckError>;
 
 #[derive(Debug, Clone, Deserialize)]
 struct PackageDto {
@@ -55,10 +59,21 @@ impl Repology {
         })
     }
 
-    async fn project(&self, project: &str) -> Result<Vec<PackageDto>, CheckError> {
-        if let Some(cached) = self.projects.lock().await.get(project) {
-            return Ok(cached.clone());
-        }
+    /// The project's packages. Asks that arrive together wait on the one
+    /// request, and its answer, a failure too, stands for the rest of the run.
+    async fn project(&self, project: &str) -> Project {
+        let once = Arc::clone(
+            self.projects
+                .lock()
+                .await
+                .entry(project.to_owned())
+                .or_default(),
+        );
+        once.get_or_init(|| self.request(project)).await.clone()
+    }
+
+    /// Asks Repology for a project, at least `interval` after the last ask.
+    async fn request(&self, project: &str) -> Project {
         let mut url = self.base.clone();
         url.path_segments_mut()
             .map_err(|()| CheckError::Unsupported(format!("API URL `{}`", self.base)))?
@@ -70,13 +85,7 @@ impl Repology {
         }
         let result = get_json(&self.client, url, &format!("repology:{project}")).await;
         *last = Some(Instant::now());
-        drop(last);
-        let packages: Vec<PackageDto> = result?;
-        self.projects
-            .lock()
-            .await
-            .insert(project.to_owned(), packages.clone());
-        Ok(packages)
+        result
     }
 }
 

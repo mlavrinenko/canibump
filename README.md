@@ -41,7 +41,9 @@ $ echo $?
 10
 ```
 
-One line per blocker, and the status is one of these.
+One line per blocker, in manifest order. Blockers are checked eight at a time,
+so a long manifest costs about its slowest chain, not the sum. The status is
+one of these.
 
 | Status | Means |
 | --- | --- |

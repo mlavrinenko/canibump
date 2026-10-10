@@ -61,7 +61,8 @@ at-least = "0.6.0"
 ```
 
 canibump asks Repology once per project per run, at most once a second, with
-a User-Agent naming itself, as Repology's API rules ask.
+a User-Agent naming itself, as Repology's API rules ask. Blockers that ask
+about one project at the same time share that one request.
 
 ## Chains
 
@@ -72,6 +73,9 @@ nest, and an `id` hands the tag a `reached` step found to a later step. A
 step of the same `all`, or of an enclosing `all`. An `any` may resolve through
 another step, so ids inside it are out of reach after it; canibump refuses such
 a manifest at load. Put both steps in one `all`.
+
+Steps run in turn, since each may hand a value on. Whole blockers run side by
+side, eight at a time.
 
 ```toml
 [[blocker]]

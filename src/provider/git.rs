@@ -7,7 +7,7 @@
 //! `file://` remote makes gix spawn `git-upload-pack`, and `ssh://` spawns
 //! `ssh`, as git itself would.
 
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, PoisonError};
 
@@ -28,6 +28,9 @@ struct Inner {
     cache: PathBuf,
     /// Refspecs already fetched this run, as `(url, spec)`.
     fetched: Mutex<HashSet<(String, String)>>,
+    /// One lock per remote URL, held while its repo is opened, created or
+    /// fetched into.
+    turns: Mutex<HashMap<String, Arc<Mutex<()>>>>,
 }
 
 /// The bare repo a remote is fetched into.
@@ -125,6 +128,7 @@ impl GitRemotes {
             inner: Arc::new(Inner {
                 cache,
                 fetched: Mutex::new(HashSet::new()),
+                turns: Mutex::new(HashMap::new()),
             }),
         }
     }
@@ -141,6 +145,26 @@ impl GitRemotes {
 }
 
 impl Inner {
+    /// The bare repo of `source` with `spec` fetched into it.
+    ///
+    /// One worker at a time opens or creates a remote's repo and fetches into
+    /// it, so two blockers on one remote never race `init_bare` or a fetch.
+    /// Reading the repo afterwards is not under the lock.
+    fn synced(&self, source: &Source, spec: &str) -> Result<gix::Repository, CheckError> {
+        let url = remote_url(source)?;
+        let turn = Arc::clone(
+            self.turns
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .entry(url.to_owned())
+                .or_default(),
+        );
+        let _turn = turn.lock().unwrap_or_else(PoisonError::into_inner);
+        let repo = self.repo(source)?;
+        self.fetch(&repo, source, spec)?;
+        Ok(repo)
+    }
+
     fn repo(&self, source: &Source) -> Result<gix::Repository, CheckError> {
         let dir = clone_dir(&self.cache, remote_url(source)?);
         let fail = network(source);
@@ -151,12 +175,17 @@ impl Inner {
         gix::init_bare(dir).map_err(|error| fail(&error))
     }
 
+    /// Whether `spec` came this run, itself or inside a fetch of every tag.
+    fn was_fetched(&self, url: &str, spec: &str) -> bool {
+        let seen = self.fetched.lock().unwrap_or_else(PoisonError::into_inner);
+        let has = |spec: &str| seen.contains(&(url.to_owned(), spec.to_owned()));
+        has(spec) || (spec.starts_with(TAG_REFS) && has(ALL_TAGS))
+    }
+
     /// Fetches `spec` once per run.
     fn fetch(&self, repo: &gix::Repository, source: &Source, spec: &str) -> Result<(), CheckError> {
         let url = remote_url(source)?;
-        let key = (url.to_owned(), spec.to_owned());
-        let seen = || self.fetched.lock().unwrap_or_else(PoisonError::into_inner);
-        if seen().contains(&key) {
+        if self.was_fetched(url, spec) {
             return Ok(());
         }
         let fail = network(source);
@@ -178,12 +207,15 @@ impl Inner {
             Ok(_) | Err(gix::remote::fetch::Error::NoMapping { .. }) => {}
             Err(error) => return Err(fail(&error)),
         }
-        seen().insert(key);
+        let key = (url.to_owned(), spec.to_owned());
+        self.fetched
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .insert(key);
         Ok(())
     }
 
     fn contains(&self, source: &Source, sha: &str, target: &GitRef) -> Result<bool, CheckError> {
-        let repo = self.repo(source)?;
         let (spec, local) = match target {
             GitRef::Tag(name) => (
                 format!("+refs/tags/{name}:refs/tags/{name}"),
@@ -194,10 +226,7 @@ impl Inner {
                 format!("refs/remotes/origin/{name}"),
             ),
         };
-        let tag_fetched = matches!(target, GitRef::Tag(_)) && self.has_tags(source)?;
-        if !tag_fetched {
-            self.fetch(&repo, source, &spec)?;
-        }
+        let repo = self.synced(source, &spec)?;
         let missing = || CheckError::NotFound(format!("{source}: {}", target.name()));
         let mut reference = repo.find_reference(local.as_str()).map_err(|_| missing())?;
         let tip = reference.peel_to_id().map_err(|_| missing())?.detach();
@@ -207,16 +236,8 @@ impl Inner {
         is_ancestor(&repo, source, commit, tip)
     }
 
-    /// Whether every tag was fetched this run, so a tag needs no fetch of its own.
-    fn has_tags(&self, source: &Source) -> Result<bool, CheckError> {
-        let key = (remote_url(source)?.to_owned(), ALL_TAGS.to_owned());
-        let fetched = self.fetched.lock().unwrap_or_else(PoisonError::into_inner);
-        Ok(fetched.contains(&key))
-    }
-
     fn tags(&self, source: &Source, prefix: &str) -> Result<Vec<String>, CheckError> {
-        let repo = self.repo(source)?;
-        self.fetch(&repo, source, ALL_TAGS)?;
+        let repo = self.synced(source, ALL_TAGS)?;
         let fail = network(source);
         let platform = repo.references().map_err(|error| fail(&error))?;
         let mut tags = Vec::new();
@@ -230,6 +251,9 @@ impl Inner {
         Ok(tags)
     }
 }
+
+/// The refspecs of tags start like this.
+const TAG_REFS: &str = "+refs/tags/";
 
 const ALL_TAGS: &str = "+refs/tags/*:refs/tags/*";
 

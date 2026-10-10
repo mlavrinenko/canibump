@@ -61,16 +61,22 @@ async fn an_unknown_project_is_not_found() {
     );
 }
 
-#[tokio::test]
-async fn spaces_requests_by_the_interval() {
-    let server = MockServer::start_async().await;
+/// Makes `server` answer every project with one nixpkgs version; the mock
+/// counts the requests.
+async fn answer_any_project(server: &MockServer) -> httpmock::Mock<'_> {
     server
         .mock_async(|when, then| {
             when.method(GET);
             then.status(200)
                 .json_body(json!([{"repo": "nix_unstable", "version": "1"}]));
         })
-        .await;
+        .await
+}
+
+#[tokio::test]
+async fn spaces_requests_by_the_interval() {
+    let server = MockServer::start_async().await;
+    answer_any_project(&server).await;
     let repology = Repology::new(&server.base_url(), Duration::from_millis(300)).expect("client");
     let started = Instant::now();
     for project in ["a", "b", "c"] {
@@ -84,6 +90,54 @@ async fn spaces_requests_by_the_interval() {
         "{:?}",
         started.elapsed()
     );
+}
+
+#[tokio::test]
+async fn concurrent_asks_stay_spaced_by_the_interval() {
+    let server = MockServer::start_async().await;
+    answer_any_project(&server).await;
+    let repology = Repology::new(&server.base_url(), Duration::from_millis(300)).expect("client");
+    let started = Instant::now();
+    let packages = ["a", "b", "c"].map(|project| nix(project, None));
+    let asks = packages.iter().map(|package| repology.versions(package));
+    for versions in futures_util::future::join_all(asks).await {
+        assert_eq!(versions, Ok(vec!["1".to_owned()]));
+    }
+    assert!(
+        started.elapsed() >= Duration::from_millis(600),
+        "{:?}",
+        started.elapsed()
+    );
+}
+
+#[tokio::test]
+async fn concurrent_asks_for_one_project_share_a_request() {
+    let server = MockServer::start_async().await;
+    let mock = answer_any_project(&server).await;
+    let repology = Repology::new(&server.base_url(), Duration::ZERO).expect("client");
+    let package = nix("llama.cpp", None);
+    let (first, second) = tokio::join!(repology.versions(&package), repology.versions(&package));
+    assert_eq!(first, Ok(vec!["1".to_owned()]));
+    assert_eq!(second, first);
+    mock.assert_calls_async(1).await;
+}
+
+#[tokio::test]
+async fn a_failed_project_is_not_asked_again() {
+    let server = MockServer::start_async().await;
+    let mock = server
+        .mock_async(|when, then| {
+            when.method(GET).path("/project/down");
+            then.status(503);
+        })
+        .await;
+    let repology = Repology::new(&server.base_url(), Duration::ZERO).expect("client");
+    let package = nix("down", None);
+    let (first, second) = tokio::join!(repology.versions(&package), repology.versions(&package));
+    assert!(matches!(first, Err(CheckError::Network(_))), "{first:?}");
+    assert_eq!(second, first);
+    assert_eq!(repology.versions(&package).await, first);
+    mock.assert_calls_async(1).await;
 }
 
 #[tokio::test]

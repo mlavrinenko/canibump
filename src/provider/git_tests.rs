@@ -177,6 +177,28 @@ fn remote(url: &str) -> (tempfile::TempDir, GitRemotes, Source) {
 }
 
 #[tokio::test]
+async fn blockers_asking_one_remote_together_do_not_race_the_clone_or_the_fetch() {
+    let up = upstream();
+    let (_cache, remotes, source) = remote(&up.url);
+    let asks = [
+        (&up.c2, tag("v0.1.0")),
+        (&up.c3, tag("v0.2.0")),
+        (&up.c3, branch("main")),
+        (&up.c4, branch("side")),
+        (&up.c5, branch("orphan")),
+    ];
+    let contains = asks
+        .iter()
+        .map(|(sha, target)| remotes.contains(&source, sha, target));
+    let (answers, tags) = tokio::join!(
+        futures_util::future::join_all(contains),
+        remotes.tags(&source, "v")
+    );
+    assert_eq!(answers, vec![Ok(true); asks.len()]);
+    assert_eq!(tags.map(|names| names.len()), Ok(2));
+}
+
+#[tokio::test]
 async fn a_sha_the_history_lacks_reads_waiting() {
     let up = upstream();
     let (_cache, remotes, source) = remote(&up.url);
