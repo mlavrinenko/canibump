@@ -1,4 +1,7 @@
 use super::*;
+use crate::condition::{
+    Bound, Condition, ReachedCondition, StateCondition, Step, VersionCondition, Within,
+};
 use crate::refs::{ItemRef, PackageRef, Reachable, Source};
 
 fn first_error(text: &str) -> String {
@@ -219,7 +222,7 @@ fn parses_a_version_condition() {
                 repo: "nix_unstable".to_owned(),
                 srcname: Some("llama-cpp".to_owned()),
             },
-            at_least: "0.6.0".to_owned(),
+            at_least: Bound::Version("0.6.0".to_owned()),
         }))
     );
     let error = first_error(
@@ -229,4 +232,112 @@ fn parses_a_version_condition() {
     let error =
         first_error("[[blocker]]\nid = \"a\"\nnote = \"n\"\nversion = \"deps.dev:cargo/x\"\n");
     assert!(error.contains("at-least"), "{error}");
+}
+
+const CHAIN: &str = r#"
+[[blocker]]
+id = "llama"
+note = "n"
+
+[[blocker.all]]
+id = "merged"
+state = "github:o/r#1"
+
+[[blocker.all]]
+id = "released"
+reached = "github:o/r#1"
+in = { tags = "v*" }
+
+[[blocker.all]]
+version = "repology:x"
+repo = "nix_unstable"
+at-least = { step = "released" }
+"#;
+
+fn only_condition(text: &str) -> Condition {
+    Manifest::parse(text)
+        .expect("valid")
+        .blockers
+        .into_iter()
+        .next()
+        .map(|blocker| blocker.condition)
+        .expect("one blocker")
+}
+
+#[test]
+fn parses_an_all_of_chain_with_a_step_bound() {
+    let Condition::All(steps) = only_condition(CHAIN) else {
+        panic!("all-of expected");
+    };
+    let ids: Vec<Option<&str>> = steps.iter().map(|step| step.id.as_deref()).collect();
+    assert_eq!(ids, [Some("merged"), Some("released"), None]);
+    let Some(Step {
+        condition: Condition::Version(version),
+        ..
+    }) = steps.get(2)
+    else {
+        panic!("a version step expected: {steps:?}");
+    };
+    assert_eq!(version.at_least, Bound::Step("released".to_owned()));
+}
+
+#[test]
+fn parses_a_nested_any_of() {
+    let text = r#"
+[[blocker]]
+id = "a"
+note = "n"
+
+[[blocker.any]]
+state = "github:o/r#1"
+
+[[blocker.any]]
+[[blocker.any.all]]
+state = "github:o/r#2"
+[[blocker.any.all]]
+state = "github:o/r#3"
+"#;
+    let Condition::Any(steps) = only_condition(text) else {
+        panic!("any-of expected");
+    };
+    assert!(matches!(
+        steps.get(1).map(|step| &step.condition),
+        Some(Condition::All(inner)) if inner.len() == 2
+    ));
+}
+
+#[test]
+fn rejects_bad_composites() {
+    let blocker = "[[blocker]]\nid = \"a\"\nnote = \"n\"\n";
+    for (body, message) in [
+        ("all = []\n", "needs at least one step"),
+        ("all = [1]\n", "steps are tables"),
+        (
+            "state = \"github:o/r#1\"\n[[blocker.all]]\nstate = \"github:o/r#1\"\n",
+            "several conditions",
+        ),
+        (
+            "[[blocker.all]]\nid = \"x\"\nstate = \"github:o/r#1\"\n[[blocker.all]]\nid = \"x\"\nstate = \"github:o/r#1\"\n",
+            "duplicate step id `x`",
+        ),
+        (
+            "[[blocker.all]]\nversion = \"deps.dev:cargo/x\"\nat-least = { step = \"nope\" }\n",
+            "no earlier step `nope`",
+        ),
+        (
+            "[[blocker.all]]\nid = \"m\"\nstate = \"github:o/r#1\"\n[[blocker.all]]\nversion = \"deps.dev:cargo/x\"\nat-least = { step = \"m\" }\n",
+            "step `m` finds no tag",
+        ),
+        (
+            "version = \"deps.dev:cargo/x\"\nat-least = { step = \"r\" }\n",
+            "no earlier step `r`",
+        ),
+        (
+            "[[blocker.all]]\nstate = \"github:o/r#1\"\nextra = 1\n",
+            "step 1",
+        ),
+    ] {
+        let error = first_error(&format!("{blocker}{body}"));
+        assert!(error.contains(message), "{body}: {error}");
+    }
 }

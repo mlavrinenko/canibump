@@ -21,9 +21,6 @@ Or grab a binary from the [latest release](https://github.com/mlavrinenko/canibu
 Drop a `canibump.toml` in your repo:
 
 ```toml
-[settings]
-ttl = "6h"            # reuse results this long (default 6h)
-
 [[blocker]]
 id = "llama-blocking-sync"
 note = "apps/llama-cpp-16gb.nix: drop the GGML_CUDA_BLOCKING_SYNC postPatch"
@@ -32,15 +29,14 @@ state = "github:ggml-org/llama.cpp#26487"
 [[blocker]]
 id = "serde-pin"
 note = "Cargo.toml: unpin serde"
-state = "github:serde-rs/serde#2590"
+reached = "github:serde-rs/serde#2590"
+in = { tags = "v*" }
 ```
-
-Then:
 
 ```console
 $ canibump
 waiting   llama-blocking-sync  github:ggml-org/llama.cpp#26487 is open
-bumpable  serde-pin            github:serde-rs/serde#2590 merged (Cargo.toml: unpin serde)
+bumpable  serde-pin            github:serde-rs/serde#2590 (110af31) is in v1.0.185 (Cargo.toml: unpin serde)
 $ echo $?
 10
 ```
@@ -77,13 +73,7 @@ in = { branch = "master" }
 ```
 
 GitHub answers through its API, no clone. A `git:` remote gets a bare clone of
-just the refs you ask about under `~/.cache/canibump/git/`, via gix, reused
-across runs.
-
-```console
-$ canibump
-bumpable  serde-released  github:serde-rs/serde#2590 (110af31) is in v1.0.185 (Cargo.toml: unpin serde)
-```
+just the refs you ask about under `~/.cache/canibump/git/`, via gix.
 
 `version`: a package is at least some version. Repology covers distro repos,
 nixpkgs channels included (`nix_unstable`, `nix_stable_25_11`). deps.dev
@@ -101,6 +91,37 @@ at-least = "0.6.0"
 
 canibump asks Repology once per project per run, at most once a second, with
 a User-Agent naming itself, as Repology's API rules ask.
+
+### Chains
+
+Real blockers come in chains: merged, then released, then packaged.
+`[[blocker.all]]` holds only when every step does, checked in order, and
+stops at the first that doesn't. `[[blocker.any]]` holds when one does. Steps
+nest, and an `id` lets a later step use the tag an earlier `reached` found.
+
+```toml
+[[blocker]]
+id = "llama-blocking-sync"
+note = "apps/llama-cpp-16gb.nix: drop the GGML_CUDA_BLOCKING_SYNC postPatch"
+
+[[blocker.all]]
+state = "github:ggml-org/llama.cpp#26487"
+
+[[blocker.all]]
+id = "released"
+reached = "github:ggml-org/llama.cpp#26487"
+in = { tags = "v*" }
+
+[[blocker.all]]
+version = "repology:llama.cpp"
+repo = "nix_unstable"
+srcname = "llama-cpp"
+at-least = { step = "released" }
+```
+
+A dead or failed step never lets the chain read bumpable. In an any-of, a
+failed step beats a waiting one, and the whole thing is dead only when every
+step is.
 
 ### Exit codes
 
@@ -128,29 +149,19 @@ canibump -m path/to/canibump.toml
 
 ### Cache
 
-Every run writes the results to
-`$XDG_CACHE_HOME/canibump/state/<absolute manifest path>.json`
+Every run writes `$XDG_CACHE_HOME/canibump/state/<absolute manifest path>.json`
 (`~/.cache/...` without XDG), so other tools read the state offline:
 
 ```json
-{
-  "version": 1,
-  "manifest": "/home/me/repo/canibump.toml",
-  "entries": [
-    {
-      "id": "serde-pin",
-      "note": "Cargo.toml: unpin serde",
-      "status": "bumpable",
-      "detail": "github:serde-rs/serde#2590 merged",
-      "checked_at": "2026-10-10T12:00:00Z",
-      "fresh_until": "2026-10-10T18:00:00Z",
-      "spec": "state = \"github:serde-rs/serde#2590\"\n"
-    }
-  ]
-}
+{"version": 1, "manifest": "/home/me/repo/canibump.toml", "entries": [
+  {"id": "serde-pin", "note": "Cargo.toml: unpin serde", "status": "bumpable",
+   "detail": "github:serde-rs/serde#2590 (110af31) is in v1.0.185",
+   "checked_at": "2026-10-10T12:00:00Z", "fresh_until": "2026-10-10T18:00:00Z",
+   "spec": "reached = ..."}]}
 ```
 
-Move it with `--cache FILE` or `[settings] cache = "FILE"` (relative to the
+Results stay fresh for `[settings] ttl = "6h"` (the default). Move the file
+with `--cache FILE` or `[settings] cache = "FILE"` (relative to the
 manifest). A failed check is never fresh, so the next run retries it.
 
 ### Auth
@@ -160,21 +171,15 @@ says. No token works too, just with GitHub's tighter rate limit.
 
 ## Development
 
-Prerequisites: [Nix](https://nixos.org/) with flakes enabled.
+Needs [Nix](https://nixos.org/) with flakes.
 
 ```bash
-direnv allow         # or: nix develop
-just install-hooks   # pre-commit hook running the (memoized) gate
-
-just check           # fmt, clippy, tests, unused deps, file size, drift, copy-paste, tasks
-just deny            # cargo-deny: advisories, licenses, bans (needs network)
-just build
-just test
-just cover           # code coverage via cargo-llvm-cov (70% minimum)
-just fmt             # format code
+direnv allow   # or: nix develop
+just check     # fmt, clippy, tests, unused deps, file size, drift, copy-paste, tasks
+just cover     # coverage, 70% minimum
 ```
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for coding conventions.
+Conventions live in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

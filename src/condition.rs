@@ -1,0 +1,275 @@
+//! Conditions: when a blocker, or one step of it, is resolved.
+//!
+//! A condition table is read by the key present, then deserialized into
+//! that condition's own type, so an unknown key or a bad reference is an
+//! error naming it.
+
+use serde::Deserialize;
+use toml::{Table, Value};
+
+use crate::refs::{ItemRef, PackageRef, Reachable};
+
+/// Condition keys a blocker may carry, one per blocker.
+pub const CONDITION_KEYS: &[&str] = &["state", "reached", "version", "all", "any"];
+
+/// When a blocker is resolved.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Condition {
+    /// An issue is fixed, or a PR merged.
+    State(StateCondition),
+    /// A commit, or a merged PR's merge commit, is in a branch or tag.
+    Reached(ReachedCondition),
+    /// A package version is at least a bound.
+    Version(VersionCondition),
+    /// Every step holds, checked in order.
+    All(Vec<Step>),
+    /// Some step holds, checked in order.
+    Any(Vec<Step>),
+}
+
+/// One step of an all-of or any-of.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Step {
+    /// A name later steps refer to, e.g. `at-least = { step = "released" }`.
+    pub id: Option<String>,
+    /// What must hold.
+    pub condition: Condition,
+}
+
+/// The `at-least` of a `version` condition.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Bound {
+    /// A literal version.
+    Version(String),
+    /// The tag an earlier `reached` step with `in = { tags = ... }` found.
+    Step(String),
+}
+
+/// `state = "<item>"`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StateCondition {
+    /// The issue or PR.
+    pub item: ItemRef,
+}
+
+/// `reached = "<commit or PR>"` with `in = { ... }`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ReachedCondition {
+    /// The commit, or the PR whose merge commit counts.
+    pub target: Reachable,
+    /// Where it has to arrive.
+    pub within: Within,
+}
+
+/// `version = "<package>"` with `at-least = "<version>"`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VersionCondition {
+    /// The package and where to look.
+    pub package: PackageRef,
+    /// The lowest version that resolves it.
+    pub at_least: Bound,
+}
+
+/// The `in` of a `reached` condition.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum Within {
+    /// `{ branch = "main" }`.
+    Branch(String),
+    /// `{ tag = "v1.2" }`.
+    Tag(String),
+    /// `{ tags = "v*", since = "0.5.0" }`: the first matching tag, in version
+    /// order, at or after `since`.
+    Tags {
+        /// Which tags count.
+        pattern: glob::Pattern,
+        /// Ignore tags below this version.
+        since: Option<String>,
+    },
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawState {
+    state: String,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawReached {
+    reached: String,
+    #[serde(rename = "in")]
+    within: RawWithin,
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields, rename_all = "kebab-case")]
+struct RawVersion {
+    version: String,
+    repo: Option<String>,
+    srcname: Option<String>,
+    at_least: RawBound,
+}
+
+#[derive(Deserialize)]
+#[serde(untagged)]
+enum RawBound {
+    Version(String),
+    Step { step: String },
+}
+
+#[derive(Deserialize)]
+#[serde(deny_unknown_fields)]
+struct RawWithin {
+    branch: Option<String>,
+    tag: Option<String>,
+    tags: Option<String>,
+    since: Option<String>,
+}
+
+impl RawWithin {
+    fn parse(self) -> Result<Within, String> {
+        let one_of = "`in` needs one of branch, tag, tags";
+        match (self.branch, self.tag, self.tags, self.since) {
+            (Some(_) | None, Some(_) | None, None, Some(_)) => {
+                Err("`since` goes with `tags`".to_owned())
+            }
+            (Some(branch), None, None, None) => Ok(Within::Branch(branch)),
+            (None, Some(tag), None, None) => Ok(Within::Tag(tag)),
+            (None, None, Some(tags), since) => {
+                let pattern = glob::Pattern::new(&tags)
+                    .map_err(|error| format!("`tags = \"{tags}\"`: {error}"))?;
+                Ok(Within::Tags { pattern, since })
+            }
+            _ => Err(one_of.to_owned()),
+        }
+    }
+}
+
+/// Deserializes a condition table into its own type.
+fn typed<T: serde::de::DeserializeOwned>(table: Table) -> Result<T, String> {
+    Value::Table(table)
+        .try_into()
+        .map_err(|error: toml::de::Error| error.message().to_owned())
+}
+
+/// Reads the one condition a table holds, by the condition key present.
+pub(crate) fn parse_condition(table: Table) -> Result<Condition, String> {
+    let present: Vec<&str> = CONDITION_KEYS
+        .iter()
+        .copied()
+        .filter(|key| table.contains_key(*key))
+        .collect();
+    match present.as_slice() {
+        ["state"] => {
+            let raw: RawState = typed(table)?;
+            let item = raw.state.parse().map_err(|error| format!("{error}"))?;
+            Ok(Condition::State(StateCondition { item }))
+        }
+        ["version"] => {
+            let raw: RawVersion = typed(table)?;
+            let package = PackageRef::parse(&raw.version, raw.repo, raw.srcname)
+                .map_err(|error| format!("{error}"))?;
+            Ok(Condition::Version(VersionCondition {
+                package,
+                at_least: match raw.at_least {
+                    RawBound::Version(version) => Bound::Version(version),
+                    RawBound::Step { step } => Bound::Step(step),
+                },
+            }))
+        }
+        ["reached"] => {
+            let raw: RawReached = typed(table)?;
+            let target = raw.reached.parse().map_err(|error| format!("{error}"))?;
+            let within = raw.within.parse()?;
+            Ok(Condition::Reached(ReachedCondition { target, within }))
+        }
+        ["all"] => Ok(Condition::All(parse_steps(table, "all")?)),
+        ["any"] => Ok(Condition::Any(parse_steps(table, "any")?)),
+        [] => Err(format!(
+            "needs one condition: {}",
+            CONDITION_KEYS.join(", ")
+        )),
+        several => Err(format!(
+            "has several conditions ({}); keep one",
+            several.join(", ")
+        )),
+    }
+}
+
+/// Reads the steps under `key`, which must be the table's only key.
+fn parse_steps(mut table: Table, key: &str) -> Result<Vec<Step>, String> {
+    let value = table.remove(key).unwrap_or(Value::Array(Vec::new()));
+    if let Some(other) = table.keys().next() {
+        return Err(format!("unknown key `{other}` beside `{key}`"));
+    }
+    let Value::Array(items) = value else {
+        return Err(format!(
+            "`{key}` holds steps; write them as [[...{key}]] tables"
+        ));
+    };
+    if items.is_empty() {
+        return Err(format!("`{key}` needs at least one step"));
+    }
+    items
+        .into_iter()
+        .enumerate()
+        .map(|(index, item)| {
+            let Value::Table(mut table) = item else {
+                return Err(format!("`{key}`: steps are tables"));
+            };
+            let id = match table.remove("id") {
+                None => None,
+                Some(Value::String(id)) => Some(id),
+                Some(_) => return Err(format!("step {}: `id` must be a string", index + 1)),
+            };
+            let label = id.as_ref().map_or_else(
+                || format!("step {}", index + 1),
+                |id| format!("step `{id}`"),
+            );
+            let condition =
+                parse_condition(table).map_err(|message| format!("{label}: {message}"))?;
+            Ok(Step { id, condition })
+        })
+        .collect()
+}
+
+/// Checks that step ids are unique and every `at-least = { step = ... }`
+/// names an earlier `reached` step that finds a tag.
+pub(crate) fn check_steps(condition: &Condition) -> Result<(), String> {
+    check_in(condition, &mut Vec::new())
+}
+
+fn check_in(condition: &Condition, known: &mut Vec<(String, bool)>) -> Result<(), String> {
+    match condition {
+        Condition::All(steps) | Condition::Any(steps) => {
+            for step in steps {
+                check_in(&step.condition, known)?;
+                if let Some(id) = &step.id {
+                    if known.iter().any(|(seen, _)| seen == id) {
+                        return Err(format!("duplicate step id `{id}`"));
+                    }
+                    let finds_tag = matches!(
+                        &step.condition,
+                        Condition::Reached(ReachedCondition {
+                            within: Within::Tags { .. },
+                            ..
+                        })
+                    );
+                    known.push((id.clone(), finds_tag));
+                }
+            }
+            Ok(())
+        }
+        Condition::Version(VersionCondition {
+            at_least: Bound::Step(name),
+            ..
+        }) => match known.iter().find(|(seen, _)| seen == name) {
+            None => Err(format!("`at-least` names no earlier step `{name}`")),
+            Some((_, false)) => Err(format!(
+                "step `{name}` finds no tag; point `at-least` at a `reached` step with `in = {{ tags = ... }}`"
+            )),
+            Some((_, true)) => Ok(()),
+        },
+        Condition::State(_) | Condition::Reached(_) | Condition::Version(_) => Ok(()),
+    }
+}

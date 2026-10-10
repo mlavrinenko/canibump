@@ -42,3 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   run, at most once a second, with a User-Agent naming canibump.
   `CANIBUMP_GITHUB_API`, `CANIBUMP_REPOLOGY_API` and `CANIBUMP_DEPSDEV_API`
   point a provider elsewhere.
+- `[[blocker.all]]` and `[[blocker.any]]` chain steps, nested as deep as you
+  like. An all-of stops at its first step that does not hold; an any-of
+  resolves on its first that does. `at-least = { step = "<id>" }` uses the
+  tag an earlier `reached` step found, checked when the manifest loads.

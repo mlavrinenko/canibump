@@ -1,6 +1,12 @@
 //! Turns a blocker's condition into an [`Outcome`].
 
-use crate::manifest::{Condition, ReachedCondition, StateCondition, VersionCondition, Within};
+use std::collections::HashMap;
+use std::future::Future;
+use std::pin::Pin;
+
+use crate::condition::{
+    Bound, Condition, ReachedCondition, StateCondition, Step, VersionCondition, Within,
+};
 use crate::outcome::{Outcome, Status};
 use crate::provider::{CheckError, CodeHost, GitRef, ItemState, Registry};
 use crate::refs::{ItemRef, Reachable, Source};
@@ -11,12 +17,84 @@ use crate::version;
 /// A provider error becomes a [`Status::Failed`] outcome, never a resolved
 /// one.
 pub async fn evaluate(condition: &Condition, registry: &Registry) -> Outcome {
-    let result = match condition {
-        Condition::State(state) => evaluate_state(state, registry).await,
-        Condition::Reached(reached) => evaluate_reached(reached, registry).await,
-        Condition::Version(version) => evaluate_version(version, registry).await,
-    };
-    result.unwrap_or_else(|error| Outcome::new(Status::Failed, error.to_string()))
+    evaluate_in(condition, registry, &mut Outputs::new()).await
+}
+
+/// Values named steps hand to later ones, by step id.
+type Outputs = HashMap<String, String>;
+
+type Pending<'a> = Pin<Box<dyn Future<Output = Outcome> + Send + 'a>>;
+
+fn evaluate_in<'a>(
+    condition: &'a Condition,
+    registry: &'a Registry,
+    outputs: &'a mut Outputs,
+) -> Pending<'a> {
+    Box::pin(async move {
+        let result = match condition {
+            Condition::State(state) => evaluate_state(state, registry).await,
+            Condition::Reached(reached) => evaluate_reached(reached, registry).await,
+            Condition::Version(version) => evaluate_version(version, registry, outputs).await,
+            Condition::All(steps) => Ok(all_of(steps, registry, outputs).await),
+            Condition::Any(steps) => Ok(any_of(steps, registry, outputs).await),
+        };
+        result.unwrap_or_else(|error| Outcome::new(Status::Failed, error.to_string()))
+    })
+}
+
+/// Runs one step and records its value under its id.
+async fn run_step(step: &Step, registry: &Registry, outputs: &mut Outputs) -> Outcome {
+    let outcome = evaluate_in(&step.condition, registry, outputs).await;
+    if let (Some(id), Some(value)) = (&step.id, &outcome.value) {
+        outputs.insert(id.clone(), value.clone());
+    }
+    outcome
+}
+
+/// Prefixes an outcome's detail with its step's id, or its 1-based position.
+fn labelled(step: &Step, index: usize, mut outcome: Outcome) -> Outcome {
+    let label = step
+        .id
+        .clone()
+        .unwrap_or_else(|| format!("step {}", index + 1));
+    outcome.detail = format!("{label}: {}", outcome.detail);
+    outcome
+}
+
+/// Every step must hold; the first that does not decides the outcome.
+async fn all_of(steps: &[Step], registry: &Registry, outputs: &mut Outputs) -> Outcome {
+    let mut last = String::new();
+    for (index, step) in steps.iter().enumerate() {
+        let outcome = run_step(step, registry, outputs).await;
+        if outcome.status != Status::Bumpable {
+            return labelled(step, index, outcome);
+        }
+        last = outcome.detail;
+    }
+    Outcome::new(
+        Status::Bumpable,
+        format!("all {} steps hold; {last}", steps.len()),
+    )
+}
+
+/// The first step that holds resolves it. Otherwise a failure wins over a
+/// wait, and a wait over a dead step, so it reads dead only when all are.
+async fn any_of(steps: &[Step], registry: &Registry, outputs: &mut Outputs) -> Outcome {
+    let (mut failed, mut waiting, mut dead) = (None, None, None);
+    for (index, step) in steps.iter().enumerate() {
+        let outcome = labelled(step, index, run_step(step, registry, outputs).await);
+        let slot = match outcome.status {
+            Status::Bumpable => return outcome,
+            Status::Failed => &mut failed,
+            Status::Waiting => &mut waiting,
+            Status::Dead => &mut dead,
+        };
+        slot.get_or_insert(outcome);
+    }
+    failed
+        .or(waiting)
+        .or(dead)
+        .unwrap_or_else(|| Outcome::new(Status::Waiting, "no steps"))
 }
 
 async fn item_state(item: &ItemRef, registry: &Registry) -> Result<ItemState, CheckError> {
@@ -101,7 +179,9 @@ async fn evaluate_reached(
         Within::Tags { pattern, since } => {
             let tags = candidate_tags(host, source, pattern, since.as_deref()).await?;
             Ok(match first_containing(host, source, &sha, &tags).await? {
-                Some(tag) => Outcome::new(Status::Bumpable, format!("{label} is in {tag}")),
+                Some(tag) => {
+                    Outcome::new(Status::Bumpable, format!("{label} is in {tag}")).with_value(tag)
+                }
                 None => Outcome::new(
                     Status::Waiting,
                     format!("{label} is in no {} tag yet", pattern.as_str()),
@@ -135,10 +215,22 @@ impl Found<'_> {
 async fn evaluate_version(
     condition: &VersionCondition,
     registry: &Registry,
+    outputs: &Outputs,
 ) -> Result<Outcome, CheckError> {
     let package = &condition.package;
+    let bound = match &condition.at_least {
+        Bound::Version(version) => version,
+        Bound::Step(step) => match outputs.get(step) {
+            Some(found) => found,
+            None => {
+                return Ok(Outcome::new(
+                    Status::Failed,
+                    format!("step `{step}` found no tag to compare against"),
+                ));
+            }
+        },
+    };
     let versions = registry.index(package.index())?.versions(package).await?;
-    let bound = &condition.at_least;
     let highest = versions
         .iter()
         .max_by(|left, right| version::compare(left, right));

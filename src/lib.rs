@@ -4,6 +4,7 @@
 pub mod auth;
 pub mod cache;
 pub mod cli;
+pub mod condition;
 pub mod eval;
 pub mod manifest;
 pub mod outcome;

@@ -36,6 +36,8 @@ pub struct Outcome {
     pub status: Status,
     /// Why, in one line.
     pub detail: String,
+    /// What a later step may use, e.g. the first tag that has a commit.
+    pub value: Option<String>,
 }
 
 impl Outcome {
@@ -45,6 +47,14 @@ impl Outcome {
         Self {
             status,
             detail: detail.into(),
+            value: None,
         }
+    }
+
+    /// The same outcome, carrying a value for later steps.
+    #[must_use]
+    pub fn with_value(mut self, value: impl Into<String>) -> Self {
+        self.value = Some(value.into());
+        self
     }
 }
