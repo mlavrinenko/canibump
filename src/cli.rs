@@ -1,7 +1,8 @@
 //! Command-line interface.
 
+use anstream::AutoStream;
 use anyhow::{Context as _, Result, bail};
-use clap::{Args, Parser, Subcommand};
+use clap::{Args, ColorChoice, Parser, Subcommand};
 use jiff::Timestamp;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
@@ -28,6 +29,9 @@ pub struct Cli {
     /// Print JSON instead of lines.
     #[arg(long, global = true)]
     pub json: bool,
+    /// When to color the status words; `auto` honors the terminal and `NO_COLOR`.
+    #[arg(long, global = true, value_enum, default_value_t = ColorChoice::Auto)]
+    pub color: ColorChoice,
     /// The check flags, for a bare `canibump` or ahead of `check`.
     #[command(flatten)]
     pub check: CheckArgs,
@@ -89,13 +93,13 @@ pub fn run(cli: &Cli) -> Result<u8> {
             bail!("--refresh goes with check, not {}", other.name())
         }
         Some(Command::Schema) => {
-            print(&crate::schema::render())?;
+            print(cli, &crate::schema::render())?;
             Ok(report::EXIT_OK)
         }
         Some(Command::Status { path }) => {
             let (_, cache_path) = load(cli)?;
             if *path {
-                print(&format!("{}\n", cache_path.display()))?;
+                print(cli, &format!("{}\n", cache_path.display()))?;
                 return Ok(report::EXIT_OK);
             }
             status(cli, &cache_path)
@@ -160,13 +164,19 @@ fn output(cli: &Cli, cache_path: &Path, state: &StateFile, now: Timestamp) -> Re
     } else {
         report::lines(&state.entries, now)
     };
-    print(&text)?;
+    print(cli, &text)?;
     Ok(report::exit_code(&state.entries))
 }
 
-fn print(text: &str) -> Result<()> {
-    std::io::stdout()
-        .lock()
+/// Writes to stdout, which keeps the styles in `text` when `--color` and the
+/// terminal say so and strips them otherwise.
+fn print(cli: &Cli, text: &str) -> Result<()> {
+    let choice = match cli.color {
+        ColorChoice::Auto => anstream::ColorChoice::Auto,
+        ColorChoice::Always => anstream::ColorChoice::Always,
+        ColorChoice::Never => anstream::ColorChoice::Never,
+    };
+    AutoStream::new(std::io::stdout().lock(), choice)
         .write_all(text.as_bytes())
         .context("writing to stdout")
 }

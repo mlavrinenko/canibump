@@ -87,6 +87,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   Repology about one project share a single request, and requests stay a
   second apart; blockers on one git remote take turns at its clone and
   fetch.
+- The status word is colored on a terminal: bumpable green, dead magenta,
+  failed red, waiting dimmed. `--color auto|always|never` and `NO_COLOR`
+  decide; pipes and `--json` stay plain. A dead line ends with the blocker's
+  note, as a bumpable one does, and a stale line reads
+  `(stale, checked 7h ago)` rather than a raw instant. Columns align by
+  chars, so a non-ASCII id no longer shifts them.
 
 ### Fixed
 

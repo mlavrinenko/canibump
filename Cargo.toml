@@ -25,6 +25,8 @@ path = "src/main.rs"
 thiserror = "2"
 
 anyhow = "1"
+anstream = "1.0.0"
+anstyle = "1.0.14"
 clap = { version = "4", features = ["derive"] }
 serde = { version = "1.0.229", features = ["derive"] }
 toml = "1.1.8"

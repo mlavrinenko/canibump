@@ -3,6 +3,7 @@
 use std::fmt::Write as _;
 use std::path::Path;
 
+use anstyle::{AnsiColor, Style};
 use jiff::Timestamp;
 use serde::Serialize;
 
@@ -34,33 +35,64 @@ pub fn exit_code(entries: &[Entry]) -> u8 {
     }
 }
 
-/// One line per entry: status, id, detail. A bumpable entry adds its note; a
-/// stale one adds when it was checked.
+/// How long ago, as the largest whole unit among days, hours and minutes.
+const AGE_UNITS: [(i64, &str); 3] = [(86_400, "d"), (3_600, "h"), (60, "m")];
+
+/// One line per entry: status, id, detail. A bumpable or dead entry adds its
+/// note, the workaround to drop or rethink; a stale one adds how long ago it
+/// was checked.
+///
+/// The status word carries ANSI styles. Write the text through an
+/// [`anstream::AutoStream`], which keeps them on a terminal and strips them
+/// everywhere else.
 #[must_use]
 pub fn lines(entries: &[Entry], now: Timestamp) -> String {
     let id_width = entries
         .iter()
-        .map(|entry| entry.id.len())
+        .map(|entry| entry.id.chars().count())
         .max()
         .unwrap_or(0);
     let mut out = String::new();
     for entry in entries {
+        let style = style(entry.status);
+        let label = entry.status.label();
+        let pad = STATUS_WIDTH.saturating_sub(label.chars().count());
         let mut line = format!(
-            "{:STATUS_WIDTH$}  {:id_width$}  {}",
-            entry.status.label(),
-            entry.id,
-            entry.detail
+            "{style}{label}{style:#}{:pad$}  {:id_width$}  {}",
+            "", entry.id, entry.detail
         );
-        if entry.status == Status::Bumpable {
+        if matches!(entry.status, Status::Bumpable | Status::Dead) {
             let _ = write!(line, " ({})", entry.note);
         }
         if is_stale(entry, now) {
-            let _ = write!(line, " (stale, checked {})", entry.checked_at);
+            let _ = write!(line, " (stale, checked {})", age(now, entry.checked_at));
         }
         out.push_str(line.trim_end());
         out.push('\n');
     }
     out
+}
+
+/// The style of a status word: what needs you stands out, waiting recedes.
+const fn style(status: Status) -> Style {
+    match status {
+        Status::Waiting => Style::new().dimmed(),
+        Status::Bumpable => AnsiColor::Green.on_default(),
+        Status::Dead => AnsiColor::Magenta.on_default(),
+        Status::Failed => AnsiColor::Red.on_default(),
+    }
+}
+
+/// `7h ago`, or `just now` under a minute.
+fn age(now: Timestamp, then: Timestamp) -> String {
+    let seconds = now.duration_since(then).as_secs();
+    AGE_UNITS
+        .iter()
+        .find(|(size, _)| seconds >= *size)
+        .map_or_else(
+            || "just now".to_owned(),
+            |(size, unit)| format!("{}{unit} ago", seconds / size),
+        )
 }
 
 fn is_stale(entry: &Entry, now: Timestamp) -> bool {
@@ -122,3 +154,7 @@ impl<'a> Report<'a> {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "report_tests.rs"]
+mod tests;

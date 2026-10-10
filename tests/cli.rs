@@ -1,97 +1,15 @@
 //! End-to-end: the built binary against an httpmock GitHub.
 
-use std::fs::Permissions;
-use std::os::unix::fs::PermissionsExt as _;
-use std::path::{Path, PathBuf};
+mod common;
+
+use std::path::Path;
 
 use assert_cmd::Command;
 use httpmock::Method::GET;
-use httpmock::{Mock, MockServer};
 use predicates::prelude::*;
 use serde_json::{Value, json};
-use tempfile::TempDir;
 
-struct Repo {
-    dir: TempDir,
-    server: MockServer,
-}
-
-impl Repo {
-    fn new(manifest: &str) -> Self {
-        let dir = tempfile::tempdir().expect("tempdir");
-        std::fs::write(dir.path().join("canibump.toml"), manifest).expect("write manifest");
-        Self {
-            dir,
-            server: MockServer::start(),
-        }
-    }
-
-    fn cmd(&self) -> Command {
-        let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("binary should build");
-        cmd.current_dir(self.dir.path())
-            .env("CANIBUMP_GITHUB_API", self.server.base_url())
-            .env("CANIBUMP_REPOLOGY_API", self.server.base_url())
-            .env("CANIBUMP_DEPSDEV_API", self.server.base_url())
-            .env("GH_TOKEN", "t0ken")
-            .env_remove("GITHUB_TOKEN")
-            .env("XDG_CACHE_HOME", self.dir.path().join("cache"));
-        cmd
-    }
-
-    /// Like [`Repo::cmd`], but with no token in the environment and a `gh`
-    /// that logs each call and prints one: the log path says who asked.
-    fn cmd_with_gh(&self) -> (Command, PathBuf) {
-        let bin = self.dir.path().join("bin");
-        std::fs::create_dir_all(&bin).expect("mkdir");
-        let log = self.dir.path().join("gh.log");
-        let script = bin.join("gh");
-        let body = format!(
-            "#!/bin/sh\necho called >> '{}'\necho t0ken\n",
-            log.display()
-        );
-        std::fs::write(&script, body).expect("write gh");
-        std::fs::set_permissions(&script, Permissions::from_mode(0o755)).expect("chmod gh");
-        let mut cmd = self.cmd();
-        cmd.env_remove("GH_TOKEN").env("PATH", &bin);
-        (cmd, log)
-    }
-
-    fn issue(&self, number: u64, status: u16, body: &Value) -> Mock<'_> {
-        self.server.mock(|when, then| {
-            when.method(GET).path(format!("/repos/o/r/issues/{number}"));
-            then.status(status).json_body(body.clone());
-        })
-    }
-
-    fn cache_path(&self) -> PathBuf {
-        let manifest = self.dir.path().join("canibump.toml");
-        let canonical = manifest.canonicalize().expect("canonical");
-        let relative = canonical.strip_prefix("/").expect("absolute");
-        self.dir
-            .path()
-            .join("cache/canibump/state")
-            .join(format!("{}.json", relative.display()))
-    }
-}
-
-/// How often the fake `gh` ran.
-fn gh_calls(log: &Path) -> usize {
-    std::fs::read_to_string(log).map_or(0, |text| text.lines().count())
-}
-
-fn blocker(id: &str, number: u64) -> String {
-    format!(
-        "[[blocker]]\nid = \"{id}\"\nnote = \"drop the {id} patch\"\nstate = \"github:o/r#{number}\"\n"
-    )
-}
-
-fn open() -> Value {
-    json!({"state": "open"})
-}
-
-fn fixed() -> Value {
-    json!({"state": "closed", "state_reason": "completed"})
-}
+use common::{Repo, blocker, fixed, gh_calls, open};
 
 #[test]
 fn prints_one_line_per_blocker_and_exits_10_when_one_is_bumpable() {
@@ -221,12 +139,11 @@ fn status_marks_stale_entries() {
     let repo = Repo::new(&("[settings]\nttl = \"0s\"\n".to_owned() + &blocker("waits", 1)));
     repo.issue(1, 200, &open());
     repo.cmd().assert().code(0);
-    repo.cmd().arg("status").assert().code(0).stdout(
-        predicate::str::is_match(
-            r"^waiting   waits  github:o/r#1 is open \(stale, checked \S+\)\n$",
-        )
-        .expect("regex"),
-    );
+    repo.cmd()
+        .arg("status")
+        .assert()
+        .code(0)
+        .stdout("waiting   waits  github:o/r#1 is open (stale, checked just now)\n");
 }
 
 #[test]

@@ -7,7 +7,7 @@ groups:
       src/auth_tests.rs: 8f5e20b47c8c1d34cad8d63ffc63de43d8334a0c0ea06fd4e19b28942c265eb5
       src/cache.rs: 5cf60c00ce367aecba5bf49db23246ce6c35294c416d3623d940c995576a1744
       src/cache_tests.rs: c49552e2ef56fa54feccee38b6a661cfaf9ca253f2379824b664f14e8bc96cc0
-      src/cli.rs: c88d4120513b7f3623de604c88f5f9066267bb1e2c6806876ed6efee24f3743c
+      src/cli.rs: b350559896e00b6ca67f54be45cbc80c321d69a5707d8fee11ac69dfd97b6004
       src/condition.rs: ef77d42a13d23e95a735b650d299268e66c6ffe6c1dc3b84102990565fe93664
       src/eval.rs: ccfc8e69bf6659258ae8de87154b4599418d5c3bbb479e3712f4fb02c9fc85e7
       src/eval_chain_tests.rs: 318c5939aaffde9a2c7afe0a2fb9a8faa304f7c243d8c14578143cbe0aad8d1b
@@ -42,13 +42,14 @@ groups:
       src/provider/repology_tests.rs: 0564819b59b92b6ff2cae8c3ccb265f49a1543ba7f2e397fe1621f799c34ef56
       src/refs.rs: bfa389cbe4fbdd0ea23293a0344bbf5f41693183ceb6633fb31d47a74fab383a
       src/refs_tests.rs: 8a844a1734b8452ec0162cf4ef43e0ced1679c922bdd3ea1bc963d170238dcd8
-      src/report.rs: dee6e1e55133502c7c68d7245051ba00d7def628dd54a98f0ea9fac8336a7da7
+      src/report.rs: 98543e7c9c0d1afa458eff137165c6bb70a06b88760d2017f12dcc83ae52838f
+      src/report_tests.rs: 97bf88043435206ea90b2ea71aa1968e900a45bb22137c926e313b921cc80cdd
       src/run.rs: fd7a87a671115e32943863324ad7206b0f6bcfaf8f3c678b24af0d96326714d6
       src/schema.rs: 93947e9fccab2f55a54a1e51185b186857363dc4044ed1a25360bc2f74414f06
       src/version.rs: 29e1d00e92d3692e2dfde583b6c4abe3fb728187fec41a6abf55f0badead2148
       src/version_tests.rs: b1e44538b2ca6e4a20ef46b83c51c8e2cfa285ff3c64b9541ceb8dc598da6f82
     dependents:
-      README.md: ec7f67a636efe09699a795b9f924ddb2ff4232dd2ca09f65b2d9ed791448e64a
+      README.md: 330903fabbaac1bfde2275b49b5625e941e19861bb43761037da48207179bdac
       docs/manifest.md: 1c7d1df60fe56b609321b2bdbd8b6efc9635cd6cf6e58f2b37803d9a424532c1
       www/index.html: 733e8f241f271be1d0db949f62f8c6045378afe8d1146918d09179dc9cd52f91
   dev-docs:
@@ -63,16 +64,16 @@ groups:
       canibump.toml: b836c7d85578e0de6c7b9b55ffe2936f5198fdf2b884d34f192d747e5eb734a2
   release-notes:
     source:
-      Cargo.toml: 20195f28312798809e44b023488dc697a725c1a5a23a65d03ae6e5719baebe37
+      Cargo.toml: 20d5d6858b888d1bbc6d3fba47fa50708f79818e6f0d39e6dc3a811f36129bd2
     dependents:
-      CHANGELOG.md: c1e4b173a6912adcfb525794738171923d39319f9fa1e4e0e54dd764001b8f13
+      CHANGELOG.md: 36c25336876ee5529ece06104ab556dce3abbdfbcdbb4dff38dab72e2bf25df2
   schema:
     source:
       src/auth.rs: 13b2e1d778b5a76ebddbfeca85533ced64a9ab6c0eb84cea1438e0631be1bb21
       src/auth_tests.rs: 8f5e20b47c8c1d34cad8d63ffc63de43d8334a0c0ea06fd4e19b28942c265eb5
       src/cache.rs: 5cf60c00ce367aecba5bf49db23246ce6c35294c416d3623d940c995576a1744
       src/cache_tests.rs: c49552e2ef56fa54feccee38b6a661cfaf9ca253f2379824b664f14e8bc96cc0
-      src/cli.rs: c88d4120513b7f3623de604c88f5f9066267bb1e2c6806876ed6efee24f3743c
+      src/cli.rs: b350559896e00b6ca67f54be45cbc80c321d69a5707d8fee11ac69dfd97b6004
       src/condition.rs: ef77d42a13d23e95a735b650d299268e66c6ffe6c1dc3b84102990565fe93664
       src/eval.rs: ccfc8e69bf6659258ae8de87154b4599418d5c3bbb479e3712f4fb02c9fc85e7
       src/eval_chain_tests.rs: 318c5939aaffde9a2c7afe0a2fb9a8faa304f7c243d8c14578143cbe0aad8d1b
@@ -107,12 +108,13 @@ groups:
       src/provider/repology_tests.rs: 0564819b59b92b6ff2cae8c3ccb265f49a1543ba7f2e397fe1621f799c34ef56
       src/refs.rs: bfa389cbe4fbdd0ea23293a0344bbf5f41693183ceb6633fb31d47a74fab383a
       src/refs_tests.rs: 8a844a1734b8452ec0162cf4ef43e0ced1679c922bdd3ea1bc963d170238dcd8
-      src/report.rs: dee6e1e55133502c7c68d7245051ba00d7def628dd54a98f0ea9fac8336a7da7
+      src/report.rs: 98543e7c9c0d1afa458eff137165c6bb70a06b88760d2017f12dcc83ae52838f
+      src/report_tests.rs: 97bf88043435206ea90b2ea71aa1968e900a45bb22137c926e313b921cc80cdd
       src/run.rs: fd7a87a671115e32943863324ad7206b0f6bcfaf8f3c678b24af0d96326714d6
       src/schema.rs: 93947e9fccab2f55a54a1e51185b186857363dc4044ed1a25360bc2f74414f06
       src/version.rs: 29e1d00e92d3692e2dfde583b6c4abe3fb728187fec41a6abf55f0badead2148
       src/version_tests.rs: b1e44538b2ca6e4a20ef46b83c51c8e2cfa285ff3c64b9541ceb8dc598da6f82
     dependents:
-      README.md: ec7f67a636efe09699a795b9f924ddb2ff4232dd2ca09f65b2d9ed791448e64a
+      README.md: 330903fabbaac1bfde2275b49b5625e941e19861bb43761037da48207179bdac
       docs/manifest.md: 1c7d1df60fe56b609321b2bdbd8b6efc9635cd6cf6e58f2b37803d9a424532c1
       schema/canibump.schema.json: 42232c63b652c406bab5b10cf94bd4bef01a61f123f4e225036106ce5a3dd1b3

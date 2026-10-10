@@ -52,6 +52,13 @@ one of these.
 | `dead` | closed unmerged, wontfix, duplicate, or closed with no reason. Rethink the workaround |
 | `failed` | the check broke (network, auth, rate limit). Never counts as landed |
 
+Bumpable and dead lines end with the blocker's note, so you see which workaround to drop or
+rethink. A result past its TTL says so, as in `(stale, checked 7h ago)`.
+
+On a terminal the status word gets color. Bumpable is green, dead magenta, failed red, waiting
+dimmed. `NO_COLOR` switches it off, `--color always` or `--color never` overrides the guess,
+and pipes and `--json` stay plain.
+
 Three conditions and two combinators cover every target in one manifest.
 
 | Condition | Waits for | Targets |
