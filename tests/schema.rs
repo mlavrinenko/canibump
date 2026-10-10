@@ -57,6 +57,26 @@ fn the_nix_flake_manifest_validates() {
 }
 
 #[test]
+fn this_repos_own_manifest_validates_and_loads() {
+    let path = root().join("canibump.toml");
+    let text = std::fs::read_to_string(&path).expect("canibump.toml is committed");
+    assert!(
+        text.starts_with("#:schema ./schema/canibump.schema.json\n"),
+        "the first line wires the committed schema in"
+    );
+    let errors: Vec<String> = validator()
+        .iter_errors(&manifest(&text))
+        .map(|error| error.to_string())
+        .collect();
+    assert!(errors.is_empty(), "{errors:?}");
+    let loaded = canibump::manifest::Manifest::load(&path).expect("the manifest loads");
+    assert!(
+        !loaded.blockers.is_empty(),
+        "it tracks at least one blocker"
+    );
+}
+
+#[test]
 fn every_condition_shape_validates() {
     let text = r#"
 [settings]

@@ -57,6 +57,8 @@ groups:
   # `.config/nextest.toml` is a recipe body in practice — `status-level` lives
   # there because `cargo llvm-cov nextest` accepts the flag and ignores it — so
   # an edit to it changes what CONTRIBUTING.md and AGENTS.md describe.
+  # canibump.toml is a dependent too: each note cites a line of flake.nix or
+  # the Justfile, so moving that line flags the note.
   - name: dev-docs
     source:
       - flake.nix
@@ -66,3 +68,4 @@ groups:
     dependents:
       - CONTRIBUTING.md
       - AGENTS.md
+      - canibump.toml

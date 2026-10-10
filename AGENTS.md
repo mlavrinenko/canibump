@@ -53,6 +53,10 @@
   is finished on the same tag with `gh workflow run <release workflow> -f
   tag=vX.Y.Z`; a pushed tag never moves.
 - Eating your own dog food: the tool should use itself if applicable.
+  [canibump.toml](canibump.toml) lists the upstream items this repo's own
+  workarounds wait on; `just canibump` checks it (network-bound, outside
+  `just check`). When you comment a workaround, add its blocker with a real
+  upstream item you opened; keep the file:line in each note true.
 - Work is tracked with [MindTape](https://github.com/mlavrinenko/mindtape) in
   `truth/tasks/` (load the `mindtape` skill; `mt ls @agent` lists open agent work).
   Commits follow Conventional Commits; a work commit names its task in a

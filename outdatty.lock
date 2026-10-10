@@ -51,12 +51,13 @@ groups:
   dev-docs:
     source:
       .config/nextest.toml: e2eda0853a3c73ff4422e4d9a5f670c1aef1705b2281379dfdffdab04e837a79
-      .mmz/config.yaml: a0ade79fafe2f71263d45ced46e80a925d8576de6628cf424659c84871e389a1
-      Justfile: e598a8f9e0a7f1c4c06701765aa3eb73cca202a4abf8927435a98b648a81afdf
+      .mmz/config.yaml: 3eb84a051ace0213ad7f74bed77eab76fc536cb921032dce77a792f84bee6820
+      Justfile: db4b40358699cee46cbdd539ddf4380977ff4de1a7ef760a32497e56d8b141f7
       flake.nix: f89fe0bd042a080d0dfe2024a8da271365a45430d06b69e9ea6ecab602c69dc0
     dependents:
-      AGENTS.md: 49fbd61b9b2fd33348c5df607683180ae0f2aaa566ed5bad7e8003bfab49c701
-      CONTRIBUTING.md: 27568d2d26ae9fbe088312fe00b10a5466d6392e6fc6b9c022f94fa4f81e80c5
+      AGENTS.md: 808aa88b4033aed6350282726a7bfff1329bee5acac2c98a08fb7f0aaedef7ba
+      CONTRIBUTING.md: d0b3801951b8d2490e215ba632fe007a03328eb85e96118030fbc9882e7fa3a2
+      canibump.toml: b836c7d85578e0de6c7b9b55ffe2936f5198fdf2b884d34f192d747e5eb734a2
   release-notes:
     source:
       Cargo.toml: 4bf4e63816e02eb11f3075ff3005bad64a1eb0d831f9c2dcdd5433418325b8b5

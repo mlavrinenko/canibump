@@ -1,0 +1,31 @@
+#:schema ./schema/canibump.schema.json
+# Upstream fixes this repo's own workarounds wait on. `just canibump` says
+# which can go. Add a blocker whenever a comment explains a workaround.
+
+# cargo-llvm-cov finds no llvm-cov in nixpkgs' rustc, so the dev shell points
+# it at a standalone LLVM. The PR makes it fall back to matching LLVM tools on
+# PATH.
+[[blocker]]
+id = "llvm-cov-path-fallback"
+note = "flake.nix:81-82: drop the LLVM_COV and LLVM_PROFDATA exports, keep the matching LLVM on PATH"
+
+[[blocker.all]]
+id = "merged"
+state = "github:taiki-e/cargo-llvm-cov#522"
+
+[[blocker.all]]
+id = "released"
+reached = "github:taiki-e/cargo-llvm-cov#522"
+in = { tags = "v*" }
+
+[[blocker.all]]
+version = "repology:cargo-llvm-cov"
+repo = "nix_unstable"
+srcname = "cargo-llvm-cov"
+at-least = { step = "released" }
+
+# nextest does not run doctests, so `just test` makes a second pass for them.
+[[blocker]]
+id = "nextest-doctests"
+note = "Justfile:80: drop the `cargo test --doc` pass from `test` (and the doctest remarks in CONTRIBUTING.md, AGENTS.md, flake.nix)"
+state = "github:nextest-rs/nextest#16"

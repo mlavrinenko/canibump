@@ -296,6 +296,14 @@ deny:
 outdated:
     cargo outdated --workspace
 
+# Check the upstream items this repo's own workarounds wait on (canibump.toml),
+# with this checkout's binary. Network-bound, so it stays out of `just check`.
+# Exit 10 means a workaround can go: an answer, not a failure, which is why
+# `[no-exit-message]` keeps just from printing its own error line over it.
+[no-exit-message]
+canibump *ARGS:
+    cargo run --quiet -- {{ ARGS }}
+
 # Regenerate schema/canibump.schema.json from the manifest types. A test fails
 # while the committed file differs from what `canibump schema` prints.
 # Written through a temp file so a failed build never truncates the schema.
