@@ -3,14 +3,18 @@ algorithm: blake3
 groups:
   cli-docs:
     source:
+      src/auth.rs: 07d5361aa596a11d23d4fd098406226a3bcc6dfcf8f109916023ed0a90782157
+      src/auth_tests.rs: 02f13762af19a1afd2c9e0498c863b4a5c4aefea0305b017e52277f02883654d
       src/eval.rs: 6e2509740c0e5aa66964461720aa97f756d8cf68e3e793bc8f64152796e7d152
       src/eval_tests.rs: c9cc08a3791671894fe8ca9c0e0f4412681e9d71107eefcf45cc0ad80c4dd2bc
-      src/lib.rs: ce48c18d47ef08addd3e894c0148bbfdcfd3b9c36045ec8b79bf10bfaf3f9d71
+      src/lib.rs: 4965fd9e0704eead81146a8ee2d7683c4e94597ff43bf1bee6032449d68ecc2a
       src/main.rs: 4ab33ecbf76bd4d01aa9dd99a143ee3a52494dee23d80059e132974567b5ccc0
       src/manifest.rs: 55cc27dfaf61fcc34cb57c481a955e8e9984f1a29569d305f6e6d88979c26107
       src/manifest_tests.rs: ae0cb63192d0beebfef62fac7744f0d98240a0e0ddc5572cba782db715704919
       src/outcome.rs: fb77ab3ee4e84a3cc7022fedc26975e9ef26cc86a034061e0d4f05d14fa48eb9
-      src/provider/mod.rs: a74a491bb73a026340d14a19cc757d1817f54a26831b923229ae81ec6980d488
+      src/provider/github.rs: d58be2174db8e35adf163c01c4db5e32207089099431a7ee57ac9dabc89f53a0
+      src/provider/github_tests.rs: 354cfa693cade1cdbf7c7c9bc4800533d25df613b298998d70a590f3ffa5a86e
+      src/provider/mod.rs: 6f2fec587d411313d88eaf69a9949297eb3b11314fa99c4abcaa40adb2d7f48b
       src/refs.rs: 4677c63ceb63abc3c3b12b1eea6e507c241b0d670cdaf572f63ebf4898a7c558
       src/refs_tests.rs: 6bc6376f370b402f69e1bac01bf9732dc1d46af4cc3925468615bf68c680956b
     dependents:
@@ -27,6 +31,6 @@ groups:
       CONTRIBUTING.md: 3f6231f554ff73872a31608892b9f2b10833f8b4bd712567647202b9ce3025cd
   release-notes:
     source:
-      Cargo.toml: c697eb11c73428f22b0e9608497e57bf27db75a09fef29af2cdeecd1225f3119
+      Cargo.toml: c4b51428ce92aa1c1680b20f248a37bac9f14e76630af14f82d9994cbb104a8c
     dependents:
-      CHANGELOG.md: c2dd600423a7cf23dca85ef29f28e3a7acfe0758efbcaca7c9fd4f65879fe0b7
+      CHANGELOG.md: cf8fc228069d460a5ecfb985a26e29f6ca599bd22a5c58f8273c36704afd3027

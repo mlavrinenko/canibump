@@ -1,3 +1,4 @@
+pub mod auth;
 pub mod eval;
 pub mod manifest;
 pub mod outcome;

@@ -33,10 +33,13 @@ toml = "1.1.8"
 jiff = { version = "0.2.38", features = ["serde"] }
 async-trait = "0.1.92"
 tokio = { version = "1.53.2", features = ["rt-multi-thread", "macros", "time", "sync"] }
+octocrab = { version = "0.54.3", default-features = false, features = ["default-client", "rustls", "rustls-aws-lc-rs", "retry", "timeout", "follow-redirect"] }
 
 [dev-dependencies]
 assert_cmd = "2"
+httpmock = "0.8.2"
 predicates = "3"
+serde_json = "1.0.151"
 
 [profile.release]
 strip = true

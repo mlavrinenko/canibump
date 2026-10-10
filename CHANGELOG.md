@@ -15,3 +15,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Each check ends `waiting`, `bumpable`, `dead` or `failed`. A merged PR or an
   issue closed as completed is bumpable; closed unmerged, not planned,
   duplicate or closed without a reason is dead; a provider error is failed.
+- GitHub issues and PRs through octocrab. The token comes from `GITHUB_TOKEN`,
+  `GH_TOKEN` or `gh auth token`, else requests go unauthenticated. 401, 403,
+  404 and rate limits fail the check, saying which.
