@@ -54,7 +54,7 @@
 - `src/cli.rs`: clap commands and the run loop.
 - `src/cache.rs`: the state file, TTL and reuse.
 - `src/report.rs`: lines, JSON and exit codes.
-- `src/main.rs`, `src/lib.rs`: wire it.
+- `src/main.rs`, `src/lib.rs`: wire it and drop the template's greeter.
 
 
 == Alternatives

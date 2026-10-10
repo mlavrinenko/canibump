@@ -1,3 +1,6 @@
+pub mod manifest;
+pub mod refs;
+
 use thiserror::Error;
 
 /// Errors that can occur in this library.

@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: proposed(2026, 10, 10),
+  status: done(2026, 10, 10),
   links: parent(
     "check-github-issue-and-pr-state-from-a-canibump-toml-manifest.typ",
   ),
@@ -49,7 +49,7 @@
 
 - `src/manifest.rs`: the red tests first, then `Manifest`, `Blocker`, `Condition` and the dispatch on the condition key.
 - `src/refs.rs`: `ItemRef` and its parser.
-- `src/lib.rs`: drop the template's greeter, export the modules.
+- `src/lib.rs`: export the modules.
 
 
 == Alternatives
