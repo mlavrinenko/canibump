@@ -1,19 +1,14 @@
 //! Command-line interface.
 
-use std::io::Write as _;
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
-
 use anyhow::{Context as _, Result, bail};
 use clap::{Parser, Subcommand};
 use jiff::Timestamp;
+use std::io::Write as _;
+use std::path::{Path, PathBuf};
 
 use crate::cache::{self, StateFile};
 use crate::manifest::Manifest;
-use crate::provider::Registry;
-use crate::provider::git::GitRemotes;
-use crate::provider::github::GitHub;
-use crate::refs::SourceKind;
+use crate::provider::defaults;
 use crate::report::{self, Report};
 use crate::run;
 
@@ -96,7 +91,7 @@ fn check(cli: &Cli, manifest: &Manifest, cache_path: &Path, refresh: bool) -> Re
     let entries = runtime.block_on(run::check(
         manifest,
         previous.as_ref(),
-        default_registry,
+        defaults::registry,
         now,
         refresh,
     ));
@@ -136,25 +131,4 @@ fn print(text: &str) -> Result<()> {
         .lock()
         .write_all(text.as_bytes())
         .context("writing to stdout")
-}
-
-/// The real providers. `CANIBUMP_GITHUB_API` points GitHub elsewhere (tests,
-/// GitHub Enterprise).
-fn default_registry() -> Registry {
-    let mut registry = Registry::default();
-    let base = std::env::var("CANIBUMP_GITHUB_API").ok();
-    if let Some(root) = cache::root() {
-        let remotes = Arc::new(GitRemotes::new(root.join("git")));
-        registry = registry.with_code_host(SourceKind::Git, remotes);
-    }
-    match GitHub::new(base.as_deref(), crate::auth::github_token()) {
-        Ok(github) => {
-            let github = Arc::new(github);
-            registry = registry
-                .with_tracker(SourceKind::GitHub, github.clone())
-                .with_code_host(SourceKind::GitHub, github);
-        }
-        Err(error) => log::warn!("{error}"),
-    }
-    registry
 }

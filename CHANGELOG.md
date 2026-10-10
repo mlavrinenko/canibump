@@ -38,3 +38,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `version = "repology:<project>"` (with `repo`, optional `srcname`) or
   `version = "deps.dev:<system>/<name>"` with `at-least = "<version>"`:
   bumpable once the highest version there reaches the bound.
+- Repology and deps.dev clients. Repology is asked once per project per
+  run, at most once a second, with a User-Agent naming canibump.
+  `CANIBUMP_GITHUB_API`, `CANIBUMP_REPOLOGY_API` and `CANIBUMP_DEPSDEV_API`
+  point a provider elsewhere.

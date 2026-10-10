@@ -3,8 +3,12 @@
 //! Each capability is its own trait, so a target implements only what it can
 //! answer, and a [`Registry`] maps a [`SourceKind`] to the implementation.
 
+pub mod defaults;
+pub mod depsdev;
 pub mod git;
 pub mod github;
+mod http;
+pub mod repology;
 
 use std::collections::HashMap;
 use std::sync::Arc;

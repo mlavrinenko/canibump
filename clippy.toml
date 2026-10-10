@@ -5,3 +5,5 @@ single-char-binding-names-threshold = 2
 warn-on-all-wildcard-imports = true
 upper-case-acronyms-aggressive = true
 lint-commented-code = false
+# Product names the docs spell as their owners do. ".." keeps the defaults.
+doc-valid-idents = ["PyPI", "NuGet", "RubyGems", "GitLab", ".."]

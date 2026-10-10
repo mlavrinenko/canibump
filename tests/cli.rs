@@ -28,6 +28,8 @@ impl Repo {
         let mut cmd = Command::cargo_bin(env!("CARGO_PKG_NAME")).expect("binary should build");
         cmd.current_dir(self.dir.path())
             .env("CANIBUMP_GITHUB_API", self.server.base_url())
+            .env("CANIBUMP_REPOLOGY_API", self.server.base_url())
+            .env("CANIBUMP_DEPSDEV_API", self.server.base_url())
             .env("GH_TOKEN", "t0ken")
             .env_remove("GITHUB_TOKEN")
             .env("XDG_CACHE_HOME", self.dir.path().join("cache"));
@@ -227,4 +229,27 @@ fn reports_version() {
         .assert()
         .success()
         .stdout(predicate::str::contains(env!("CARGO_PKG_VERSION")));
+}
+
+#[test]
+fn checks_package_versions_on_repology_and_deps_dev() {
+    let repo = Repo::new(
+        "[[blocker]]\nid = \"nix\"\nnote = \"drop the overlay\"\nversion = \"repology:llama.cpp\"\nrepo = \"nix_unstable\"\nat-least = \"0.6.0\"\n\n\
+         [[blocker]]\nid = \"crate\"\nnote = \"unpin\"\nversion = \"deps.dev:cargo/serde\"\nat-least = \"2.0.0\"\n",
+    );
+    repo.server.mock(|when, then| {
+        when.method(GET).path("/project/llama.cpp");
+        then.status(200).json_body(
+            json!([{"repo": "nix_unstable", "srcname": "llama-cpp", "version": "0.6.0"}]),
+        );
+    });
+    repo.server.mock(|when, then| {
+        when.method(GET).path("/v3/systems/cargo/packages/serde");
+        then.status(200)
+            .json_body(json!({"versions": [{"versionKey": {"version": "1.0.228"}}]}));
+    });
+    repo.cmd().assert().code(10).stdout(
+        "bumpable  nix    repology:llama.cpp in nix_unstable is at 0.6.0, at least 0.6.0 (drop the overlay)\n\
+         waiting   crate  deps.dev:cargo/serde is at 1.0.228, waiting for 2.0.0\n",
+    );
 }

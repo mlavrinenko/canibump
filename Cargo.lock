@@ -273,6 +273,7 @@ dependencies = [
  "log",
  "octocrab",
  "predicates",
+ "reqwest",
  "semver",
  "serde",
  "serde_json",

@@ -85,6 +85,23 @@ $ canibump
 bumpable  serde-released  github:serde-rs/serde#2590 (110af31) is in v1.0.185 (Cargo.toml: unpin serde)
 ```
 
+`version`: a package is at least some version. Repology covers distro repos,
+nixpkgs channels included (`nix_unstable`, `nix_stable_25_11`). deps.dev
+covers `cargo`, `npm`, `pypi`, `go`, `maven`, `nuget` and `rubygems`.
+
+```toml
+version = "repology:llama.cpp"
+repo = "nix_unstable"
+srcname = "llama-cpp"    # optional, when a repo ships several
+at-least = "0.6.0"
+
+# version = "deps.dev:cargo/serde"
+# at-least = "2.0.0"
+```
+
+canibump asks Repology once per project per run, at most once a second, with
+a User-Agent naming itself, as Repology's API rules ask.
+
 ### Exit codes
 
 | Code | Means |
