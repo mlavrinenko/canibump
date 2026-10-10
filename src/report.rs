@@ -4,34 +4,71 @@ use std::fmt::Write as _;
 use std::path::Path;
 
 use anstyle::{AnsiColor, Style};
+use clap::ValueEnum;
 use jiff::Timestamp;
-use serde::Serialize;
+use schemars::JsonSchema;
+use serde::{Deserialize, Serialize};
 
 use crate::cache::Entry;
 use crate::outcome::Status;
 
-/// Exit code: nothing bumpable, every check ran.
+/// Exit code: nothing counted showed up, every check ran.
 pub const EXIT_OK: u8 = 0;
 /// Exit code: the manifest, the cache or the arguments are unusable.
 pub const EXIT_ERROR: u8 = 1;
-/// Exit code: at least one blocker is bumpable.
-pub const EXIT_BUMPABLE: u8 = 10;
-/// Exit code: at least one check failed, nothing bumpable.
-pub const EXIT_FAILED: u8 = 11;
-/// Exit code: something is bumpable and some check failed.
-pub const EXIT_BUMPABLE_AND_FAILED: u8 = 12;
+/// Exit code base once something counted showed up; each status adds its bit.
+pub const EXIT_ACTIONABLE: u8 = 8;
 
 const STATUS_WIDTH: usize = 8;
 
-/// The exit code for a set of results.
+/// A status that can fail the run: every one but `waiting`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, JsonSchema, ValueEnum)]
+#[serde(rename_all = "lowercase")]
+pub enum Actionable {
+    /// Something landed: adds 1 to the exit code.
+    Bumpable,
+    /// An upstream fix will not land as declared: adds 2.
+    Dead,
+    /// A check broke: adds 4.
+    Failed,
+}
+
+impl Actionable {
+    /// All three: what fails a run unless `--fail-on` or `[settings] fail-on`
+    /// says otherwise.
+    pub const ALL: [Self; 3] = [Self::Bumpable, Self::Dead, Self::Failed];
+
+    /// The status it counts.
+    const fn status(self) -> Status {
+        match self {
+            Self::Bumpable => Status::Bumpable,
+            Self::Dead => Status::Dead,
+            Self::Failed => Status::Failed,
+        }
+    }
+
+    /// Its bit in the exit code.
+    const fn bit(self) -> u8 {
+        match self {
+            Self::Bumpable => 1,
+            Self::Dead => 2,
+            Self::Failed => 4,
+        }
+    }
+}
+
+/// The exit code for a set of results: [`EXIT_OK`] when no `counted` status
+/// showed up, else [`EXIT_ACTIONABLE`] plus the bit of each that did.
 #[must_use]
-pub fn exit_code(entries: &[Entry]) -> u8 {
-    let has = |status| entries.iter().any(|entry| entry.status == status);
-    match (has(Status::Bumpable), has(Status::Failed)) {
-        (true, true) => EXIT_BUMPABLE_AND_FAILED,
-        (true, false) => EXIT_BUMPABLE,
-        (false, true) => EXIT_FAILED,
-        (false, false) => EXIT_OK,
+pub fn exit_code(entries: &[Entry], counted: &[Actionable]) -> u8 {
+    let bits = counted
+        .iter()
+        .filter(|kind| entries.iter().any(|entry| entry.status == kind.status()))
+        .fold(0, |bits, kind| bits | kind.bit());
+    if bits == 0 {
+        EXIT_OK
+    } else {
+        EXIT_ACTIONABLE | bits
     }
 }
 
@@ -132,13 +169,19 @@ pub struct Row<'a> {
 }
 
 impl<'a> Report<'a> {
-    /// The document for these results.
+    /// The document for these results and the `exit_code` the run ends with.
     #[must_use]
-    pub fn new(manifest: &'a Path, cache: &'a Path, entries: &'a [Entry], now: Timestamp) -> Self {
+    pub fn new(
+        manifest: &'a Path,
+        cache: &'a Path,
+        entries: &'a [Entry],
+        now: Timestamp,
+        exit_code: u8,
+    ) -> Self {
         Self {
             manifest,
             cache,
-            exit_code: exit_code(entries),
+            exit_code,
             entries: entries
                 .iter()
                 .map(|entry| Row {

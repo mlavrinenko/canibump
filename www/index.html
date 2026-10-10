@@ -36,7 +36,20 @@ id = "serde-pin"
 note = "Cargo.toml: unpin serde"
 state = "github:serde-rs/serde#2590"</code></pre>
   <pre><code>$ canibump
-bumpable  serde-pin  github:serde-rs/serde#2590 merged (Cargo.toml: unpin serde)</code></pre>
+bumpable  serde-pin  github:serde-rs/serde#2590 merged (Cargo.toml: unpin serde)
+$ echo $?
+9</code></pre>
+
+  <h2>Exit codes</h2>
+  <table>
+    <tr><th>Code</th><th>Means</th></tr>
+    <tr><td>0</td><td>nothing counted showed up, every check ran</td></tr>
+    <tr><td>9 to 15</td><td>8 plus 1 for bumpable, 2 for dead, 4 for failed, summed</td></tr>
+    <tr><td>1</td><td>bad manifest, cache or arguments</td></tr>
+  </table>
+  <p>All three count by default. <code>--fail-on failed</code> or
+    <code>[settings] fail-on = ["failed"]</code> picks which ones do.
+  </p>
 
   <footer>
     <p><a href="https://github.com/mlavrinenko/canibump">GitHub</a></p>

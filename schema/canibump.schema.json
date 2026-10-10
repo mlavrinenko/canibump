@@ -1,5 +1,25 @@
 {
   "$defs": {
+    "Actionable": {
+      "description": "A status that can fail the run: every one but `waiting`.",
+      "oneOf": [
+        {
+          "const": "bumpable",
+          "description": "Something landed: adds 1 to the exit code.",
+          "type": "string"
+        },
+        {
+          "const": "dead",
+          "description": "An upstream fix will not land as declared: adds 2.",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "description": "A check broke: adds 4.",
+          "type": "string"
+        }
+      ]
+    },
     "Blocker": {
       "anyOf": [
         {
@@ -205,6 +225,16 @@
           "description": "Where the cache file lives, relative to the manifest. Defaults to a file\nunder the user cache dir.",
           "type": [
             "string",
+            "null"
+          ]
+        },
+        "fail-on": {
+          "description": "Which statuses fail the run, with an exit code from 9 to 15: any of\n`\"bumpable\"`, `\"dead\"` and `\"failed\"`. Defaults to all three; `[]`\nnever fails. `--fail-on` overrides it.",
+          "items": {
+            "$ref": "#/$defs/Actionable"
+          },
+          "type": [
+            "array",
             "null"
           ]
         },

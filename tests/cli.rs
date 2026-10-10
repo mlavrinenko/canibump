@@ -12,11 +12,11 @@ use serde_json::{Value, json};
 use common::{Repo, blocker, fixed, gh_calls, open};
 
 #[test]
-fn prints_one_line_per_blocker_and_exits_10_when_one_is_bumpable() {
+fn prints_one_line_per_blocker_and_exits_9_when_one_is_bumpable() {
     let repo = Repo::new(&(blocker("waits", 1) + &blocker("lands", 2)));
     repo.issue(1, 200, &open());
     repo.issue(2, 200, &fixed());
-    repo.cmd().assert().code(10).stdout(
+    repo.cmd().assert().code(9).stdout(
         "waiting   waits  github:o/r#1 is open\n\
          bumpable  lands  github:o/r#2 closed as completed (drop the lands patch)\n",
     );
@@ -30,18 +30,18 @@ fn exits_0_when_nothing_is_bumpable() {
 }
 
 #[test]
-fn exits_11_on_a_failed_check_and_12_with_a_bumpable_one_too() {
+fn exits_12_on_a_failed_check_and_13_with_a_bumpable_one_too() {
     let repo = Repo::new(&(blocker("gone", 3) + &blocker("lands", 2)));
     repo.issue(3, 404, &json!({"message": "Not Found"}));
     repo.cmd()
         .arg("check")
         .assert()
-        .code(11)
+        .code(12)
         .stdout(predicate::str::contains(
             "failed    gone   github:o/r#3: not found",
         ));
     repo.issue(2, 200, &fixed());
-    repo.cmd().assert().code(12);
+    repo.cmd().assert().code(13);
 }
 
 #[test]
@@ -95,8 +95,8 @@ fn global_flags_work_before_a_subcommand() {
 fn never_caches_a_failure_as_fresh() {
     let repo = Repo::new(&blocker("gone", 3));
     let mock = repo.issue(3, 500, &json!({"message": "boom"}));
-    repo.cmd().assert().code(11);
-    repo.cmd().assert().code(11);
+    repo.cmd().assert().code(12);
+    repo.cmd().assert().code(12);
     assert!(mock.calls() >= 2, "a failure must be re-checked");
 }
 
@@ -104,13 +104,13 @@ fn never_caches_a_failure_as_fresh() {
 fn status_reads_the_cache_without_network() {
     let repo = Repo::new(&blocker("lands", 2));
     let mut mock = repo.issue(2, 200, &fixed());
-    repo.cmd().assert().code(10);
+    repo.cmd().assert().code(9);
     mock.delete();
     repo.cmd()
         .args(["status", "--json"])
         .env("CANIBUMP_GITHUB_API", "http://127.0.0.1:9")
         .assert()
-        .code(10)
+        .code(9)
         .stdout(predicate::str::contains("\"status\": \"bumpable\""));
     let path = repo.cache_path();
     let state: Value =
@@ -229,7 +229,7 @@ fn a_provider_that_cannot_start_says_why_on_its_blockers_line() {
     repo.cmd()
         .env("CANIBUMP_GITHUB_API", "not-a-url")
         .assert()
-        .code(12)
+        .code(13)
         .stdout(
             "failed    x    github: API URL `not-a-url`: relative URL without a base\n\
              bumpable  pkg  deps.dev:cargo/serde is at 1.0.228, at least 1.0.0 (n)\n",
@@ -264,7 +264,7 @@ fn a_manifest_without_a_github_blocker_never_runs_gh() {
             .json_body(json!([{"repo": "nix_unstable", "version": "0.6.0"}]));
     });
     let (mut cmd, log) = repo.cmd_with_gh();
-    cmd.assert().code(10);
+    cmd.assert().code(9);
     assert_eq!(gh_calls(&log), 0, "no blocker needs GitHub");
 }
 
@@ -280,7 +280,7 @@ fn a_github_state_and_a_reached_blocker_ask_gh_once() {
         then.status(200).json_body(json!({"status": "ahead"}));
     });
     let (mut cmd, log) = repo.cmd_with_gh();
-    cmd.assert().code(10);
+    cmd.assert().code(9);
     assert_eq!(gh_calls(&log), 1, "tracker and code host share one client");
 }
 
@@ -351,7 +351,7 @@ fn checks_package_versions_on_repology_and_deps_dev() {
         then.status(200)
             .json_body(json!({"versions": [{"versionKey": {"version": "1.0.228"}}]}));
     });
-    repo.cmd().assert().code(10).stdout(
+    repo.cmd().assert().code(9).stdout(
         "bumpable  nix    repology:llama.cpp in nix_unstable is at 0.6.0, at least 0.6.0 (drop the overlay)\n\
          waiting   crate  deps.dev:cargo/serde is at 1.0.228, waiting for 2.0.0\n",
     );

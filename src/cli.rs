@@ -11,13 +11,14 @@ use std::path::{Path, PathBuf};
 use crate::cache::{self, StateFile};
 use crate::manifest::Manifest;
 use crate::provider::defaults;
-use crate::report::{self, Report};
+use crate::report::{self, Actionable, Report};
 use crate::run;
 
 /// Can I bump yet? Checks the upstream blockers in canibump.toml.
 ///
-/// Exit codes: 0 nothing bumpable, 10 something bumpable, 11 a check failed,
-/// 12 both, 1 unusable manifest, cache or arguments.
+/// Exit codes: 0 when nothing counted showed up, else 8 plus 1 for bumpable, 2
+/// for dead and 4 for failed, summed (bumpable and dead is 11). 1 is an unusable
+/// manifest, cache or arguments. `--fail-on` picks what counts.
 #[derive(Debug, Parser)]
 #[command(version, about, long_about)]
 pub struct Cli {
@@ -30,6 +31,16 @@ pub struct Cli {
     /// Print JSON instead of lines.
     #[arg(long, global = true)]
     pub json: bool,
+    /// What fails the run, comma-separated or repeated. Defaults to
+    /// `[settings] fail-on`, else bumpable, dead and failed.
+    #[arg(
+        long,
+        global = true,
+        value_enum,
+        value_delimiter = ',',
+        value_name = "STATUS"
+    )]
+    pub fail_on: Option<Vec<Actionable>>,
     /// When to color the status words; `auto` honors the terminal and `NO_COLOR`.
     #[arg(long, global = true, value_enum, default_value_t = ColorChoice::Auto)]
     pub color: ColorChoice,
@@ -108,12 +119,12 @@ pub fn run(cli: &Cli) -> Result<u8> {
             Ok(report::EXIT_OK)
         }
         Some(Command::Status { path }) => {
-            let (_, cache_path) = load(cli)?;
+            let (manifest, cache_path) = load(cli)?;
             if *path {
                 print(cli, &format!("{}\n", cache_path.display()))?;
                 return Ok(report::EXIT_OK);
             }
-            status(cli, &cache_path)
+            status(cli, &manifest, &cache_path)
         }
     }
 }
@@ -164,28 +175,39 @@ fn check(cli: &Cli, args: CheckArgs) -> Result<u8> {
         entries,
     };
     cache::write(&cache_path, &state)?;
-    output(cli, &cache_path, &state, now)
+    let code = report::exit_code(&state.entries, counted(cli, &manifest));
+    output(cli, &cache_path, &state, now, code)
 }
 
-fn status(cli: &Cli, cache_path: &Path) -> Result<u8> {
+fn status(cli: &Cli, manifest: &Manifest, cache_path: &Path) -> Result<u8> {
     let Some(state) = cache::read(cache_path)? else {
         bail!(
             "no results at {}: run `canibump` first",
             cache_path.display()
         );
     };
-    output(cli, cache_path, &state, Timestamp::now())
+    let code = report::exit_code(&state.entries, counted(cli, manifest));
+    output(cli, cache_path, &state, Timestamp::now(), code)
 }
 
-fn output(cli: &Cli, cache_path: &Path, state: &StateFile, now: Timestamp) -> Result<u8> {
+/// The statuses that fail the run: the flag, else the manifest, else all three.
+fn counted<'a>(cli: &'a Cli, manifest: &'a Manifest) -> &'a [Actionable] {
+    cli.fail_on
+        .as_deref()
+        .or(manifest.settings.fail_on.as_deref())
+        .unwrap_or(&Actionable::ALL)
+}
+
+/// Prints `state` as lines or JSON and returns `code`, the run's exit code.
+fn output(cli: &Cli, cache_path: &Path, state: &StateFile, now: Timestamp, code: u8) -> Result<u8> {
     let text = if cli.json {
-        let report = Report::new(&state.manifest, cache_path, &state.entries, now);
+        let report = Report::new(&state.manifest, cache_path, &state.entries, now, code);
         serde_json::to_string_pretty(&report)? + "\n"
     } else {
         report::lines(&state.entries, now)
     };
     print(cli, &text)?;
-    Ok(report::exit_code(&state.entries))
+    Ok(code)
 }
 
 /// Writes to stdout, which keeps the styles in `text` when `--color` and the

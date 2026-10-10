@@ -7,8 +7,9 @@
   one-command: (
     title: "One command says what is bumpable",
     acid-test: [Running `canibump` in a repo lists every blocker's state in one
-      line each and exits non-zero only when something became bumpable or the
-      check failed.],
+      line each. It exits 0 when nothing counted showed up, else 8 plus 1
+      for bumpable, 2 for dead and 4 for failed, and `--fail-on` or
+      `[settings] fail-on` picks what counts.],
   ),
   many-targets: (
     title: "Every blocker fits",

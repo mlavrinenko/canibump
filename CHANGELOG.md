@@ -20,8 +20,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `GH_TOKEN` or `gh auth token`, else requests go unauthenticated. 401, 403,
   404 and rate limits fail the check, saying which.
 - `canibump` checks every blocker and prints one line each; `--json` prints a
-  document. Exit codes: 0 nothing bumpable, 10 bumpable, 11 a check failed,
-  12 both, 1 unusable manifest.
+  document. The exit code says what showed up; see Changed.
 - Results land in `$XDG_CACHE_HOME/canibump/state/<manifest path>.json` with
   `checked_at` and `fresh_until`; fresh ones are reused unless `--refresh`.
   `canibump status` reads only that file, and `status --path` prints it.
@@ -98,6 +97,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The flake package installs bash, zsh and fish completions and
   `share/canibump/canibump.schema.json`; the README shows the Nix install and
   one line of setup per shell.
+
+### Changed
+
+- The exit code counts a dead blocker too: 0 when nothing counted showed up,
+  else 8 plus 1 for bumpable, 2 for dead and 4 for failed, summed, so a bare
+  bumpable exits 9 and bumpable with dead 11. A check that failed was 11 and
+  is 12; 1 is still an unusable manifest or cache. `--fail-on`, comma-separated
+  or repeated, or `[settings] fail-on = ["failed"]` picks which of the three
+  count (the flag wins, `fail-on = []` never fails), and `canibump status`
+  follows it. `--help`, the README, docs/manifest.md and the site state the
+  table.
 
 ### Fixed
 

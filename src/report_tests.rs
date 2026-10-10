@@ -103,3 +103,35 @@ fn a_stale_line_says_how_long_ago_in_the_largest_whole_unit() {
         );
     }
 }
+
+#[test]
+fn the_exit_code_is_8_plus_a_bit_per_counted_status_that_showed_up() {
+    let code = |statuses: &[Status], counted: &[Actionable]| {
+        let entries: Vec<Entry> = statuses.iter().map(|status| entry("x", *status)).collect();
+        exit_code(&entries, counted)
+    };
+    let all = &Actionable::ALL;
+    assert_eq!(code(&[], all), EXIT_OK);
+    assert_eq!(code(&[Status::Waiting], all), EXIT_OK);
+    assert_eq!(code(&[Status::Bumpable], all), 9);
+    assert_eq!(code(&[Status::Dead], all), 10);
+    assert_eq!(code(&[Status::Failed], all), 12);
+    assert_eq!(code(&[Status::Dead, Status::Bumpable], all), 11);
+    let every = [
+        Status::Waiting,
+        Status::Bumpable,
+        Status::Dead,
+        Status::Failed,
+    ];
+    assert_eq!(code(&every, all), 15);
+}
+
+#[test]
+fn only_a_counted_status_adds_its_bit() {
+    let entries = [entry("a", Status::Bumpable), entry("b", Status::Dead)];
+    assert_eq!(exit_code(&entries, &[Actionable::Dead]), 10);
+    assert_eq!(exit_code(&entries, &[Actionable::Failed]), EXIT_OK);
+    assert_eq!(exit_code(&entries, &[]), EXIT_OK);
+    let twice = [Actionable::Dead, Actionable::Dead];
+    assert_eq!(exit_code(&entries, &twice), 10);
+}

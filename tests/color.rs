@@ -16,7 +16,7 @@ fn color_always_paints_the_status_word_and_nothing_else() {
     repo.cmd()
         .args(["--color", "always"])
         .assert()
-        .code(10)
+        .code(9)
         .stdout(
             "\x1b[2mwaiting\x1b[0m   waits  github:o/r#1 is open\n\
              \x1b[32mbumpable\x1b[0m  lands  github:o/r#2 closed as completed (drop the lands patch)\n",
@@ -78,12 +78,12 @@ fn a_dead_line_names_the_workaround_like_a_bumpable_one() {
     repo.issue(4, 200, &not_planned);
     repo.cmd()
         .assert()
-        .code(0)
+        .code(10)
         .stdout("dead      gone  github:o/r#4 closed as not planned (drop the gone patch)\n");
     repo.cmd()
         .args(["--color", "always"])
         .assert()
-        .code(0)
+        .code(10)
         .stdout(
             "\x1b[35mdead\x1b[0m      gone  github:o/r#4 closed as not planned (drop the gone patch)\n",
         );

@@ -139,6 +139,22 @@ the run rewrites it:
 canibump: warning: ignoring /home/me/.cache/canibump/state/...json: not a canibump state file: expected value at line 1 column 1
 ```
 
+## Exit codes
+
+A run exits 0 when nothing counted showed up, else 8 plus 1 for bumpable, 2 for
+dead and 4 for failed, summed: bumpable and dead together exit 11. 1 is an
+unusable manifest or cache. `canibump status` follows the same rules.
+
+All three count unless `[settings] fail-on` lists the ones that do. The
+`--fail-on` flag beats it. `waiting` never counts, so neither can name it, and
+a status that does not count still prints its line.
+
+```toml
+[settings]
+fail-on = ["failed"]  # dead and bumpable print, the run still exits 0
+# fail-on = []        # never fail
+```
+
 ## Auth
 
 GitHub takes `GITHUB_TOKEN`, then `GH_TOKEN`, then whatever `gh auth token`

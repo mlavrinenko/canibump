@@ -15,6 +15,7 @@ use thiserror::Error;
 use toml::{Spanned, Table, Value};
 
 use crate::condition::{Condition, check_steps, parse_condition};
+use crate::report::Actionable;
 use crate::schema::BlockerSchema;
 
 const DEFAULT_TTL: SignedDuration = SignedDuration::from_hours(6);
@@ -36,6 +37,8 @@ pub struct Settings {
     /// Where the cache file lives, relative to the manifest; `None` picks the
     /// default under the user cache dir.
     pub cache: Option<PathBuf>,
+    /// Which statuses fail the run; `None` counts all three, `Some([])` none.
+    pub fail_on: Option<Vec<Actionable>>,
 }
 
 /// One workaround waiting on something upstream.
@@ -161,6 +164,11 @@ pub(crate) struct RawSettings {
     /// Where the cache file lives, relative to the manifest. Defaults to a file
     /// under the user cache dir.
     cache: Option<PathBuf>,
+    /// Which statuses fail the run, with an exit code from 9 to 15: any of
+    /// `"bumpable"`, `"dead"` and `"failed"`. Defaults to all three; `[]`
+    /// never fails. `--fail-on` overrides it.
+    #[serde(rename = "fail-on")]
+    fail_on: Option<Vec<Actionable>>,
 }
 
 impl Manifest {
@@ -209,6 +217,7 @@ impl Manifest {
             settings: Settings {
                 ttl,
                 cache: raw.settings.cache,
+                fail_on: raw.settings.fail_on,
             },
             blockers,
         })

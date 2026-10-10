@@ -50,7 +50,7 @@ $ canibump
 waiting   llama-blocking-sync  github:ggml-org/llama.cpp#26487 is open
 bumpable  serde-pin            github:serde-rs/serde#2590 (110af31) is in v1.0.185 (Cargo.toml: unpin serde)
 $ echo $?
-10
+9
 ```
 
 One line per blocker, in manifest order. Blockers are checked eight at a time,
@@ -87,13 +87,24 @@ The full grammar, chains, the cache format and auth live in
 
 | Code | Means |
 | --- | --- |
-| 0 | nothing bumpable, every check ran |
-| 10 | something is bumpable |
-| 11 | a check failed, nothing bumpable |
-| 12 | something is bumpable and a check failed |
+| 0 | nothing counted showed up, every check ran |
+| 9 to 15 | 8 plus 1 for bumpable, 2 for dead, 4 for failed, summed |
 | 1 | bad manifest, cache or arguments |
 
-A bumpable blocker keeps exiting 10 until you delete it. That's the reminder.
+So bumpable alone exits 9, dead alone 10, bumpable and dead 11, a failed check 12 and all
+three 15. A script tests one bit, as in `(( code & 2 ))` for dead.
+
+All three count by default. `--fail-on` (comma-separated or repeated) or `[settings] fail-on`
+picks which ones do, and the flag wins. The lines print either way.
+
+```bash
+canibump --fail-on failed          # only a broken check fails the run
+canibump --fail-on bumpable,dead   # a flaky network won't page you
+```
+
+`fail-on = []` in the manifest never fails the run. `waiting` never counts, so you can't name it.
+
+A counted blocker keeps failing the run until you delete it. That's the reminder.
 
 ### Commands
 
