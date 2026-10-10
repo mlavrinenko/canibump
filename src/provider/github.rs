@@ -73,9 +73,12 @@ impl GitHub {
     ///
     /// [`CheckError::Unsupported`] when `base` is not a URL.
     pub fn new(base: Option<&str>, token: Option<String>) -> Result<Self, CheckError> {
+        let base = base.unwrap_or(API);
+        // Octocrab takes any string as a URI, then panics on the first request.
+        super::http::base(base)?;
         let mut builder = Octocrab::builder()
-            .base_uri(base.unwrap_or(API))
-            .map_err(|error| CheckError::Unsupported(format!("GitHub API URL: {error}")))?
+            .base_uri(base)
+            .map_err(|error| CheckError::Unsupported(format!("API URL `{base}`: {error}")))?
             .set_connect_timeout(Some(Duration::from_secs(10)))
             .set_read_timeout(Some(Duration::from_secs(30)));
         if let Some(token) = token {
@@ -83,7 +86,7 @@ impl GitHub {
         }
         let client = builder
             .build()
-            .map_err(|error| CheckError::Unsupported(format!("GitHub client: {error}")))?;
+            .map_err(|error| CheckError::Unsupported(format!("HTTP client: {error}")))?;
         Ok(Self { client })
     }
 

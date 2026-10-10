@@ -337,6 +337,20 @@ fn parse(text: &str, expected: &'static str) -> Result<Reachable, RefError> {
     }))
 }
 
+impl fmt::Display for SourceKind {
+    /// The scheme a manifest writes for it.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::GitHub => "github",
+            Self::Git => "git",
+            Self::GitLab => "gitlab",
+            Self::Gitea => "gitea",
+            Self::Redmine => "redmine",
+            Self::Jira => "jira",
+        })
+    }
+}
+
 impl fmt::Display for Source {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

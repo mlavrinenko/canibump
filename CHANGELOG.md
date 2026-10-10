@@ -78,3 +78,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The state file is written through `<state>.json.<pid>.tmp`, so two runs on
   one manifest, a cron job and a shell, no longer share a temp file and rename
   a torn one into place. A failed write or rename removes its temp file.
+- A provider that cannot start, say a `CANIBUMP_GITHUB_API` that is no URL,
+  fails only its own blockers, and their line says why:
+  `failed  x  github: API URL ...`. It used to read
+  `no provider for GitHub items`, with the reason lost to a log nobody saw.
+  Errors name a kind by its manifest scheme (`github`, `deps.dev`), not a
+  Rust type.
+- A state file that cannot be read warns on stderr with
+  `canibump: warning: ignoring <path>: <reason>` and the run goes on. `log`
+  and `env_logger` are gone, so nothing prints into the void.

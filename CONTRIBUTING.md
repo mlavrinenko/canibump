@@ -20,7 +20,7 @@ Key restrictions:
 
 ## Project Structure
 
-Keep `main.rs` as a thin entry point — argument parsing, logger init, and a call into
+Keep `main.rs` as a thin entry point — argument parsing and a call into
 library code. All logic belongs in `lib.rs` (and its modules). `main.rs` is excluded from
 coverage, so anything there is untested by default.
 

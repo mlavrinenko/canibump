@@ -15,6 +15,8 @@ pub mod redmine;
 pub mod repology;
 
 use std::collections::HashMap;
+use std::fmt;
+use std::hash::Hash;
 use std::sync::Arc;
 
 use async_trait::async_trait;
@@ -133,70 +135,110 @@ pub trait PackageIndex: Send + Sync {
     async fn versions(&self, package: &PackageRef) -> Result<Vec<String>, CheckError>;
 }
 
+/// A provider started, or why it could not start.
+type Started<T> = Result<Arc<T>, CheckError>;
+
 /// The providers a run may use, keyed by source kind.
+///
+/// A provider that failed to start is kept as its [`CheckError`], so every
+/// blocker that needs it fails with the reason; the others are not affected.
 #[derive(Clone, Default)]
 pub struct Registry {
-    trackers: HashMap<SourceKind, Arc<dyn Tracker>>,
-    code_hosts: HashMap<SourceKind, Arc<dyn CodeHost>>,
-    indexes: HashMap<IndexKind, Arc<dyn PackageIndex>>,
+    trackers: HashMap<SourceKind, Started<dyn Tracker>>,
+    code_hosts: HashMap<SourceKind, Started<dyn CodeHost>>,
+    indexes: HashMap<IndexKind, Started<dyn PackageIndex>>,
 }
 
 impl Registry {
     /// Registers the tracker for a source kind, replacing any earlier one.
     #[must_use]
     pub fn with_tracker(mut self, kind: SourceKind, tracker: Arc<dyn Tracker>) -> Self {
-        self.trackers.insert(kind, tracker);
+        self.trackers.insert(kind, Ok(tracker));
+        self
+    }
+
+    /// Records why the tracker for a source kind could not start.
+    #[must_use]
+    pub fn with_tracker_error(mut self, kind: SourceKind, error: CheckError) -> Self {
+        self.trackers.insert(kind, Err(error));
         self
     }
 
     /// Registers the code host for a source kind, replacing any earlier one.
     #[must_use]
     pub fn with_code_host(mut self, kind: SourceKind, host: Arc<dyn CodeHost>) -> Self {
-        self.code_hosts.insert(kind, host);
+        self.code_hosts.insert(kind, Ok(host));
         self
     }
 
-    /// The code host for a source kind.
-    ///
-    /// # Errors
-    ///
-    /// [`CheckError::Unsupported`] when none is registered.
-    pub fn code_host(&self, kind: SourceKind) -> Result<&dyn CodeHost, CheckError> {
-        self.code_hosts
-            .get(&kind)
-            .map(AsRef::as_ref)
-            .ok_or_else(|| CheckError::Unsupported(format!("no provider for {kind:?} history")))
+    /// Records why the code host for a source kind could not start.
+    #[must_use]
+    pub fn with_code_host_error(mut self, kind: SourceKind, error: CheckError) -> Self {
+        self.code_hosts.insert(kind, Err(error));
+        self
     }
 
     /// Registers a package index, replacing any earlier one.
     #[must_use]
     pub fn with_index(mut self, kind: IndexKind, index: Arc<dyn PackageIndex>) -> Self {
-        self.indexes.insert(kind, index);
+        self.indexes.insert(kind, Ok(index));
         self
     }
 
-    /// The package index of a kind.
-    ///
-    /// # Errors
-    ///
-    /// [`CheckError::Unsupported`] when none is registered.
-    pub fn index(&self, kind: IndexKind) -> Result<&dyn PackageIndex, CheckError> {
-        self.indexes
-            .get(&kind)
-            .map(AsRef::as_ref)
-            .ok_or_else(|| CheckError::Unsupported(format!("no provider for {kind:?} packages")))
+    /// Records why the package index of a kind could not start.
+    #[must_use]
+    pub fn with_index_error(mut self, kind: IndexKind, error: CheckError) -> Self {
+        self.indexes.insert(kind, Err(error));
+        self
     }
 
     /// The tracker for a source kind.
     ///
     /// # Errors
     ///
-    /// [`CheckError::Unsupported`] when none is registered.
+    /// [`CheckError::Unsupported`] when none is registered, or it could not
+    /// start.
     pub fn tracker(&self, kind: SourceKind) -> Result<&dyn Tracker, CheckError> {
-        self.trackers
-            .get(&kind)
-            .map(AsRef::as_ref)
-            .ok_or_else(|| CheckError::Unsupported(format!("no provider for {kind:?} items")))
+        lookup(&self.trackers, kind, "items")
+    }
+
+    /// The code host for a source kind.
+    ///
+    /// # Errors
+    ///
+    /// [`CheckError::Unsupported`] when none is registered, or it could not
+    /// start.
+    pub fn code_host(&self, kind: SourceKind) -> Result<&dyn CodeHost, CheckError> {
+        lookup(&self.code_hosts, kind, "history")
+    }
+
+    /// The package index of a kind.
+    ///
+    /// # Errors
+    ///
+    /// [`CheckError::Unsupported`] when none is registered, or it could not
+    /// start.
+    pub fn index(&self, kind: IndexKind) -> Result<&dyn PackageIndex, CheckError> {
+        lookup(&self.indexes, kind, "packages")
+    }
+}
+
+/// The provider of `kind`, or the reason there is none, naming `kind`.
+fn lookup<'a, K, T>(
+    slots: &'a HashMap<K, Started<T>>,
+    kind: K,
+    what: &str,
+) -> Result<&'a T, CheckError>
+where
+    K: Copy + Eq + Hash + fmt::Display,
+    T: ?Sized,
+{
+    match slots.get(&kind) {
+        Some(Ok(provider)) => Ok(provider.as_ref()),
+        Some(Err(error)) => Err(CheckError::Unsupported(format!("{kind}: {error}"))),
+        None => Err(CheckError::Unsupported(format!(
+            "no provider for {kind} {what}"
+        ))),
     }
 }
 
@@ -219,4 +261,54 @@ pub(crate) fn names_any(name: &str, phrases: &[&str]) -> bool {
                 .windows(phrase.len())
                 .any(|window| window == phrase.as_slice())
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn broken() -> CheckError {
+        CheckError::Unsupported("API URL `x`: bad".to_owned())
+    }
+
+    /// What an ask answers: the error's text, or `started`.
+    fn answer<T: ?Sized>(result: Result<&T, CheckError>) -> String {
+        result
+            .err()
+            .map_or_else(|| "started".to_owned(), |error| error.to_string())
+    }
+
+    #[test]
+    fn a_start_up_error_reaches_every_ask_naming_the_kind() {
+        let registry = Registry::default()
+            .with_tracker_error(SourceKind::GitHub, broken())
+            .with_code_host_error(SourceKind::GitHub, broken())
+            .with_index_error(IndexKind::DepsDev, broken());
+        for _ in 0..2 {
+            let github = "github: API URL `x`: bad";
+            assert_eq!(answer(registry.tracker(SourceKind::GitHub)), github);
+            assert_eq!(answer(registry.code_host(SourceKind::GitHub)), github);
+            assert_eq!(
+                answer(registry.index(IndexKind::DepsDev)),
+                "deps.dev: API URL `x`: bad"
+            );
+        }
+    }
+
+    #[test]
+    fn a_kind_nobody_registered_has_no_provider() {
+        let registry = Registry::default().with_tracker_error(SourceKind::GitHub, broken());
+        assert_eq!(
+            answer(registry.tracker(SourceKind::GitLab)),
+            "no provider for gitlab items"
+        );
+        assert_eq!(
+            answer(registry.code_host(SourceKind::GitHub)),
+            "no provider for github history"
+        );
+        assert_eq!(
+            answer(registry.index(IndexKind::Repology)),
+            "no provider for repology packages"
+        );
+    }
 }

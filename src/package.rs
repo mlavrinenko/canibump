@@ -111,6 +111,16 @@ impl PackageRef {
     }
 }
 
+impl fmt::Display for IndexKind {
+    /// The scheme a manifest writes for it.
+    fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
+        formatter.write_str(match self {
+            Self::Repology => "repology",
+            Self::DepsDev => "deps.dev",
+        })
+    }
+}
+
 impl fmt::Display for PackageRef {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {

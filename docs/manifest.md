@@ -122,6 +122,13 @@ Results stay fresh for `[settings] ttl = "6h"` (the default). Move the file
 with `--cache FILE` or `[settings] cache = "FILE"` (relative to the
 manifest). A failed check is never fresh, so the next run retries it.
 
+A state file canibump cannot parse is dropped with a warning on stderr, and
+the run rewrites it:
+
+```text
+canibump: warning: ignoring /home/me/.cache/canibump/state/...json: not a canibump state file: expected value at line 1 column 1
+```
+
 ## Auth
 
 GitHub takes `GITHUB_TOKEN`, then `GH_TOKEN`, then whatever `gh auth token`

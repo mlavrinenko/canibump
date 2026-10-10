@@ -218,3 +218,18 @@ fn parses_redmine_and_jira_items() {
         assert!(error.contains(text), "{error}");
     }
 }
+
+#[test]
+fn a_kind_displays_as_its_manifest_scheme() {
+    for (kind, scheme) in [
+        (SourceKind::GitHub, "github"),
+        (SourceKind::Git, "git"),
+        (SourceKind::GitLab, "gitlab"),
+        (SourceKind::Gitea, "gitea"),
+        (SourceKind::Redmine, "redmine"),
+        (SourceKind::Jira, "jira"),
+    ] {
+        assert_eq!(kind.to_string(), scheme);
+        assert!(SCHEMES.contains(&scheme), "{scheme} is no manifest scheme");
+    }
+}

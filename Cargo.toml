@@ -23,11 +23,9 @@ path = "src/main.rs"
 
 [dependencies]
 thiserror = "2"
-log = "0.4"
 
 anyhow = "1"
 clap = { version = "4", features = ["derive"] }
-env_logger = "0.11"
 serde = { version = "1.0.229", features = ["derive"] }
 toml = "1.1.8"
 jiff = { version = "0.2.38", features = ["serde"] }

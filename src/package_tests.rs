@@ -50,3 +50,9 @@ fn rejects_bad_package_refs() {
         assert!(error.contains(message), "{text}: {error}");
     }
 }
+
+#[test]
+fn an_index_displays_as_its_manifest_scheme() {
+    assert_eq!(IndexKind::Repology.to_string(), "repology");
+    assert_eq!(IndexKind::DepsDev.to_string(), "deps.dev");
+}

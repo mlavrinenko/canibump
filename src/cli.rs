@@ -89,7 +89,7 @@ fn check(cli: &Cli, manifest: &Manifest, cache_path: &Path, refresh: bool) -> Re
     let previous = match cache::read(cache_path) {
         Ok(previous) => previous,
         Err(error) => {
-            log::warn!("ignoring the old state file: {error}");
+            eprintln!("canibump: warning: ignoring {error}");
             None
         }
     };

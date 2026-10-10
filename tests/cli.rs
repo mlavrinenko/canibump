@@ -238,6 +238,44 @@ fn a_blocker_error_names_the_manifest_as_given_and_the_blocker_line() {
 }
 
 #[test]
+fn a_provider_that_cannot_start_says_why_on_its_blockers_line() {
+    let repo = Repo::new(
+        &(blocker("x", 1)
+            + "\n[[blocker]]\nid = \"pkg\"\nnote = \"n\"\nversion = \"deps.dev:cargo/serde\"\nat-least = \"1.0.0\"\n"),
+    );
+    repo.server.mock(|when, then| {
+        when.method(GET).path("/v3/systems/cargo/packages/serde");
+        then.status(200)
+            .json_body(json!({"versions": [{"versionKey": {"version": "1.0.228"}}]}));
+    });
+    repo.cmd()
+        .env("CANIBUMP_GITHUB_API", "not-a-url")
+        .assert()
+        .code(12)
+        .stdout(
+            "failed    x    github: API URL `not-a-url`: relative URL without a base\n\
+             bumpable  pkg  deps.dev:cargo/serde is at 1.0.228, at least 1.0.0 (n)\n",
+        );
+}
+
+#[test]
+fn a_corrupt_state_file_warns_on_stderr_and_the_run_goes_on() {
+    let repo = Repo::new(&blocker("waits", 1));
+    repo.issue(1, 200, &open());
+    let path = repo.cache_path();
+    std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
+    std::fs::write(&path, "junk").expect("write junk");
+    repo.cmd()
+        .assert()
+        .code(0)
+        .stdout("waiting   waits  github:o/r#1 is open\n")
+        .stderr(predicate::str::starts_with(format!(
+            "canibump: warning: ignoring {}: not a canibump state file",
+            path.display()
+        )));
+}
+
+#[test]
 fn a_manifest_setting_moves_the_cache() {
     let repo =
         Repo::new(&("[settings]\ncache = \"state.json\"\n".to_owned() + &blocker("waits", 1)));
