@@ -124,6 +124,56 @@ fn keeps_a_spec_that_changes_with_the_condition() {
     assert_ne!(parse("github:o/r#1"), parse("github:o/r#2"));
 }
 
+fn error_line(text: &str) -> Option<usize> {
+    Manifest::parse(text).expect_err("expected an error").line()
+}
+
+#[test]
+fn reports_the_line_a_bad_blocker_starts_on() {
+    let good = "[[blocker]]\nid = \"a\"\nnote = \"n\"\nstate = \"github:o/r#1\"\n";
+    let bad_key = format!("{good}\n[[blocker]]\nid = \"b\"\nnote = \"n\"\nstat = 1\n");
+    assert_eq!(error_line(&bad_key), Some(6));
+    let no_id = format!("{good}[[blocker]]\nnote = \"n\"\nstate = \"github:o/r#1\"\n");
+    assert_eq!(error_line(&no_id), Some(5));
+    assert_eq!(error_line(&format!("{good}{good}")), Some(5));
+    let bad_step = format!(
+        "{good}[[blocker]]\nid = \"b\"\nnote = \"n\"\n[[blocker.all]]\nstate = \"github:o/r#1\"\nextra = 1\n"
+    );
+    assert_eq!(error_line(&bad_step), Some(5));
+}
+
+#[test]
+fn leaves_syntax_and_settings_errors_without_a_line() {
+    assert_eq!(error_line("[[blocker]]\nid = x\n"), None);
+    assert_eq!(error_line("[settings]\nttl = \"soon\"\n"), None);
+}
+
+#[test]
+fn load_names_the_file_and_the_blocker_line_once() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("deps.toml");
+    std::fs::write(&path, "\n[[blocker]]\nid = \"a\"\nnote = \"n\"\nstat = 1\n").expect("write");
+    let error = Manifest::load(&path).expect_err("bad blocker").to_string();
+    assert_eq!(
+        error,
+        format!(
+            "{}:2: blocker `a`: needs one condition: state, reached, version, all, any",
+            path.display()
+        ),
+    );
+}
+
+#[test]
+fn load_names_the_file_of_a_syntax_error() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("deps.toml");
+    std::fs::write(&path, "id = x\n").expect("write");
+    let error = Manifest::load(&path).expect_err("bad toml").to_string();
+    let prefix = format!("{}: TOML parse error at line 1", path.display());
+    assert!(error.starts_with(&prefix), "{error}");
+    assert_eq!(error.matches("TOML parse error").count(), 1, "{error}");
+}
+
 #[test]
 fn load_names_the_missing_file() {
     let error = Manifest::load(Path::new("/nonexistent/canibump.toml"))

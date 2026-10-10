@@ -11,7 +11,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `canibump.toml` manifest: `[[blocker]]` entries with an `id`, a `note` and a
   `state = "github:owner/repo#N"` condition, plus `[settings]` `ttl` and
-  `cache`. Errors name the blocker they sit in.
+  `cache`. A manifest error prints once, naming the manifest as given and, for
+  a blocker, the line it starts on: ``canibump.toml:4: blocker `x`: ...``.
 - Each check ends `waiting`, `bumpable`, `dead` or `failed`. A merged PR or an
   issue closed as completed is bumpable; closed unmerged, not planned,
   duplicate or closed without a reason is dead; a provider error is failed.

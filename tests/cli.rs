@@ -210,6 +210,34 @@ fn a_bad_manifest_exits_1_naming_the_problem() {
 }
 
 #[test]
+fn a_toml_syntax_error_prints_once_naming_the_manifest() {
+    let repo = Repo::new("[[blocker]]\nid = \"x\"\nnote = \"n\"\nstate = github\n");
+    let output = repo.cmd().output().expect("runs");
+    assert_eq!(output.status.code(), Some(1));
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(
+        stderr.starts_with("canibump: canibump.toml: TOML parse error at line 4, column 9\n"),
+        "{stderr}"
+    );
+    assert_eq!(stderr.matches("TOML parse error").count(), 1, "{stderr}");
+}
+
+#[test]
+fn a_blocker_error_names_the_manifest_as_given_and_the_blocker_line() {
+    let repo = Repo::new(&(blocker("a", 1) + &blocker("x", 2) + "foo = 1\n"));
+    std::fs::rename(
+        repo.dir.path().join("canibump.toml"),
+        repo.dir.path().join("deps.toml"),
+    )
+    .expect("rename");
+    repo.cmd()
+        .args(["-m", "./deps.toml"])
+        .assert()
+        .code(1)
+        .stderr("canibump: ./deps.toml:5: blocker `x`: unknown field `foo`, expected `state`\n");
+}
+
+#[test]
 fn a_manifest_setting_moves_the_cache() {
     let repo =
         Repo::new(&("[settings]\ncache = \"state.json\"\n".to_owned() + &blocker("waits", 1)));

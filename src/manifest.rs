@@ -12,7 +12,7 @@ use jiff::SignedDuration;
 use schemars::JsonSchema;
 use serde::Deserialize;
 use thiserror::Error;
-use toml::{Table, Value};
+use toml::{Spanned, Table, Value};
 
 use crate::condition::{Condition, check_steps, parse_condition};
 use crate::schema::BlockerSchema;
@@ -63,7 +63,7 @@ pub enum ManifestError {
         reason: std::io::Error,
     },
     /// The file is not valid TOML, or a top-level key is wrong.
-    #[error("{0}")]
+    #[error(transparent)]
     Toml(#[from] toml::de::Error),
     /// `[settings] ttl` does not parse.
     #[error("settings.ttl: `{0}` is not a duration like \"6h\" or \"30m\"")]
@@ -73,6 +73,8 @@ pub enum ManifestError {
     MissingId {
         /// 1-based position in the file.
         index: usize,
+        /// The line its table starts on.
+        line: usize,
     },
     /// A blocker that is wrong.
     #[error("blocker `{id}`: {message}")]
@@ -81,10 +83,57 @@ pub enum ManifestError {
         id: String,
         /// What is wrong.
         message: String,
+        /// The line its table starts on.
+        line: usize,
     },
     /// Two blockers share an id.
-    #[error("duplicate blocker id `{0}`")]
-    DuplicateId(String),
+    #[error("duplicate blocker id `{id}`")]
+    DuplicateId {
+        /// The shared id.
+        id: String,
+        /// The line the second blocker's table starts on.
+        line: usize,
+    },
+    /// Another error, found in the manifest at `path`. The inner error is a
+    /// field, not a `source`, so a chain prints it once.
+    #[error("{}: {error}", place(.path, .error.line()))]
+    File {
+        /// The manifest path, as given.
+        path: PathBuf,
+        /// What is wrong in it.
+        error: Box<ManifestError>,
+    },
+}
+
+impl ManifestError {
+    /// The line the offending blocker starts on, when the error sits in one.
+    #[must_use]
+    pub fn line(&self) -> Option<usize> {
+        match self {
+            Self::MissingId { line, .. }
+            | Self::Blocker { line, .. }
+            | Self::DuplicateId { line, .. } => Some(*line),
+            Self::File { error, .. } => error.line(),
+            Self::Read { .. } | Self::Toml(_) | Self::Ttl(_) => None,
+        }
+    }
+}
+
+/// `path`, or `path:line` when the error sits in a blocker.
+fn place(path: &Path, line: Option<usize>) -> String {
+    match line {
+        Some(line) => format!("{}:{line}", path.display()),
+        None => path.display().to_string(),
+    }
+}
+
+/// The 1-based line a byte offset falls on.
+fn line_of(text: &str, offset: usize) -> usize {
+    1 + text
+        .bytes()
+        .take(offset)
+        .filter(|byte| *byte == b'\n')
+        .count()
 }
 
 /// A `canibump.toml`: settings, and the blockers a repo waits on.
@@ -98,7 +147,7 @@ pub(crate) struct RawManifest {
     /// One `[[blocker]]` per workaround waiting on something upstream.
     #[serde(default, rename = "blocker")]
     #[schemars(with = "Vec<BlockerSchema>")]
-    blockers: Vec<Table>,
+    blockers: Vec<Spanned<Table>>,
 }
 
 /// `[settings]`.
@@ -120,13 +169,16 @@ impl Manifest {
     /// # Errors
     ///
     /// [`ManifestError::Read`] when the file cannot be read, else whatever
-    /// [`Manifest::parse`] returns.
+    /// [`Manifest::parse`] returns, as a [`ManifestError::File`] naming `path`.
     pub fn load(path: &Path) -> Result<Self, ManifestError> {
         let text = std::fs::read_to_string(path).map_err(|reason| ManifestError::Read {
             path: path.to_owned(),
             reason,
         })?;
-        Self::parse(&text)
+        Self::parse(&text).map_err(|error| ManifestError::File {
+            path: path.to_owned(),
+            error: Box::new(error),
+        })
     }
 
     /// Parses manifest text.
@@ -142,10 +194,14 @@ impl Manifest {
         };
         let mut seen = HashSet::new();
         let mut blockers = Vec::with_capacity(raw.blockers.len());
-        for (index, table) in raw.blockers.into_iter().enumerate() {
-            let blocker = parse_blocker(index + 1, table)?;
+        for (index, spanned) in raw.blockers.into_iter().enumerate() {
+            let line = line_of(text, spanned.span().start);
+            let blocker = parse_blocker(index + 1, line, spanned.into_inner())?;
             if !seen.insert(blocker.id.clone()) {
-                return Err(ManifestError::DuplicateId(blocker.id));
+                return Err(ManifestError::DuplicateId {
+                    id: blocker.id,
+                    line,
+                });
             }
             blockers.push(blocker);
         }
@@ -169,13 +225,14 @@ fn take_string(table: &mut Table, key: &str) -> Option<Result<String, String>> {
     })
 }
 
-fn parse_blocker(index: usize, mut table: Table) -> Result<Blocker, ManifestError> {
+fn parse_blocker(index: usize, line: usize, mut table: Table) -> Result<Blocker, ManifestError> {
     let id = match take_string(&mut table, "id") {
-        None => return Err(ManifestError::MissingId { index }),
+        None => return Err(ManifestError::MissingId { index, line }),
         Some(Err(message)) => {
             return Err(ManifestError::Blocker {
                 id: format!("#{index}"),
                 message,
+                line,
             });
         }
         Some(Ok(id)) => id,
@@ -183,6 +240,7 @@ fn parse_blocker(index: usize, mut table: Table) -> Result<Blocker, ManifestErro
     let fail = |message: String| ManifestError::Blocker {
         id: id.clone(),
         message,
+        line,
     };
     let note = take_string(&mut table, "note")
         .ok_or_else(|| fail("missing `note`: say what workaround it guards".to_owned()))?
