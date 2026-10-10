@@ -72,6 +72,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   manifest types and committed as `schema/canibump.schema.json`. Point taplo or
   tombi at it with a `#:schema` first line; `just install` also writes it to
   `~/.config/canibump/`.
+- A run starts a provider only when a blocker needs it, once. A manifest
+  with no GitHub blocker never runs `gh auth token`, and a fully cached run
+  starts nothing.
 
 ### Fixed
 

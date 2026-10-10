@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: proposed(2026, 10, 10),
+  status: done(2026, 10, 10),
   links: depends-on("say-on-its-own-line-why-a-provider-could-not-start.typ"),
 )
 

@@ -137,7 +137,9 @@ GitLab takes glab's config per host and `GITLAB_TOKEN` for `GITLAB_HOST`
 (default gitlab.com). Gitea takes tea's config logins and `GITEA_TOKEN` for
 `GITEA_HOST`. Redmine takes `REDMINE_API_KEY` for `REDMINE_URL`. Jira takes
 `JIRA_TOKEN`, or `JIRA_USER` with `JIRA_API_TOKEN`, for `JIRA_URL`. A token
-only ever goes to its own host.
+only ever goes to its own host. Credentials are read when a blocker first
+needs them: a manifest with no GitHub blocker never runs `gh`, and a run that
+reuses every cached result reads none.
 
 
 ## Schema

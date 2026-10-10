@@ -1,5 +1,7 @@
 //! End-to-end: the built binary against an httpmock GitHub.
 
+use std::fs::Permissions;
+use std::os::unix::fs::PermissionsExt as _;
 use std::path::{Path, PathBuf};
 
 use assert_cmd::Command;
@@ -36,6 +38,24 @@ impl Repo {
         cmd
     }
 
+    /// Like [`Repo::cmd`], but with no token in the environment and a `gh`
+    /// that logs each call and prints one: the log path says who asked.
+    fn cmd_with_gh(&self) -> (Command, PathBuf) {
+        let bin = self.dir.path().join("bin");
+        std::fs::create_dir_all(&bin).expect("mkdir");
+        let log = self.dir.path().join("gh.log");
+        let script = bin.join("gh");
+        let body = format!(
+            "#!/bin/sh\necho called >> '{}'\necho t0ken\n",
+            log.display()
+        );
+        std::fs::write(&script, body).expect("write gh");
+        std::fs::set_permissions(&script, Permissions::from_mode(0o755)).expect("chmod gh");
+        let mut cmd = self.cmd();
+        cmd.env_remove("GH_TOKEN").env("PATH", &bin);
+        (cmd, log)
+    }
+
     fn issue(&self, number: u64, status: u16, body: &Value) -> Mock<'_> {
         self.server.mock(|when, then| {
             when.method(GET).path(format!("/repos/o/r/issues/{number}"));
@@ -52,6 +72,11 @@ impl Repo {
             .join("cache/canibump/state")
             .join(format!("{}.json", relative.display()))
     }
+}
+
+/// How often the fake `gh` ran.
+fn gh_calls(log: &Path) -> usize {
+    std::fs::read_to_string(log).map_or(0, |text| text.lines().count())
 }
 
 fn blocker(id: &str, number: u64) -> String {
@@ -273,6 +298,37 @@ fn a_corrupt_state_file_warns_on_stderr_and_the_run_goes_on() {
             "canibump: warning: ignoring {}: not a canibump state file",
             path.display()
         )));
+}
+
+#[test]
+fn a_manifest_without_a_github_blocker_never_runs_gh() {
+    let repo = Repo::new(
+        "[[blocker]]\nid = \"nix\"\nnote = \"drop the overlay\"\nversion = \"repology:llama.cpp\"\nrepo = \"nix_unstable\"\nat-least = \"0.6.0\"\n",
+    );
+    repo.server.mock(|when, then| {
+        when.method(GET).path("/project/llama.cpp");
+        then.status(200)
+            .json_body(json!([{"repo": "nix_unstable", "version": "0.6.0"}]));
+    });
+    let (mut cmd, log) = repo.cmd_with_gh();
+    cmd.assert().code(10);
+    assert_eq!(gh_calls(&log), 0, "no blocker needs GitHub");
+}
+
+#[test]
+fn a_github_state_and_a_reached_blocker_ask_gh_once() {
+    let repo = Repo::new(&format!(
+        "{}\n[[blocker]]\nid = \"landed\"\nnote = \"n\"\nreached = \"github:o/r@abc1234\"\nin = {{ branch = \"main\" }}\n",
+        blocker("waits", 1)
+    ));
+    repo.issue(1, 200, &open());
+    repo.server.mock(|when, then| {
+        when.method(GET).path("/repos/o/r/compare/abc1234...main");
+        then.status(200).json_body(json!({"status": "ahead"}));
+    });
+    let (mut cmd, log) = repo.cmd_with_gh();
+    cmd.assert().code(10);
+    assert_eq!(gh_calls(&log), 1, "tracker and code host share one client");
 }
 
 #[test]

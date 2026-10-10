@@ -11,6 +11,7 @@ pub mod github;
 pub mod gitlab;
 mod http;
 pub mod jira;
+mod lazy;
 pub mod redmine;
 pub mod repology;
 
@@ -22,6 +23,7 @@ use std::sync::Arc;
 use async_trait::async_trait;
 use thiserror::Error;
 
+use self::lazy::Lazy;
 use crate::package::{IndexKind, PackageRef};
 use crate::refs::{ItemRef, Source, SourceKind};
 
@@ -135,64 +137,74 @@ pub trait PackageIndex: Send + Sync {
     async fn versions(&self, package: &PackageRef) -> Result<Vec<String>, CheckError>;
 }
 
-/// A provider started, or why it could not start.
-type Started<T> = Result<Arc<T>, CheckError>;
-
 /// The providers a run may use, keyed by source kind.
 ///
-/// A provider that failed to start is kept as its [`CheckError`], so every
-/// blocker that needs it fails with the reason; the others are not affected.
+/// A provider starts when first asked for, at most once. One that fails to
+/// start is kept as its [`CheckError`], so every blocker that needs it fails
+/// with the reason; the others are not affected.
 #[derive(Clone, Default)]
 pub struct Registry {
-    trackers: HashMap<SourceKind, Started<dyn Tracker>>,
-    code_hosts: HashMap<SourceKind, Started<dyn CodeHost>>,
-    indexes: HashMap<IndexKind, Started<dyn PackageIndex>>,
+    trackers: HashMap<SourceKind, Arc<Lazy<dyn Tracker>>>,
+    code_hosts: HashMap<SourceKind, Arc<Lazy<dyn CodeHost>>>,
+    indexes: HashMap<IndexKind, Arc<Lazy<dyn PackageIndex>>>,
 }
 
 impl Registry {
     /// Registers the tracker for a source kind, replacing any earlier one.
     #[must_use]
-    pub fn with_tracker(mut self, kind: SourceKind, tracker: Arc<dyn Tracker>) -> Self {
-        self.trackers.insert(kind, Ok(tracker));
-        self
+    pub fn with_tracker(self, kind: SourceKind, tracker: Arc<dyn Tracker>) -> Self {
+        self.with_lazy_tracker(kind, move || Ok(Arc::clone(&tracker)))
     }
 
-    /// Records why the tracker for a source kind could not start.
+    /// Registers how to start the tracker for a source kind, replacing any
+    /// earlier one. `start` runs on the first ask, and never again.
     #[must_use]
-    pub fn with_tracker_error(mut self, kind: SourceKind, error: CheckError) -> Self {
-        self.trackers.insert(kind, Err(error));
+    pub fn with_lazy_tracker(
+        mut self,
+        kind: SourceKind,
+        start: impl Fn() -> Result<Arc<dyn Tracker>, CheckError> + Send + Sync + 'static,
+    ) -> Self {
+        self.trackers.insert(kind, Arc::new(Lazy::new(start)));
         self
     }
 
     /// Registers the code host for a source kind, replacing any earlier one.
     #[must_use]
-    pub fn with_code_host(mut self, kind: SourceKind, host: Arc<dyn CodeHost>) -> Self {
-        self.code_hosts.insert(kind, Ok(host));
-        self
+    pub fn with_code_host(self, kind: SourceKind, host: Arc<dyn CodeHost>) -> Self {
+        self.with_lazy_code_host(kind, move || Ok(Arc::clone(&host)))
     }
 
-    /// Records why the code host for a source kind could not start.
+    /// Registers how to start the code host for a source kind, replacing any
+    /// earlier one. `start` runs on the first ask, and never again.
     #[must_use]
-    pub fn with_code_host_error(mut self, kind: SourceKind, error: CheckError) -> Self {
-        self.code_hosts.insert(kind, Err(error));
+    pub fn with_lazy_code_host(
+        mut self,
+        kind: SourceKind,
+        start: impl Fn() -> Result<Arc<dyn CodeHost>, CheckError> + Send + Sync + 'static,
+    ) -> Self {
+        self.code_hosts.insert(kind, Arc::new(Lazy::new(start)));
         self
     }
 
     /// Registers a package index, replacing any earlier one.
     #[must_use]
-    pub fn with_index(mut self, kind: IndexKind, index: Arc<dyn PackageIndex>) -> Self {
-        self.indexes.insert(kind, Ok(index));
-        self
+    pub fn with_index(self, kind: IndexKind, index: Arc<dyn PackageIndex>) -> Self {
+        self.with_lazy_index(kind, move || Ok(Arc::clone(&index)))
     }
 
-    /// Records why the package index of a kind could not start.
+    /// Registers how to start the package index of a kind, replacing any
+    /// earlier one. `start` runs on the first ask, and never again.
     #[must_use]
-    pub fn with_index_error(mut self, kind: IndexKind, error: CheckError) -> Self {
-        self.indexes.insert(kind, Err(error));
+    pub fn with_lazy_index(
+        mut self,
+        kind: IndexKind,
+        start: impl Fn() -> Result<Arc<dyn PackageIndex>, CheckError> + Send + Sync + 'static,
+    ) -> Self {
+        self.indexes.insert(kind, Arc::new(Lazy::new(start)));
         self
     }
 
-    /// The tracker for a source kind.
+    /// The tracker for a source kind, started if this is the first ask.
     ///
     /// # Errors
     ///
@@ -202,7 +214,7 @@ impl Registry {
         lookup(&self.trackers, kind, "items")
     }
 
-    /// The code host for a source kind.
+    /// The code host for a source kind, started if this is the first ask.
     ///
     /// # Errors
     ///
@@ -212,7 +224,7 @@ impl Registry {
         lookup(&self.code_hosts, kind, "history")
     }
 
-    /// The package index of a kind.
+    /// The package index of a kind, started if this is the first ask.
     ///
     /// # Errors
     ///
@@ -223,9 +235,10 @@ impl Registry {
     }
 }
 
-/// The provider of `kind`, or the reason there is none, naming `kind`.
+/// The provider of `kind`, started now if need be, or the reason there is
+/// none, naming `kind`.
 fn lookup<'a, K, T>(
-    slots: &'a HashMap<K, Started<T>>,
+    slots: &'a HashMap<K, Arc<Lazy<T>>>,
     kind: K,
     what: &str,
 ) -> Result<&'a T, CheckError>
@@ -233,7 +246,7 @@ where
     K: Copy + Eq + Hash + fmt::Display,
     T: ?Sized,
 {
-    match slots.get(&kind) {
+    match slots.get(&kind).map(|slot| slot.get()) {
         Some(Ok(provider)) => Ok(provider.as_ref()),
         Some(Err(error)) => Err(CheckError::Unsupported(format!("{kind}: {error}"))),
         None => Err(CheckError::Unsupported(format!(
@@ -265,10 +278,35 @@ pub(crate) fn names_any(name: &str, phrases: &[&str]) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
     use super::*;
+
+    struct Quiet;
+
+    #[async_trait]
+    impl Tracker for Quiet {
+        async fn item_state(&self, _item: &ItemRef) -> Result<ItemState, CheckError> {
+            Ok(ItemState::Open)
+        }
+    }
 
     fn broken() -> CheckError {
         CheckError::Unsupported("API URL `x`: bad".to_owned())
+    }
+
+    /// A tracker factory that counts its starts, then succeeds or fails.
+    fn counting(
+        starts: &Arc<AtomicUsize>,
+        outcome: Result<(), CheckError>,
+    ) -> impl Fn() -> Result<Arc<dyn Tracker>, CheckError> + Send + Sync + 'static {
+        let starts = Arc::clone(starts);
+        move || {
+            starts.fetch_add(1, Ordering::SeqCst);
+            outcome
+                .clone()
+                .map(|()| Arc::new(Quiet) as Arc<dyn Tracker>)
+        }
     }
 
     /// What an ask answers: the error's text, or `started`.
@@ -279,11 +317,35 @@ mod tests {
     }
 
     #[test]
-    fn a_start_up_error_reaches_every_ask_naming_the_kind() {
+    fn a_provider_starts_on_its_first_ask_and_only_once() {
+        let starts = Arc::new(AtomicUsize::new(0));
+        let registry =
+            Registry::default().with_lazy_tracker(SourceKind::GitHub, counting(&starts, Ok(())));
+        assert_eq!(starts.load(Ordering::SeqCst), 0, "nobody asked yet");
+        assert_eq!(answer(registry.tracker(SourceKind::GitHub)), "started");
+        assert_eq!(answer(registry.tracker(SourceKind::GitHub)), "started");
+        assert_eq!(starts.load(Ordering::SeqCst), 1);
+    }
+
+    #[test]
+    fn asking_for_another_kind_starts_nothing() {
+        let starts = Arc::new(AtomicUsize::new(0));
+        let registry =
+            Registry::default().with_lazy_tracker(SourceKind::GitHub, counting(&starts, Ok(())));
+        assert_eq!(
+            answer(registry.tracker(SourceKind::GitLab)),
+            "no provider for gitlab items"
+        );
+        assert_eq!(starts.load(Ordering::SeqCst), 0);
+    }
+
+    #[test]
+    fn a_start_up_error_is_kept_and_handed_to_every_ask() {
+        let starts = Arc::new(AtomicUsize::new(0));
         let registry = Registry::default()
-            .with_tracker_error(SourceKind::GitHub, broken())
-            .with_code_host_error(SourceKind::GitHub, broken())
-            .with_index_error(IndexKind::DepsDev, broken());
+            .with_lazy_tracker(SourceKind::GitHub, counting(&starts, Err(broken())))
+            .with_lazy_code_host(SourceKind::GitHub, || Err(broken()))
+            .with_lazy_index(IndexKind::DepsDev, || Err(broken()));
         for _ in 0..2 {
             let github = "github: API URL `x`: bad";
             assert_eq!(answer(registry.tracker(SourceKind::GitHub)), github);
@@ -293,15 +355,12 @@ mod tests {
                 "deps.dev: API URL `x`: bad"
             );
         }
+        assert_eq!(starts.load(Ordering::SeqCst), 1, "a failure is not retried");
     }
 
     #[test]
     fn a_kind_nobody_registered_has_no_provider() {
-        let registry = Registry::default().with_tracker_error(SourceKind::GitHub, broken());
-        assert_eq!(
-            answer(registry.tracker(SourceKind::GitLab)),
-            "no provider for gitlab items"
-        );
+        let registry = Registry::default().with_lazy_tracker(SourceKind::GitHub, || Err(broken()));
         assert_eq!(
             answer(registry.code_host(SourceKind::GitHub)),
             "no provider for github history"
@@ -310,5 +369,26 @@ mod tests {
             answer(registry.index(IndexKind::Repology)),
             "no provider for repology packages"
         );
+    }
+
+    #[test]
+    fn one_lazy_provider_can_back_two_slots_and_starts_once() {
+        let starts = Arc::new(AtomicUsize::new(0));
+        let counter = Arc::clone(&starts);
+        let shared = Arc::new(Lazy::new(move || {
+            counter.fetch_add(1, Ordering::SeqCst);
+            Ok(Arc::new(Quiet))
+        }));
+        let (first, second) = (Arc::clone(&shared), shared);
+        let registry = Registry::default()
+            .with_lazy_tracker(SourceKind::GitHub, move || {
+                first.get().clone().map(|quiet| quiet as Arc<dyn Tracker>)
+            })
+            .with_lazy_tracker(SourceKind::GitLab, move || {
+                second.get().clone().map(|quiet| quiet as Arc<dyn Tracker>)
+            });
+        assert_eq!(answer(registry.tracker(SourceKind::GitHub)), "started");
+        assert_eq!(answer(registry.tracker(SourceKind::GitLab)), "started");
+        assert_eq!(starts.load(Ordering::SeqCst), 1);
     }
 }

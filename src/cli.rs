@@ -95,10 +95,11 @@ fn check(cli: &Cli, manifest: &Manifest, cache_path: &Path, refresh: bool) -> Re
     };
     let now = Timestamp::now();
     let runtime = tokio::runtime::Runtime::new().context("starting the async runtime")?;
+    let registry = defaults::registry();
     let entries = runtime.block_on(run::check(
         manifest,
         previous.as_ref(),
-        defaults::registry,
+        &registry,
         now,
         refresh,
     ));
