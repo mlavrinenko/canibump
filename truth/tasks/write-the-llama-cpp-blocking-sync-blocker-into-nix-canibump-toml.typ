@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: proposed(2026, 10, 10),
+  status: done(2026, 10, 10),
   links: parent(
     "track-the-llama-cpp-blocking-sync-patch-in-nix-with-canibump.typ",
   ),

@@ -105,6 +105,7 @@ id = "llama-blocking-sync"
 note = "apps/llama-cpp-16gb.nix: drop the GGML_CUDA_BLOCKING_SYNC postPatch"
 
 [[blocker.all]]
+id = "merged"
 state = "github:ggml-org/llama.cpp#26487"
 
 [[blocker.all]]
@@ -117,6 +118,13 @@ version = "repology:llama.cpp"
 repo = "nix_unstable"
 srcname = "llama-cpp"
 at-least = { step = "released" }
+```
+
+That one is real: it guards a patch in the author's NixOS flake.
+
+```console
+$ canibump
+waiting   llama-blocking-sync  merged: github:ggml-org/llama.cpp#26487 is open
 ```
 
 A dead or failed step never lets the chain read bumpable. In an any-of, a

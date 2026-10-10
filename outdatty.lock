@@ -34,7 +34,7 @@ groups:
       src/version.rs: 5143da0e832df416b0b2e0980aa4528a913917095bd0e819de54a3fbeaf1d3c5
       src/version_tests.rs: 7261cedc441f28749d932cc3a87aca31758f4e80aefb4f95a25ebce6d3deaf32
     dependents:
-      README.md: 3b66bc69a0efc9ca6a6c1d9dfc53b7d852085ba528ff02556845fa521bd671ce
+      README.md: 2d67ad8c6cbe0c278a2da5382582dbf3a639a27a744e6196d70e7cbd71bda739
       www/index.html: 733e8f241f271be1d0db949f62f8c6045378afe8d1146918d09179dc9cd52f91
   dev-docs:
     source:

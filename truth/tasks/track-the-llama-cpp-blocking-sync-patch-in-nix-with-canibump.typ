@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: proposed(2026, 10, 10),
+  status: done(2026, 10, 10),
   links: depends-on(
     "check-that-a-commit-or-merged-pr-reached-a-branch-tag-or-release.typ",
     "check-package-versions-through-deps-dev-and-repology.typ",
