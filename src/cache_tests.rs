@@ -79,3 +79,38 @@ fn round_trips_and_reports_a_missing_or_broken_file() {
     let error = read(&path).expect_err("broken").to_string();
     assert!(error.contains("not a canibump state file"), "{error}");
 }
+
+fn state() -> StateFile {
+    StateFile {
+        version: VERSION,
+        manifest: PathBuf::from("/m/canibump.toml"),
+        entries: vec![entry(Status::Waiting, Timestamp::UNIX_EPOCH)],
+    }
+}
+
+#[test]
+fn another_writers_temp_file_is_left_alone() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("state.json");
+    let other = dir.path().join("state.json.tmp");
+    std::fs::write(&other, "other writer").expect("another run is mid-write");
+    write(&path, &state()).expect("write");
+    assert_eq!(
+        std::fs::read_to_string(&other).expect("still there"),
+        "other writer"
+    );
+    assert_eq!(read(&path).expect("read"), Some(state()));
+}
+
+#[test]
+fn a_failed_rename_leaves_no_temp_file_behind() {
+    let dir = tempfile::tempdir().expect("tempdir");
+    let path = dir.path().join("state.json");
+    std::fs::create_dir(&path).expect("a directory where the file belongs");
+    write(&path, &state()).expect_err("a file cannot replace a directory");
+    let left: Vec<_> = std::fs::read_dir(dir.path())
+        .expect("list")
+        .map(|item| item.expect("entry").file_name())
+        .collect();
+    assert_eq!(left, [OsString::from("state.json")]);
+}

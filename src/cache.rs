@@ -164,7 +164,16 @@ pub fn read(path: &Path) -> Result<Option<StateFile>, CacheError> {
         })
 }
 
-/// Writes the state file atomically (temp file, then rename).
+/// `<state file>.<pid>.tmp`: a name no other process writes, so two runs on one
+/// manifest cannot interleave their writes into one torn file.
+fn temp_path(path: &Path) -> PathBuf {
+    let mut name = path.as_os_str().to_owned();
+    name.push(format!(".{}.tmp", std::process::id()));
+    PathBuf::from(name)
+}
+
+/// Writes the state file atomically (temp file, then rename). The temp file is
+/// private to this process and removed again when the write or rename fails.
 ///
 /// # Errors
 ///
@@ -178,11 +187,15 @@ pub fn write(path: &Path, state: &StateFile) -> Result<(), CacheError> {
         reason,
     })?;
     text.push('\n');
-    let mut temp = path.as_os_str().to_owned();
-    temp.push(".tmp");
-    let temp = PathBuf::from(temp);
-    std::fs::write(&temp, text).map_err(io_error(&temp))?;
-    std::fs::rename(&temp, path).map_err(io_error(path))
+    let temp = temp_path(path);
+    let written = std::fs::write(&temp, text)
+        .map_err(io_error(&temp))
+        .and_then(|()| std::fs::rename(&temp, path).map_err(io_error(path)));
+    if written.is_err() {
+        // The write or rename error is the one worth reporting.
+        drop(std::fs::remove_file(&temp));
+    }
+    written
 }
 
 #[cfg(test)]

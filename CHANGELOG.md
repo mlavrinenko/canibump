@@ -72,3 +72,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   manifest types and committed as `schema/canibump.schema.json`. Point taplo or
   tombi at it with a `#:schema` first line; `just install` also writes it to
   `~/.config/canibump/`.
+
+### Fixed
+
+- The state file is written through `<state>.json.<pid>.tmp`, so two runs on
+  one manifest, a cron job and a shell, no longer share a temp file and rename
+  a torn one into place. A failed write or rename removes its temp file.
