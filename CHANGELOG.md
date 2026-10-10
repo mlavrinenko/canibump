@@ -93,6 +93,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   note, as a bumpable one does, and a stale line reads
   `(stale, checked 7h ago)` rather than a raw instant. Columns align by
   chars, so a non-ASCII id no longer shifts them.
+- `canibump completions <bash|zsh|fish|elvish|powershell>` prints a completion
+  script generated from the CLI definition, so it cannot drift from the flags.
+  The flake package installs bash, zsh and fish completions and
+  `share/canibump/canibump.schema.json`; the README shows the Nix install and
+  one line of setup per shell.
 
 ### Fixed
 

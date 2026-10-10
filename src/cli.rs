@@ -2,7 +2,8 @@
 
 use anstream::AutoStream;
 use anyhow::{Context as _, Result, bail};
-use clap::{Args, ColorChoice, Parser, Subcommand};
+use clap::{Args, ColorChoice, CommandFactory as _, Parser, Subcommand};
+use clap_complete::Shell;
 use jiff::Timestamp;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
@@ -61,6 +62,11 @@ pub enum Command {
     },
     /// Print the JSON Schema for canibump.toml and exit.
     Schema,
+    /// Print a shell completion script and exit.
+    Completions {
+        /// The shell to complete for.
+        shell: Shell,
+    },
 }
 
 impl Command {
@@ -70,6 +76,7 @@ impl Command {
             Self::Check(_) => "check",
             Self::Status { .. } => "status",
             Self::Schema => "schema",
+            Self::Completions { .. } => "completions",
         }
     }
 }
@@ -96,6 +103,10 @@ pub fn run(cli: &Cli) -> Result<u8> {
             print(cli, &crate::schema::render())?;
             Ok(report::EXIT_OK)
         }
+        Some(Command::Completions { shell }) => {
+            print(cli, &completions(*shell)?)?;
+            Ok(report::EXIT_OK)
+        }
         Some(Command::Status { path }) => {
             let (_, cache_path) = load(cli)?;
             if *path {
@@ -105,6 +116,15 @@ pub fn run(cli: &Cli) -> Result<u8> {
             status(cli, &cache_path)
         }
     }
+}
+
+/// The completion script for `shell`, generated from the `Cli` definition.
+fn completions(shell: Shell) -> Result<String> {
+    let mut command = Cli::command();
+    let name = command.get_name().to_owned();
+    let mut script = Vec::new();
+    clap_complete::generate(shell, &mut command, name, &mut script);
+    String::from_utf8(script).context("rendering the completion script")
 }
 
 /// The manifest, and the state file its results live in.

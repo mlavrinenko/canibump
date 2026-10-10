@@ -28,6 +28,7 @@ anyhow = "1"
 anstream = "1.0.0"
 anstyle = "1.0.14"
 clap = { version = "4", features = ["derive"] }
+clap_complete = "4.6.11"
 serde = { version = "1.0.229", features = ["derive"] }
 toml = "1.1.8"
 jiff = { version = "0.2.38", features = ["serde"] }

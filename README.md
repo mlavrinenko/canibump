@@ -12,9 +12,21 @@ run `canibump`, and it tells you which ones you can finally drop.
 
 ```bash
 cargo install canibump
+nix profile install github:mlavrinenko/canibump
 ```
 
 Or grab a binary from the [latest release](https://github.com/mlavrinenko/canibump/releases/latest).
+
+Tab completion is one line in your shell config. The Nix package installs it for bash, zsh
+and fish on its own.
+
+```bash
+source <(canibump completions bash)   # ~/.bashrc
+source <(canibump completions zsh)    # ~/.zshrc, after compinit
+canibump completions fish | source    # ~/.config/fish/config.fish
+```
+
+`elvish` and `powershell` work too.
 
 ## Usage
 
@@ -92,6 +104,7 @@ canibump --json          # same, as JSON
 canibump status          # last results from the cache, no network
 canibump status --path   # where the cache lives
 canibump schema          # print the JSON Schema for canibump.toml
+canibump completions zsh # print a completion script for a shell
 canibump -m path/to/canibump.toml
 ```
 
@@ -106,7 +119,8 @@ once the first line of `canibump.toml` points at it.
 ```
 
 Prefer a local copy that works offline? `just install` writes one next to the binary
-and `canibump schema > FILE` makes one anywhere.
+and `canibump schema > FILE` makes one anywhere. The Nix package ships one too, as
+`share/canibump/canibump.schema.json` in your profile.
 
 ```toml
 #:schema file:///home/<you>/.config/canibump/canibump.schema.json

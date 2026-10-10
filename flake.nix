@@ -36,6 +36,17 @@
         # For `nix build` & `nix run`:
         packages.default = naersk'.buildPackage {
           src = ./.;
+          nativeBuildInputs = [ pkgs.installShellFiles ];
+          # Completions and the manifest schema come from the built binary, so
+          # they cannot drift from the CLI or the manifest types.
+          postInstall = ''
+            installShellCompletion --cmd canibump \
+              --bash <($out/bin/canibump completions bash) \
+              --zsh <($out/bin/canibump completions zsh) \
+              --fish <($out/bin/canibump completions fish)
+            mkdir -p $out/share/canibump
+            $out/bin/canibump schema > $out/share/canibump/canibump.schema.json
+          '';
         };
 
         # For `nix develop`:
