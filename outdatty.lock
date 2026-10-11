@@ -78,7 +78,7 @@ groups:
     source:
       Cargo.toml: ee75eaa636b331fed70cc2d022bc8d0f1ec15cfe5197a8e7b0592fed5adec9f3
     dependents:
-      CHANGELOG.md: 268834221b6326874abf2abae9c20d84dde489438a19f885692a0036d5fc2f5c
+      CHANGELOG.md: 1c48bc854fbf8c6ea428b823b01b82e876b7a1db7d2b36e02076708f6536b85c
   schema:
     source:
       src/auth.rs: 6a5bb1cfecfc78e2c5bd7c38d1a7fed3df7d3701a06d4be46bfaef161eba9df4
