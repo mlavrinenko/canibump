@@ -263,14 +263,57 @@ fn tags(pattern: &str, since: Option<&str>) -> Within {
 }
 
 #[tokio::test]
-async fn finds_the_first_matching_tag_by_binary_search() {
+async fn finds_the_first_matching_tag_one_call_per_line() {
     let (outcome, fake) = reach(released_from(13), "github:o/r#1", tags("v*", None)).await;
     assert_eq!(
         outcome,
         Outcome::new(Status::Bumpable, "github:o/r#1 (abc1234) is in v0.13.0")
             .with_value("v0.13.0")
     );
-    assert!(fake.contains_calls.load(Ordering::SeqCst) <= 7);
+    // Each 0.x minor is a line of one tag: lines 0.1 to 0.13 are asked.
+    assert_eq!(fake.contains_calls.load(Ordering::SeqCst), 13);
+}
+
+/// A merged PR whose commit is in exactly `holding`, among `tags`.
+fn tagged(tags: &[&str], holding: &[&str]) -> Fake {
+    Fake {
+        tags: tags.iter().map(|tag| (*tag).to_owned()).collect(),
+        containing: holding.iter().map(|tag| (*tag).to_owned()).collect(),
+        ..merged_pr()
+    }
+}
+
+async fn first_tag(fake: Fake) -> (Option<String>, usize) {
+    let (outcome, fake) = reach(fake, "github:o/r#1", tags("v*", None)).await;
+    (outcome.value, fake.contains_calls.load(Ordering::SeqCst))
+}
+
+#[tokio::test]
+async fn finds_a_fix_released_on_a_maintenance_line_only() {
+    let backport = tagged(&["v1.5.0", "v2.0.0", "v2.0.1"], &["v1.5.0"]);
+    assert_eq!(first_tag(backport).await.0.as_deref(), Some("v1.5.0"));
+    let both = tagged(&["v1.5.0", "v2.0.0", "v2.1.0"], &["v1.5.0", "v2.1.0"]);
+    assert_eq!(first_tag(both).await.0.as_deref(), Some("v1.5.0"));
+}
+
+#[tokio::test]
+async fn binary_searches_within_a_line() {
+    for series in ["v1.0.", "vb"] {
+        let line: Vec<String> = (0..64).map(|run| format!("{series}{run}")).collect();
+        let refs: Vec<&str> = line.iter().map(String::as_str).collect();
+        let (found, calls) = first_tag(tagged(&refs, refs.get(37..).unwrap_or_default())).await;
+        assert_eq!(found, Some(format!("{series}37")));
+        assert!(calls <= 7, "{series}: {calls} calls");
+    }
+}
+
+#[tokio::test]
+async fn a_line_shares_major_and_minor() {
+    let tags = ["v1.4.0-rc1", "v1.4.0", "v1.4.10", "v1.4.2+build", "v1.5"];
+    // One call for the 1.4 line's newest tag, one for v1.5's line.
+    let (found, calls) = first_tag(tagged(&tags, &["v1.5"])).await;
+    assert_eq!(found.as_deref(), Some("v1.5"));
+    assert_eq!(calls, 2);
 }
 
 #[tokio::test]

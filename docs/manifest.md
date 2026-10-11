@@ -24,11 +24,11 @@ whole words: `Rejected`, `Won't Fix`, `Invalid` or `Abandoned` read dead,
 `Fixed` or `Done` read bumpable, `Not done` does not.
 
 `reached` waits for a commit, or a PR's merge commit, to land in a branch, a
-tag, or any tag matching a pattern. It reads history on GitHub and any git
-remote, so a target on another forge fails the manifest. An issue has no merge
-commit, so it reads `failed` there. Wait on it with `state` instead. With a
-pattern, canibump names the first tag that has it, in version order. One order
-covers semver, `v`-tags, dates and builds like `b7012`.
+tag, or the first tag matching a pattern, in version order. It reads history
+on GitHub and any git remote, and a target elsewhere fails the manifest. An
+issue has no merge commit and reads `failed`, so wait on it with `state`. A
+short sha matching two commits fails and asks for more digits. One version
+order covers semver, `v`-tags, dates and builds like `b7012`.
 
 ```
 v1.0.0 = 1.0.0 = 1.0.0+build     # a letter prefix and +build drop
@@ -45,7 +45,12 @@ in = { branch = "master" }
 # in = { tags = "v*", since = "1.0.180" }
 ```
 
-A short sha that matches two commits fails and asks for more digits.
+Tags fall into release lines by their first two numbers (`v1.4.2` and
+`v1.4.0-rc1` share `1.4`, all `b`-builds share one), so a fix shipped only on
+an old line, in `v1.5.0` but no `v2`, still counts. canibump asks each line's
+newest tag and binary-searches the first that has it, a call per line plus a
+few. Within a line, a later tag is taken to have what an earlier one has.
+`since` trims the lines to ask.
 
 `version` waits for a package to reach some version. Repology covers distro
 repos, nixpkgs channels included (`nix_unstable`, `nix_stable_25_11`).
@@ -184,12 +189,8 @@ gitlab.com token.
 ## Schema
 
 `canibump schema` prints the manifest's JSON Schema, generated from the types
-that parse it and committed as
-[schema/canibump.schema.json](../schema/canibump.schema.json). `just install`
-writes a copy to `~/.config/canibump/`, and the Nix package ships one as
-`share/canibump/canibump.schema.json`, so an editor can point at it offline.
-
-`canibump schema report` and `canibump schema state` print the schemas of
-`--json` and the state file, committed beside it as
-[schema/report.schema.json](../schema/report.schema.json) and
-[schema/state.schema.json](../schema/state.schema.json).
+that parse it, and `canibump schema report` and `canibump schema state` those
+of `--json` and the state file. All three are committed under
+[schema/](../schema/). `just install` copies the manifest's to
+`~/.config/canibump/`, and the Nix package ships it as
+`share/canibump/canibump.schema.json`, so an editor finds it offline.

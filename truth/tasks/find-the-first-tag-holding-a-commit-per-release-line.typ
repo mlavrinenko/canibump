@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: proposed(2026, 10, 11),
+  status: done(2026, 10, 11),
 )
 
 == Problem
@@ -44,7 +44,7 @@
 
 == TO-BE
 
-- 🟢 Version-sorted tags split into release lines: tags sharing every number run but the last (`v1.4.2`, `v1.4.10`, `v1.4.0-rc1` share `1.4`; all `b`-builds share one). From the lowest line up, canibump checks each line's newest tag, then binary-searches the first line whose newest tag holds the commit.
+- 🟢 Version-sorted tags split into release lines by their first two number runs (`v1.4.2` and `v1.4.0-rc1` share `1.4`, `v1.5` sits on `1`, `b`-builds share one). Lowest line first, canibump asks each line's newest tag, then binary-searches the first line that holds the commit.
 - 🟢 Both cases above name `v1.5.0`. A commit in no tag still reads `waiting`.
 - 🟢 Trade-off: one call per line plus log2 of the line, not log2 of all tags. Same for `b`-builds and `1.0.x`; one call per minor for 0.x projects. A linear scan costs a call per tag on every `waiting` run, which unauthenticated GitHub (60 an hour) cannot pay.
 - 🟢 Still assumed: within a line, later tags hold what an earlier one holds.

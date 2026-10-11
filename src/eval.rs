@@ -190,7 +190,7 @@ async fn evaluate_reached(
         Within::Tag(tag) => found.within(GitRef::Tag(tag.clone())).await,
         Within::Tags { pattern, since } => {
             let tags = candidate_tags(host, source, pattern, since.as_deref()).await?;
-            Ok(match first_containing(host, source, &sha, &tags).await? {
+            Ok(match found.first_containing(&tags).await? {
                 Some(tag) => {
                     Outcome::new(Status::Bumpable, format!("{label} is in {tag}")).with_value(tag)
                 }
@@ -212,6 +212,46 @@ struct Found<'a> {
 }
 
 impl Found<'_> {
+    async fn holds(&self, tag: &str) -> Result<bool, CheckError> {
+        self.host
+            .contains(self.source, self.sha, &GitRef::Tag(tag.to_owned()))
+            .await
+    }
+
+    /// The first of `tags` holding the commit, taking every tag after one
+    /// that holds it to hold it too.
+    async fn first_in<'t>(&self, tags: &'t [String]) -> Result<Option<&'t String>, CheckError> {
+        let (mut low, mut high) = (0, tags.len());
+        while low < high {
+            let middle = low + (high - low) / 2;
+            match tags.get(middle) {
+                Some(tag) if self.holds(tag).await? => high = middle,
+                Some(_) => low = middle + 1,
+                None => break,
+            }
+        }
+        Ok(tags.get(low))
+    }
+
+    /// The first of `tags`, in version order, holding the commit.
+    ///
+    /// Containment need not grow with the version across lines: a fix merged
+    /// into 1.x only is in `v1.5.0` but not `v2.0.0`. Within a line it is
+    /// taken to, so this asks each line's newest tag, lowest line first, and
+    /// binary-searches the first line that holds it: one call per line plus
+    /// about log2 of that line, not one per tag.
+    async fn first_containing(&self, tags: &[String]) -> Result<Option<String>, CheckError> {
+        for line in tags.chunk_by(|left, right| release_line(left) == release_line(right)) {
+            let Some((newest, older)) = line.split_last() else {
+                continue;
+            };
+            if self.holds(newest).await? {
+                return Ok(Some(self.first_in(older).await?.unwrap_or(newest).clone()));
+            }
+        }
+        Ok(None)
+    }
+
     async fn within(&self, target: GitRef) -> Result<Outcome, CheckError> {
         let (label, name) = (self.label, target.name());
         Ok(
@@ -284,30 +324,16 @@ async fn candidate_tags(
     Ok(tags)
 }
 
-/// The first tag holding `sha`. Tags in version order hold a commit from
-/// some point on, so a binary search needs about log2(n) checks.
-async fn first_containing(
-    host: &dyn CodeHost,
-    source: &Source,
-    sha: &str,
-    tags: &[String],
-) -> Result<Option<String>, CheckError> {
-    let (mut low, mut high) = (0, tags.len());
-    while low < high {
-        let middle = low + (high - low) / 2;
-        let Some(tag) = tags.get(middle) else {
-            break;
-        };
-        if host
-            .contains(source, sha, &GitRef::Tag(tag.clone()))
-            .await?
-        {
-            high = middle;
-        } else {
-            low = middle + 1;
-        }
-    }
-    Ok(tags.get(low).cloned())
+/// The release line of a tag: its first two number runs (`v1.4.2-rc1` is on
+/// `1.4`), the first alone for a two-run tag (`v1.5` is on `1`), and none for
+/// a build number (every `b7012` shares one line).
+fn release_line(tag: &str) -> Vec<&str> {
+    let mut runs: Vec<&str> = tag
+        .split(|char: char| !char.is_ascii_digit())
+        .filter(|run| !run.is_empty())
+        .collect();
+    runs.truncate(runs.len().saturating_sub(1).min(2));
+    runs
 }
 
 #[cfg(test)]
