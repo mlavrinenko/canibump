@@ -38,7 +38,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   generated from the code.
 - Tokens come from what you already use: `gh`, glab and tea configs, or
   environment variables. Each goes only to its own host, never follows a
-  redirect off it, and goes only when a blocker needs it.
+  redirect off it or a `CANIBUMP_*_API` override, and goes only when a
+  blocker needs it.
 - Each question is asked once per run, up to eight blockers at once, and
   Repology gets at most one request a second.
 - `canibump schema` prints the manifest's JSON Schema, so taplo and tombi give

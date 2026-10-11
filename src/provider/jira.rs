@@ -135,7 +135,7 @@ impl Tracker for Jira {
             ]);
         url.query_pairs_mut()
             .append_pair("fields", "status,resolution");
-        let request = match self.auth.get(host) {
+        let request = match super::http::credential(&self.auth, self.base.as_ref(), host) {
             Some(JiraAuth::Bearer(token)) => self.client.get(url).bearer_auth(token),
             Some(JiraAuth::Basic(user, token)) => {
                 self.client.get(url).basic_auth(user, Some(token))

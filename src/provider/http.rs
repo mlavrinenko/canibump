@@ -1,5 +1,6 @@
 //! The HTTP client the JSON APIs share, and its error mapping.
 
+use std::collections::HashMap;
 use std::time::Duration;
 
 use reqwest::{Client, RequestBuilder, StatusCode, Url, redirect};
@@ -52,6 +53,31 @@ pub fn client() -> Result<Client, CheckError> {
 /// Parses an API root, so a bad override fails at start-up.
 pub fn base(text: &str) -> Result<Url, CheckError> {
     Url::parse(text).map_err(|error| CheckError::Unsupported(format!("API URL `{text}`: {error}")))
+}
+
+/// The credential for an item on `host`, keyed by where the request goes:
+/// `host` itself, or `base` when it sends every host elsewhere. So an
+/// override never gets a token issued for the item's host.
+pub fn credential<'a, T>(
+    credentials: &'a HashMap<String, T>,
+    base: Option<&Url>,
+    host: &str,
+) -> Option<&'a T> {
+    match base {
+        Some(url) => credentials.get(&instance(url)),
+        None => credentials.get(host),
+    }
+}
+
+/// `https://host:port/path/` to `host:port/path`, the way credentials are
+/// keyed (`REDMINE_URL`, glab's and tea's hosts).
+fn instance(url: &Url) -> String {
+    let host = url.host_str().unwrap_or_default();
+    let port = url
+        .port()
+        .map(|port| format!(":{port}"))
+        .unwrap_or_default();
+    format!("{host}{port}{}", url.path().trim_end_matches('/'))
 }
 
 /// `base` when given (a mock, a mirror), else `https://<host>`.

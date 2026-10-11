@@ -7,7 +7,7 @@ use serde_json::json;
 use super::*;
 
 async fn state(server: &MockServer, text: &str) -> Result<ItemState, CheckError> {
-    let tokens = HashMap::from([("codeberg.org".to_owned(), "t0ken".to_owned())]);
+    let tokens = HashMap::from([(server.address().to_string(), "t0ken".to_owned())]);
     let gitea = Gitea::new(Some(&server.base_url()), tokens).expect("client");
     let item: ItemRef = text.parse().expect("valid ref");
     gitea.item_state(&item).await
@@ -68,10 +68,10 @@ async fn sends_no_token_to_another_host_and_refuses_other_sources() {
             then.status(200).json_body(json!({"state": "open"}));
         })
         .await;
-    assert_eq!(
-        state(&server, "gitea:git.example.org/o/r#1").await,
-        Ok(ItemState::Open)
-    );
+    let tokens = HashMap::from([("git.example.org".to_owned(), "t0ken".to_owned())]);
+    let gitea = Gitea::new(Some(&server.base_url()), tokens).expect("client");
+    let item: ItemRef = "gitea:git.example.org/o/r#1".parse().expect("valid ref");
+    assert_eq!(gitea.item_state(&item).await, Ok(ItemState::Open));
     let result = state(&server, "github:o/r#1").await;
     assert!(
         matches!(result, Err(CheckError::Unsupported(_))),

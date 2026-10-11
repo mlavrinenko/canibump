@@ -3,8 +3,8 @@ algorithm: blake3
 groups:
   cli-docs:
     source:
-      src/auth.rs: 13b2e1d778b5a76ebddbfeca85533ced64a9ab6c0eb84cea1438e0631be1bb21
-      src/auth_tests.rs: 8f5e20b47c8c1d34cad8d63ffc63de43d8334a0c0ea06fd4e19b28942c265eb5
+      src/auth.rs: 6a5bb1cfecfc78e2c5bd7c38d1a7fed3df7d3701a06d4be46bfaef161eba9df4
+      src/auth_tests.rs: 60168b0da88e73d1b11e96b8ea3d5b8ecc430944cd471b39338eb502733128a4
       src/cache.rs: 2e72a4e0ea0110393c8788307d2988d44663263614296c1efe96b8e57b8fedaf
       src/cache_tests.rs: c49552e2ef56fa54feccee38b6a661cfaf9ca253f2379824b664f14e8bc96cc0
       src/cli.rs: c0acaf52466661de790acd52279c4469b701fed3b20620ca47ca059a43d1381e
@@ -19,26 +19,26 @@ groups:
       src/outcome.rs: 15d7ce10d6101e5ec69e1cb5b4b251c75896f29ba9a012eb4de60ddbdaf1e9d3
       src/package.rs: 10f7a020f4627223b4c3b217fa5e38f555419cd053dacc2ddda092e5ecdc475f
       src/package_tests.rs: 455dc46d0e8862ea0186b4526bc9622913799d40a071e5bf6c80f8df168bff0d
-      src/provider/defaults.rs: 975323e7606efb5d90b205c1d0d79844a2e8c1ad51b2a16144d86040af24fb1e
+      src/provider/defaults.rs: 4b455db1d628c0182a3c163b2d81ce49f87ed849484e28f80db831b44572fa8a
       src/provider/depsdev.rs: 4a28482e40f193c927c8205526be3a829e30340347c7737ca74c486ef7a220f0
       src/provider/depsdev_tests.rs: 05e0e2cbfb8a9eea4a93d57a9ce3d0e78bd9de0dd401578f08057233a68fe5a7
       src/provider/git.rs: cf21c591594454add33ed336b6c8536c43b5be6904913b9e5534767f07a42431
       src/provider/git_tests.rs: 76379b5f900381ff070715cc85474fcb087cc29eaa840b763e0b7d08cc511ecd
-      src/provider/gitea.rs: f0c5551fbbb7cb81b702d4ff976a2656b2cca3b119ab78ad9229dd27b9c69826
-      src/provider/gitea_tests.rs: c43da5a3bae39fbf48fc239a02f1031a6d016eed73ebc21c3dd27c0951d1e042
+      src/provider/gitea.rs: 69fd53e1f3f07a6e8362e29c4a4a3c0c6396bfa10e0a6a387067f10611bbae38
+      src/provider/gitea_tests.rs: 6951d8f6754580b73b2a3bbc7e370a3411774656109e0c7faf9fd05623c8e2a9
       src/provider/github.rs: 780bbddce10f31b57b3533bcddeb0c40be6074ce0610b4828c32a298a908bfc3
       src/provider/github_tests.rs: f64fe7e0f9160229a7f192b4ba9e3cc53803e3774bf5636fff8c8f6781c668cf
-      src/provider/gitlab.rs: 7d224bd299051274dde1ff2e58a5106a1f5fb91e759e063dfc57cd173a1a1abb
-      src/provider/gitlab_tests.rs: c0f57560fb3b6b356a288c9efbfaa326e2ac78ea5f43a6efc0bba919b40333ba
-      src/provider/http.rs: a847090efd794f0b10c52a7c0d6ae9a4bd25a7e0ca00ff94c4883a06234ae72b
-      src/provider/http_tests.rs: bf2e67f4deb63b03b3c132c9aceb6019d26c3c3c329c6e48f63ac73c47079436
-      src/provider/jira.rs: 05d5041ca671f7f300c3c5adb5aa066a7bfe8b1247729bdd680f7df2408a6262
-      src/provider/jira_tests.rs: acfee879a9b05aa44dfa80c915614651c4e7bae0050e4b91f853bfb1e8fffcc0
+      src/provider/gitlab.rs: ad5e40bf4c5519833f7371581c38e3c8452164783690fd485aa0e0ce6c2b1d91
+      src/provider/gitlab_tests.rs: e66ada038605e19c05d6fbffe3ad7ef953fdd996900d2fc8a1732bd4811901b3
+      src/provider/http.rs: 1adbf2822c67f24936f9a68090bf320729b4f2c8233ba086e8f1ca4aea68b772
+      src/provider/http_tests.rs: 381fcbf2b4387bb482a2e83de5a6ceb7d7e7b866eed4c4a2a884e8fe2b4a4398
+      src/provider/jira.rs: ef6fafc6fba390a1e8b5c63c767efb881d217e5a54447cbc156fbce70c4f386e
+      src/provider/jira_tests.rs: f3c98c78c68852a4f5851566cc974bd25093f58c1058e7c90f020de4b1f6312f
       src/provider/lazy.rs: 817837bceb2dc6c47334a080140c57f5f85693182b67089c47274e70ca845b21
       src/provider/memo.rs: 0d3770c9b68e611d4f56e2bec07707d90c30e611a4754202f74339f4cc77cba9
       src/provider/mod.rs: 319693d658b77d3aa5ebbe578ef307d6b945980fd77fba79c84a9f1de5946afc
-      src/provider/redmine.rs: e09c85136eb7e8106cedd9aa7a7e6301f426bc40e178ea424fd73b97c208c617
-      src/provider/redmine_tests.rs: 8e3aaf72120f81f4de16163733e73b6748e7483a2a521738f1258897f999373a
+      src/provider/redmine.rs: 94736da32184f29ed583f608b2438ddfd8c9901e0c448ede57300850b51da420
+      src/provider/redmine_tests.rs: 5bd5bd706b2985ef90da48625ddc2332819b2e17fb9aa2db99ab5581e20cf5a4
       src/provider/repology.rs: b61ccb7a0bd73dfc2cc24c950ddbd06b2fb8bac568395d1ebf962d543db46070
       src/provider/repology_tests.rs: 0564819b59b92b6ff2cae8c3ccb265f49a1543ba7f2e397fe1621f799c34ef56
       src/refs.rs: bfa389cbe4fbdd0ea23293a0344bbf5f41693183ceb6633fb31d47a74fab383a
@@ -52,7 +52,7 @@ groups:
     dependents:
       README.md: 3c551f06ee500646d02fd3d3eb05d8354212911f58ffc5b2ec64d57ad96e209d
       docs/architecture.md: 40c1387109718056fbcb0eb4ae5463537f757fb441cf858eb0b5bdf491ead52c
-      docs/manifest.md: c7bcb98094c769354d808ac78b5b13adb25d6ab23b8ed0f4007fab4f00343943
+      docs/manifest.md: 243717c55558d95c2beed34c856e307dc7bb2561544167750d116f6927c8b967
   dev-docs:
     source:
       .config/nextest.toml: ec97d2444d9bf38aae8499d53eac3ffbbab47593637e3a324452ee72bec0ef0b
@@ -76,11 +76,11 @@ groups:
     source:
       Cargo.toml: ee75eaa636b331fed70cc2d022bc8d0f1ec15cfe5197a8e7b0592fed5adec9f3
     dependents:
-      CHANGELOG.md: dee333ff72bf3541d4857b7f6597fb122fc83bf73dc1c8edd2cbc7a873b6475c
+      CHANGELOG.md: b8cb69fa7c83245f28bd95625a84350f82980771f59e68066d23fc06ff6877b7
   schema:
     source:
-      src/auth.rs: 13b2e1d778b5a76ebddbfeca85533ced64a9ab6c0eb84cea1438e0631be1bb21
-      src/auth_tests.rs: 8f5e20b47c8c1d34cad8d63ffc63de43d8334a0c0ea06fd4e19b28942c265eb5
+      src/auth.rs: 6a5bb1cfecfc78e2c5bd7c38d1a7fed3df7d3701a06d4be46bfaef161eba9df4
+      src/auth_tests.rs: 60168b0da88e73d1b11e96b8ea3d5b8ecc430944cd471b39338eb502733128a4
       src/cache.rs: 2e72a4e0ea0110393c8788307d2988d44663263614296c1efe96b8e57b8fedaf
       src/cache_tests.rs: c49552e2ef56fa54feccee38b6a661cfaf9ca253f2379824b664f14e8bc96cc0
       src/cli.rs: c0acaf52466661de790acd52279c4469b701fed3b20620ca47ca059a43d1381e
@@ -95,26 +95,26 @@ groups:
       src/outcome.rs: 15d7ce10d6101e5ec69e1cb5b4b251c75896f29ba9a012eb4de60ddbdaf1e9d3
       src/package.rs: 10f7a020f4627223b4c3b217fa5e38f555419cd053dacc2ddda092e5ecdc475f
       src/package_tests.rs: 455dc46d0e8862ea0186b4526bc9622913799d40a071e5bf6c80f8df168bff0d
-      src/provider/defaults.rs: 975323e7606efb5d90b205c1d0d79844a2e8c1ad51b2a16144d86040af24fb1e
+      src/provider/defaults.rs: 4b455db1d628c0182a3c163b2d81ce49f87ed849484e28f80db831b44572fa8a
       src/provider/depsdev.rs: 4a28482e40f193c927c8205526be3a829e30340347c7737ca74c486ef7a220f0
       src/provider/depsdev_tests.rs: 05e0e2cbfb8a9eea4a93d57a9ce3d0e78bd9de0dd401578f08057233a68fe5a7
       src/provider/git.rs: cf21c591594454add33ed336b6c8536c43b5be6904913b9e5534767f07a42431
       src/provider/git_tests.rs: 76379b5f900381ff070715cc85474fcb087cc29eaa840b763e0b7d08cc511ecd
-      src/provider/gitea.rs: f0c5551fbbb7cb81b702d4ff976a2656b2cca3b119ab78ad9229dd27b9c69826
-      src/provider/gitea_tests.rs: c43da5a3bae39fbf48fc239a02f1031a6d016eed73ebc21c3dd27c0951d1e042
+      src/provider/gitea.rs: 69fd53e1f3f07a6e8362e29c4a4a3c0c6396bfa10e0a6a387067f10611bbae38
+      src/provider/gitea_tests.rs: 6951d8f6754580b73b2a3bbc7e370a3411774656109e0c7faf9fd05623c8e2a9
       src/provider/github.rs: 780bbddce10f31b57b3533bcddeb0c40be6074ce0610b4828c32a298a908bfc3
       src/provider/github_tests.rs: f64fe7e0f9160229a7f192b4ba9e3cc53803e3774bf5636fff8c8f6781c668cf
-      src/provider/gitlab.rs: 7d224bd299051274dde1ff2e58a5106a1f5fb91e759e063dfc57cd173a1a1abb
-      src/provider/gitlab_tests.rs: c0f57560fb3b6b356a288c9efbfaa326e2ac78ea5f43a6efc0bba919b40333ba
-      src/provider/http.rs: a847090efd794f0b10c52a7c0d6ae9a4bd25a7e0ca00ff94c4883a06234ae72b
-      src/provider/http_tests.rs: bf2e67f4deb63b03b3c132c9aceb6019d26c3c3c329c6e48f63ac73c47079436
-      src/provider/jira.rs: 05d5041ca671f7f300c3c5adb5aa066a7bfe8b1247729bdd680f7df2408a6262
-      src/provider/jira_tests.rs: acfee879a9b05aa44dfa80c915614651c4e7bae0050e4b91f853bfb1e8fffcc0
+      src/provider/gitlab.rs: ad5e40bf4c5519833f7371581c38e3c8452164783690fd485aa0e0ce6c2b1d91
+      src/provider/gitlab_tests.rs: e66ada038605e19c05d6fbffe3ad7ef953fdd996900d2fc8a1732bd4811901b3
+      src/provider/http.rs: 1adbf2822c67f24936f9a68090bf320729b4f2c8233ba086e8f1ca4aea68b772
+      src/provider/http_tests.rs: 381fcbf2b4387bb482a2e83de5a6ceb7d7e7b866eed4c4a2a884e8fe2b4a4398
+      src/provider/jira.rs: ef6fafc6fba390a1e8b5c63c767efb881d217e5a54447cbc156fbce70c4f386e
+      src/provider/jira_tests.rs: f3c98c78c68852a4f5851566cc974bd25093f58c1058e7c90f020de4b1f6312f
       src/provider/lazy.rs: 817837bceb2dc6c47334a080140c57f5f85693182b67089c47274e70ca845b21
       src/provider/memo.rs: 0d3770c9b68e611d4f56e2bec07707d90c30e611a4754202f74339f4cc77cba9
       src/provider/mod.rs: 319693d658b77d3aa5ebbe578ef307d6b945980fd77fba79c84a9f1de5946afc
-      src/provider/redmine.rs: e09c85136eb7e8106cedd9aa7a7e6301f426bc40e178ea424fd73b97c208c617
-      src/provider/redmine_tests.rs: 8e3aaf72120f81f4de16163733e73b6748e7483a2a521738f1258897f999373a
+      src/provider/redmine.rs: 94736da32184f29ed583f608b2438ddfd8c9901e0c448ede57300850b51da420
+      src/provider/redmine_tests.rs: 5bd5bd706b2985ef90da48625ddc2332819b2e17fb9aa2db99ab5581e20cf5a4
       src/provider/repology.rs: b61ccb7a0bd73dfc2cc24c950ddbd06b2fb8bac568395d1ebf962d543db46070
       src/provider/repology_tests.rs: 0564819b59b92b6ff2cae8c3ccb265f49a1543ba7f2e397fe1621f799c34ef56
       src/refs.rs: bfa389cbe4fbdd0ea23293a0344bbf5f41693183ceb6633fb31d47a74fab383a
@@ -127,7 +127,7 @@ groups:
       src/version_tests.rs: f914fa5918e6747ab85d18a542e073f8ab11252de65143c49d105ccde8a4c9c3
     dependents:
       README.md: 3c551f06ee500646d02fd3d3eb05d8354212911f58ffc5b2ec64d57ad96e209d
-      docs/manifest.md: c7bcb98094c769354d808ac78b5b13adb25d6ab23b8ed0f4007fab4f00343943
+      docs/manifest.md: 243717c55558d95c2beed34c856e307dc7bb2561544167750d116f6927c8b967
       schema/canibump.schema.json: 43fd8c54915035c83daf838d5cd595943898e66423ea52729cdd866b1d1e6096
       schema/report.schema.json: 3959630b0b339e89cd796232b1c42b106e1f5a7844894bb2cdaacaec6c48ec5d
       schema/state.schema.json: 4e9bac260e4803a0889470dc91510da8decd23a7d8c1bb9379848323d054ae44

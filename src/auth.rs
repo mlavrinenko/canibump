@@ -6,28 +6,51 @@ use std::process::{Command, Stdio};
 
 use serde::Deserialize;
 
-/// The GitHub token: `GITHUB_TOKEN`, then `GH_TOKEN`, then `gh auth token`.
+/// The token for the GitHub API at `api`. On `api.github.com` it is
+/// github.com's: `GITHUB_TOKEN`, `GH_TOKEN`, then `gh auth token`. On any
+/// other host it is that host's, the way gh picks one: `GH_ENTERPRISE_TOKEN`,
+/// `GITHUB_ENTERPRISE_TOKEN`, then `gh auth token --hostname <host>`.
 /// `None` means unauthenticated requests.
 #[must_use]
-pub fn github_token() -> Option<String> {
-    github_token_from(|key| std::env::var(key).ok(), gh_auth_token)
+pub fn github_token(api: &str) -> Option<String> {
+    github_token_from(api, |key| std::env::var(key).ok(), gh_auth_token)
 }
 
 fn github_token_from(
+    api: &str,
     env: impl Fn(&str) -> Option<String>,
-    fallback: impl FnOnce() -> Option<String>,
+    fallback: impl FnOnce(&str) -> Option<String>,
 ) -> Option<String> {
-    ["GITHUB_TOKEN", "GH_TOKEN"]
-        .into_iter()
+    let host = github_host(api)?;
+    let keys = if host == "github.com" {
+        ["GITHUB_TOKEN", "GH_TOKEN"]
+    } else {
+        ["GH_ENTERPRISE_TOKEN", "GITHUB_ENTERPRISE_TOKEN"]
+    };
+    keys.into_iter()
         .find_map(|key| env(key).filter(|value| !value.is_empty()))
-        .or_else(fallback)
+        .or_else(|| fallback(&host))
 }
 
-/// Asks the `gh` CLI for its stored token, the one place canibump runs
+/// The host gh files `api`'s token under: `github.com` for
+/// `api.github.com`, else the API's own host and port.
+fn github_host(api: &str) -> Option<String> {
+    let url = reqwest::Url::parse(api).ok()?;
+    let host = url.host_str()?;
+    if host == "api.github.com" {
+        return Some("github.com".to_owned());
+    }
+    Some(
+        url.port()
+            .map_or_else(|| host.to_owned(), |port| format!("{host}:{port}")),
+    )
+}
+
+/// Asks the `gh` CLI for `host`'s stored token, the one place canibump runs
 /// another program: gh keeps the token in the system keyring, not a file.
-fn gh_auth_token() -> Option<String> {
+fn gh_auth_token(host: &str) -> Option<String> {
     let output = Command::new("gh")
-        .args(["auth", "token"])
+        .args(["auth", "token", "--hostname", host])
         .stdin(Stdio::null())
         .stderr(Stdio::null())
         .output()

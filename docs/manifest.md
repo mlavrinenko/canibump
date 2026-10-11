@@ -164,6 +164,21 @@ skipped.
 A token only ever goes to its own host, and only when a blocker needs it. A
 redirect to another host fails the check rather than carry the token along.
 
+`CANIBUMP_<PROVIDER>_API` (`GITHUB`, `GITLAB`, `GITEA`, `REDMINE`, `JIRA`,
+`REPOLOGY`, `DEPSDEV`) sends every request of that provider to another API
+root, say a GitHub Enterprise box or a mirror. The override gets the token
+filed under its own host, never the item's host's or github.com's. On GitHub
+Enterprise that's `GH_ENTERPRISE_TOKEN`, `GITHUB_ENTERPRISE_TOKEN`, then
+`gh auth token --hostname <host>`, the way gh picks one.
+
+```console
+$ CANIBUMP_GITHUB_API=https://ghe.example.com/api/v3 GH_ENTERPRISE_TOKEN=ghp_xxx canibump
+$ CANIBUMP_GITLAB_API=https://mirror.example.com GITLAB_HOST=mirror.example.com GITLAB_TOKEN=glpat_xxx canibump
+```
+
+Here `GITHUB_TOKEN` and `GH_TOKEN` stay home, and the mirror never sees the
+gitlab.com token.
+
 ## Schema
 
 `canibump schema` prints the manifest's JSON Schema, generated from the types

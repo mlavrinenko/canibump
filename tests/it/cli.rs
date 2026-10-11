@@ -351,3 +351,48 @@ fn checks_package_versions_on_repology_and_deps_dev() {
          waiting   crate  deps.dev:cargo/serde is at 1.0.228, waiting for 2.0.0\n",
     );
 }
+
+#[test]
+fn a_github_com_token_never_reaches_another_api_host() {
+    let repo = Repo::new(&blocker("waits", 1));
+    let carrying = repo.server.mock(|when, then| {
+        when.method(GET)
+            .path("/repos/o/r/issues/1")
+            .header_exists("authorization");
+        then.status(200).json_body(open());
+    });
+    repo.issue(1, 200, &open());
+    repo.cmd()
+        .env("GH_TOKEN", "for-github.com")
+        .env_remove("GH_ENTERPRISE_TOKEN")
+        .env("PATH", repo.dir.path())
+        .assert()
+        .code(0);
+    assert_eq!(carrying.calls(), 0, "GH_TOKEN is github.com's");
+}
+
+#[test]
+fn an_enterprise_api_gets_the_enterprise_token() {
+    let repo = Repo::new(&blocker("waits", 1));
+    let carrying = repo.server.mock(|when, then| {
+        when.method(GET)
+            .path("/repos/o/r/issues/1")
+            .header("authorization", "Bearer t0ken");
+        then.status(200).json_body(open());
+    });
+    repo.cmd().assert().code(0);
+    assert_eq!(carrying.calls(), 1);
+}
+
+#[test]
+fn an_enterprise_api_asks_gh_for_its_own_host() {
+    let repo = Repo::new(&blocker("waits", 1));
+    repo.issue(1, 200, &open());
+    let (mut cmd, log) = repo.cmd_with_gh();
+    cmd.assert().code(0);
+    let asked = std::fs::read_to_string(&log).expect("gh ran");
+    assert_eq!(
+        asked,
+        format!("auth token --hostname {}\n", repo.server.address())
+    );
+}

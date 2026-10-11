@@ -20,7 +20,7 @@ async fn assert_states(cases: Vec<(Value, ItemState)>) {
             })
             .await;
     }
-    let keys = HashMap::from([("redmine.example.org".to_owned(), "k3y".to_owned())]);
+    let keys = HashMap::from([(server.address().to_string(), "k3y".to_owned())]);
     let redmine = Redmine::new(Some(&server.base_url()), keys).expect("client");
     for (index, (status, want)) in cases.into_iter().enumerate() {
         let item: ItemRef = format!("redmine:redmine.example.org#{}", index + 1)

@@ -7,7 +7,7 @@ use serde_json::json;
 use super::*;
 
 fn gitlab(server: &MockServer) -> GitLab {
-    let tokens = HashMap::from([("gitlab.com".to_owned(), "t0ken".to_owned())]);
+    let tokens = HashMap::from([(server.address().to_string(), "t0ken".to_owned())]);
     GitLab::new(Some(&server.base_url()), tokens).expect("client")
 }
 
@@ -124,10 +124,12 @@ async fn sends_a_token_only_to_its_own_host() {
             then.status(200).json_body(json!({"state": "opened"}));
         })
         .await;
-    assert_eq!(
-        state(&server, "gitlab:other.example.org/group/proj#1").await,
-        Ok(ItemState::Open)
-    );
+    let tokens = HashMap::from([("other.example.org".to_owned(), "t0ken".to_owned())]);
+    let gitlab = GitLab::new(Some(&server.base_url()), tokens).expect("client");
+    let item: ItemRef = "gitlab:other.example.org/group/proj#1"
+        .parse()
+        .expect("valid ref");
+    assert_eq!(gitlab.item_state(&item).await, Ok(ItemState::Open));
 }
 
 #[tokio::test]

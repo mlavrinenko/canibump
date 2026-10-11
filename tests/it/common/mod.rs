@@ -34,7 +34,9 @@ impl Repo {
             .env("CANIBUMP_GITHUB_API", self.server.base_url())
             .env("CANIBUMP_REPOLOGY_API", self.server.base_url())
             .env("CANIBUMP_DEPSDEV_API", self.server.base_url())
-            .env("GH_TOKEN", "t0ken")
+            .env("GH_ENTERPRISE_TOKEN", "t0ken")
+            .env_remove("GITHUB_ENTERPRISE_TOKEN")
+            .env_remove("GH_TOKEN")
             .env_remove("GITHUB_TOKEN")
             .env_remove("CLICOLOR_FORCE")
             .env("XDG_CACHE_HOME", self.dir.path().join("cache"));
@@ -42,20 +44,21 @@ impl Repo {
     }
 
     /// Like [`Repo::cmd`], but with no token in the environment and a `gh`
-    /// that logs each call and prints one: the log path says who asked.
+    /// that logs each call's arguments and prints one: the log path says who
+    /// asked.
     pub fn cmd_with_gh(&self) -> (Command, PathBuf) {
         let bin = self.dir.path().join("bin");
         std::fs::create_dir_all(&bin).expect("mkdir");
         let log = self.dir.path().join("gh.log");
         let script = bin.join("gh");
         let body = format!(
-            "#!/bin/sh\necho called >> '{}'\necho t0ken\n",
+            "#!/bin/sh\necho \"$*\" >> '{}'\necho t0ken\n",
             log.display()
         );
         std::fs::write(&script, body).expect("write gh");
         std::fs::set_permissions(&script, Permissions::from_mode(0o755)).expect("chmod gh");
         let mut cmd = self.cmd();
-        cmd.env_remove("GH_TOKEN").env("PATH", &bin);
+        cmd.env_remove("GH_ENTERPRISE_TOKEN").env("PATH", &bin);
         (cmd, log)
     }
 

@@ -101,7 +101,7 @@ impl Tracker for Redmine {
             .pop_if_empty()
             .extend(["issues", &format!("{}.json", item.number)]);
         let mut request = self.client.get(url);
-        if let Some(key) = self.keys.get(host) {
+        if let Some(key) = super::http::credential(&self.keys, self.base.as_ref(), host) {
             request = request.header("X-Redmine-API-Key", key);
         }
         let envelope: Envelope = send_json(request, &item.to_string()).await?;

@@ -43,7 +43,7 @@ async fn maps_status_category_and_resolution() {
             .await;
     }
     let auth = HashMap::from([(
-        "jira.example.org".to_owned(),
+        server.address().to_string(),
         JiraAuth::Bearer("t0ken".to_owned()),
     )]);
     let jira = Jira::new(Some(&server.base_url()), auth).expect("client");
@@ -73,7 +73,7 @@ async fn sends_basic_auth() {
         })
         .await;
     let auth = HashMap::from([(
-        "jira.example.org".to_owned(),
+        server.address().to_string(),
         JiraAuth::Basic("me".to_owned(), "secret".to_owned()),
     )]);
     let jira = Jira::new(Some(&server.base_url()), auth).expect("client");

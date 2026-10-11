@@ -63,7 +63,7 @@ impl Tracker for Gitea {
             .pop_if_empty()
             .extend(["api", "v1", "repos", owner, repo, "issues", &number]);
         let mut request = self.client.get(url);
-        if let Some(token) = self.tokens.get(host) {
+        if let Some(token) = super::http::credential(&self.tokens, self.base.as_ref(), host) {
             request = request.header("Authorization", format!("token {token}"));
         }
         let issue: IssueDto = send_json(request, &item.to_string()).await?;

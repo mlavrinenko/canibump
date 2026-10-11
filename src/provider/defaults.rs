@@ -2,7 +2,8 @@
 //!
 //! `CANIBUMP_<PROVIDER>_API` (GITHUB, GITLAB, GITEA, REDMINE, JIRA, REPOLOGY,
 //! DEPSDEV) points a provider elsewhere: a mock in tests, GitHub Enterprise,
-//! a mirror.
+//! a mirror. The override gets its own host's token, never the one issued
+//! for github.com or for the item's host.
 //!
 //! Nothing starts here. Each provider is a factory the registry runs when a
 //! blocker first needs it, so a manifest that never mentions GitHub never
@@ -59,7 +60,7 @@ fn index<T: PackageIndex + 'static>(
 fn github(registry: Registry) -> Registry {
     let client = Arc::new(Lazy::new(|| {
         let api = env_or("CANIBUMP_GITHUB_API", super::github::API);
-        GitHub::new(Some(&api), auth::github_token()).map(Arc::new)
+        GitHub::new(Some(&api), auth::github_token(&api)).map(Arc::new)
     }));
     let for_tracker = Arc::clone(&client);
     registry

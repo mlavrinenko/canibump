@@ -8,6 +8,7 @@ use super::super::gitea::Gitea;
 use super::super::gitlab::GitLab;
 use super::super::redmine::Redmine;
 use super::super::{CheckError, ItemState, Tracker};
+use super::{Url, credential};
 use crate::refs::ItemRef;
 
 const GITLAB_ISSUE: &str = "/api/v4/projects/group%2Fproj/issues/1";
@@ -174,4 +175,79 @@ async fn follows_ten_redirects_and_refuses_the_eleventh() {
         panic!("want a network error, got {result:?}");
     };
     assert_eq!(message, "gitlab:group/proj#1: too many redirects");
+}
+
+/// Asks `tracker` built with `server`'s own credential, then with only
+/// `host`'s, for `item`, counting what reached `server` with `header`.
+async fn assert_override_keyed_by_itself(
+    server: &MockServer,
+    answered: &Mock<'_>,
+    host: &str,
+    tracker: impl Fn(HashMap<String, String>) -> Box<dyn Tracker>,
+    item: &str,
+) {
+    let own = HashMap::from([(server.address().to_string(), "s3cret".to_owned())]);
+    let foreign = HashMap::from([(host.to_owned(), "s3cret".to_owned())]);
+    for (credentials, want) in [(foreign, 0), (own, 1)] {
+        let result = state(&*tracker(credentials), item).await;
+        assert_eq!(answered.calls_async().await, want, "{result:?}");
+    }
+}
+
+#[tokio::test]
+async fn a_gitlab_override_gets_its_own_token_never_the_items_host() {
+    let server = MockServer::start_async().await;
+    let body = json!({"state": "opened"});
+    let answered = answer(&server, GITLAB_ISSUE, "private-token", &body).await;
+    let base = server.base_url();
+    let gitlab =
+        |tokens| Box::new(GitLab::new(Some(&base), tokens).expect("client")) as Box<dyn Tracker>;
+    assert_override_keyed_by_itself(
+        &server,
+        &answered,
+        "gitlab.com",
+        gitlab,
+        "gitlab:group/proj#1",
+    )
+    .await;
+}
+
+#[tokio::test]
+async fn a_redmine_override_gets_its_own_key_never_the_items_host() {
+    let server = MockServer::start_async().await;
+    let body = json!({"issue": {"status": {"name": "New"}}});
+    let answered = answer(&server, REDMINE_ISSUE, "x-redmine-api-key", &body).await;
+    let base = server.base_url();
+    let redmine =
+        |keys| Box::new(Redmine::new(Some(&base), keys).expect("client")) as Box<dyn Tracker>;
+    let item = "redmine:redmine.example.org#1";
+    assert_override_keyed_by_itself(&server, &answered, "redmine.example.org", redmine, item).await;
+}
+
+#[test]
+fn keys_a_credential_by_where_the_request_goes() {
+    let credentials = HashMap::from([
+        ("gitlab.com".to_owned(), 1),
+        ("ghe.example.com:8443".to_owned(), 2),
+        ("example.org/redmine".to_owned(), 3),
+    ]);
+    let url = |text: &str| Url::parse(text).expect("url");
+    let at =
+        |base: Option<&str>, host: &str| credential(&credentials, base.map(url).as_ref(), host);
+    assert_eq!(at(None, "gitlab.com"), Some(&1));
+    assert_eq!(at(None, "other.example.org"), None);
+    assert_eq!(
+        at(Some("https://ghe.example.com:8443/"), "gitlab.com"),
+        Some(&2)
+    );
+    assert_eq!(
+        at(Some("https://ghe.example.com"), "ghe.example.com:8443"),
+        None
+    );
+    assert_eq!(
+        at(Some("https://example.org/redmine/"), "gitlab.com"),
+        Some(&3)
+    );
+    assert_eq!(at(Some("https://example.org"), "example.org/redmine"), None);
+    assert_eq!(at(Some("https://gitlab.com:443"), "x"), Some(&1));
 }

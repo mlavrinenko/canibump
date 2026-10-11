@@ -2,29 +2,89 @@ use std::collections::HashMap;
 
 use super::*;
 
+fn env(vars: &'static [(&'static str, &'static str)]) -> impl Fn(&str) -> Option<String> {
+    move |key: &str| {
+        vars.iter()
+            .find(|(name, _)| *name == key)
+            .map(|(_, value)| (*value).to_owned())
+    }
+}
+
+const GITHUB: &str = "https://api.github.com";
+const ENTERPRISE: &str = "https://ghe.example.com:8443/api/v3";
+
 #[test]
 fn prefers_github_token_then_gh_token_then_the_fallback() {
-    let env = |vars: &'static [(&'static str, &'static str)]| {
-        move |key: &str| {
-            vars.iter()
-                .find(|(name, _)| *name == key)
-                .map(|(_, value)| (*value).to_owned())
-        }
-    };
-    let fallback = || Some("from-gh".to_owned());
+    let fallback = |host: &str| Some(format!("from-gh for {host}"));
     assert_eq!(
-        github_token_from(env(&[("GITHUB_TOKEN", "a"), ("GH_TOKEN", "b")]), fallback),
+        github_token_from(
+            GITHUB,
+            env(&[("GITHUB_TOKEN", "a"), ("GH_TOKEN", "b")]),
+            fallback
+        ),
         Some("a".to_owned())
     );
     assert_eq!(
-        github_token_from(env(&[("GITHUB_TOKEN", ""), ("GH_TOKEN", "b")]), fallback),
+        github_token_from(
+            GITHUB,
+            env(&[("GITHUB_TOKEN", ""), ("GH_TOKEN", "b")]),
+            fallback
+        ),
         Some("b".to_owned())
     );
     assert_eq!(
-        github_token_from(env(&[]), fallback),
-        Some("from-gh".to_owned())
+        github_token_from(GITHUB, env(&[]), fallback),
+        Some("from-gh for github.com".to_owned())
     );
-    assert_eq!(github_token_from(env(&[]), || None), None);
+    assert_eq!(github_token_from(GITHUB, env(&[]), |_| None), None);
+}
+
+#[test]
+fn an_enterprise_api_gets_its_own_hosts_token_never_github_coms() {
+    let fallback = |host: &str| Some(format!("from-gh for {host}"));
+    let github_com = &[("GITHUB_TOKEN", "a"), ("GH_TOKEN", "b")];
+    assert_eq!(
+        github_token_from(ENTERPRISE, env(github_com), |_| None),
+        None
+    );
+    assert_eq!(
+        github_token_from(ENTERPRISE, env(github_com), fallback),
+        Some("from-gh for ghe.example.com:8443".to_owned())
+    );
+    let both = &[
+        ("GH_ENTERPRISE_TOKEN", "e"),
+        ("GITHUB_ENTERPRISE_TOKEN", "f"),
+    ];
+    assert_eq!(
+        github_token_from(ENTERPRISE, env(both), fallback),
+        Some("e".to_owned())
+    );
+    let second = &[
+        ("GH_ENTERPRISE_TOKEN", ""),
+        ("GITHUB_ENTERPRISE_TOKEN", "f"),
+    ];
+    assert_eq!(
+        github_token_from(ENTERPRISE, env(second), fallback),
+        Some("f".to_owned())
+    );
+    assert_eq!(
+        github_token_from("https://ghe.example.com/api/v3", env(&[]), fallback),
+        Some("from-gh for ghe.example.com".to_owned())
+    );
+}
+
+#[test]
+fn a_github_api_that_is_not_a_url_gets_no_token() {
+    let asked = std::cell::Cell::new(false);
+    let fallback = |_: &str| {
+        asked.set(true);
+        Some("t".to_owned())
+    };
+    assert_eq!(
+        github_token_from("not-a-url", env(&[("GH_TOKEN", "b")]), fallback),
+        None
+    );
+    assert!(!asked.get(), "gh never runs for a bad URL");
 }
 
 #[test]

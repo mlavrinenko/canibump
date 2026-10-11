@@ -55,7 +55,7 @@ impl GitLab {
             .extend(["api", "v4", "projects", project])
             .extend(tail);
         let mut request = self.client.get(url);
-        if let Some(token) = self.tokens.get(host) {
+        if let Some(token) = super::http::credential(&self.tokens, self.base.as_ref(), host) {
             request = request.header("PRIVATE-TOKEN", token);
         }
         send_json(request, what).await
