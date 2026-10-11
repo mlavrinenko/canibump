@@ -161,7 +161,8 @@ skipped.
 | Redmine | `REDMINE_API_KEY` for `REDMINE_URL` |
 | Jira | `JIRA_TOKEN`, or `JIRA_USER` with `JIRA_API_TOKEN`, for `JIRA_URL` |
 
-A token only ever goes to its own host, and only when a blocker needs it.
+A token only ever goes to its own host, and only when a blocker needs it. A
+redirect to another host fails the check rather than carry the token along.
 
 ## Schema
 
