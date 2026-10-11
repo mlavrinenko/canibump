@@ -301,3 +301,13 @@ roles = ["maintainer"]
 [[actors]]
 name = "agent"
 kind = "llm"
+
+# The pack's rule, minus the release commit: cargo-release's version bump is
+# no work of its own, and each entry it dates went in under its task.
+[[commits.rules]]
+name = "work-names-a-task"
+scope = "commit"
+when = '!tasks_only && !matches(subject, "^chore[(]release[)]: ")'
+assert = "has(refs)"
+message = "name the task this commit works on in a `Refs: <stem>` footer"
+severity = "error"
