@@ -8,7 +8,7 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-use jiff::SignedDuration;
+use jiff::{SignedDuration, Span, SpanRelativeTo};
 use schemars::JsonSchema;
 use serde::Deserialize;
 use thiserror::Error;
@@ -19,6 +19,13 @@ use crate::report::Actionable;
 use crate::schema::BlockerSchema;
 
 const DEFAULT_TTL: SignedDuration = SignedDuration::from_hours(6);
+
+/// A friendly duration of weeks down to seconds, a day counting 24 hours. A month
+/// or a year has no fixed length, so it is not one.
+fn parse_ttl(text: &str) -> Option<SignedDuration> {
+    let span: Span = text.parse().ok()?;
+    span.to_duration(SpanRelativeTo::days_are_24_hours()).ok()
+}
 
 /// A parsed manifest.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -69,7 +76,9 @@ pub enum ManifestError {
     #[error(transparent)]
     Toml(#[from] toml::de::Error),
     /// `[settings] ttl` does not parse.
-    #[error("settings.ttl: `{0}` is not a duration like \"6h\" or \"30m\"")]
+    #[error(
+        "settings.ttl: `{0}` is not a duration like \"6h\", \"30m\" or \"1d\" (weeks, days, hours, minutes and seconds)"
+    )]
     Ttl(String),
     /// A blocker without an id.
     #[error("blocker #{index}: missing `id`")]
@@ -159,7 +168,8 @@ pub(crate) struct RawManifest {
 #[schemars(rename = "Settings")]
 pub(crate) struct RawSettings {
     /// How long a result stays fresh before `canibump` re-checks it, like
-    /// `"6h"` or `"30m"`. Defaults to 6 hours.
+    /// `"6h"`, `"30m"` or `"1d"`. Takes weeks, days, hours, minutes and
+    /// seconds, a day being 24 hours. Defaults to 6 hours.
     ttl: Option<String>,
     /// Where the cache file lives, relative to the manifest. Defaults to a file
     /// under the user cache dir.
@@ -198,7 +208,7 @@ impl Manifest {
         let raw: RawManifest = toml::from_str(text)?;
         let ttl = match raw.settings.ttl {
             None => DEFAULT_TTL,
-            Some(text) => text.parse().map_err(|_| ManifestError::Ttl(text))?,
+            Some(text) => parse_ttl(&text).ok_or(ManifestError::Ttl(text))?,
         };
         let mut seen = HashSet::new();
         let mut blockers = Vec::with_capacity(raw.blockers.len());

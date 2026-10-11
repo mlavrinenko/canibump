@@ -112,10 +112,12 @@ Every run writes `$XDG_CACHE_HOME/canibump/state/<absolute manifest path>.json`
    "spec": "reached = ..."}]}
 ```
 
-Results stay fresh for `[settings] ttl = "6h"`, the default. A failed check is
-never fresh, so the next run retries it. Move the file with `--cache FILE` or
-`[settings] cache = "FILE"`, relative to the manifest. A state file canibump
-can't parse is dropped with a warning, and the run rewrites it.
+Results stay fresh for `[settings] ttl = "6h"`, the default. It takes weeks,
+days, hours, minutes and seconds (`"1d"`, `"2w"`, `"1d12h"`), a day being 24
+hours. A failed check is never fresh, so the next run retries it. Move the
+file with `--cache FILE` or `[settings] cache = "FILE"`, relative to the
+manifest. A state file canibump can't parse is dropped with a warning, and the
+run rewrites it.
 
 ## Exit codes
 

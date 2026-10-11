@@ -30,8 +30,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   so a script tests one bit. `--fail-on` or `[settings] fail-on` picks what
   counts.
 - Results land in a state file other tools read offline, and stay fresh for
-  6 hours by default. `canibump status` reads it without network, and
-  `canibump status <id>` answers for one blocker by exit code.
+  6 hours by default (`ttl = "1d"` and `"2w"` work too). `canibump status`
+  reads it without network, and `canibump status <id>` answers for one blocker
+  by exit code.
 - `--json` prints the results as JSON. `canibump schema report` and
   `canibump schema state` print JSON Schemas of it and of the state file,
   generated from the code.

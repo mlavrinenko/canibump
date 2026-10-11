@@ -72,6 +72,26 @@ fn rejects_a_bad_ttl() {
 }
 
 #[test]
+fn reads_a_ttl_in_days_and_weeks() {
+    for (text, hours) in [("1d", 24), ("2w", 336), ("1d12h", 36), ("1w 1d", 192)] {
+        let manifest = Manifest::parse(&format!("[settings]\nttl = \"{text}\"\n"))
+            .unwrap_or_else(|error| panic!("{text}: {error}"));
+        assert_eq!(
+            manifest.settings.ttl,
+            SignedDuration::from_hours(hours),
+            "{text}"
+        );
+    }
+}
+
+#[test]
+fn a_ttl_in_months_names_the_units_it_takes() {
+    let error = first_error("[settings]\nttl = \"1mo\"\n");
+    assert!(error.contains("settings.ttl"), "{error}");
+    assert!(error.contains("weeks"), "{error}");
+}
+
+#[test]
 fn rejects_a_blocker_without_a_condition() {
     let error = first_error("[[blocker]]\nid = \"a\"\nnote = \"n\"\n");
     assert!(error.contains("blocker `a`"), "{error}");

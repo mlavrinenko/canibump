@@ -239,7 +239,7 @@
           ]
         },
         "ttl": {
-          "description": "How long a result stays fresh before `canibump` re-checks it, like\n`\"6h\"` or `\"30m\"`. Defaults to 6 hours.",
+          "description": "How long a result stays fresh before `canibump` re-checks it, like\n`\"6h\"`, `\"30m\"` or `\"1d\"`. Takes weeks, days, hours, minutes and\nseconds, a day being 24 hours. Defaults to 6 hours.",
           "type": [
             "string",
             "null"
