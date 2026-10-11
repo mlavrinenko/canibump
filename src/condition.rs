@@ -11,10 +11,14 @@ use serde::Deserialize;
 use toml::{Table, Value};
 
 use crate::package::PackageRef;
-use crate::refs::{ItemRef, Reachable};
+use crate::refs::{ItemRef, Reachable, SourceKind};
 
 /// Condition keys a blocker may carry, one per blocker.
 pub const CONDITION_KEYS: &[&str] = &["state", "reached", "version", "all", "any"];
+
+/// The sources `reached` can follow: those with a code host in
+/// `provider::defaults`.
+const HISTORY: &[SourceKind] = &[SourceKind::GitHub, SourceKind::Git];
 
 /// When a blocker is resolved.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -214,7 +218,13 @@ pub(crate) fn parse_condition(table: Table) -> Result<Condition, String> {
         }
         ["reached"] => {
             let raw: RawReached = typed(table)?;
-            let target = raw.reached.parse().map_err(|error| format!("{error}"))?;
+            let target: Reachable = raw.reached.parse().map_err(|error| format!("{error}"))?;
+            if !HISTORY.contains(&target.source().kind()) {
+                return Err(format!(
+                    "`reached` takes github:owner/repo#N, github:owner/repo@<sha> or git:<url>@<sha>, not `{}`",
+                    raw.reached
+                ));
+            }
             let within = raw.within.parse()?;
             Ok(Condition::Reached(ReachedCondition { target, within }))
         }
@@ -339,3 +349,7 @@ impl Walk {
         }
     }
 }
+
+#[cfg(test)]
+#[path = "condition_tests.rs"]
+mod tests;
