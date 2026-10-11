@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # CRAP gate over the lcov `just cover` wrote. A function with no coverage record
 # scores 0%, so a stale lcov is refused and test code is excluded. Silent on a
-# pass. `--stale-reason` prints why the lcov is unusable, for integrate.sh.
+# pass. `--stale-reason` prints why the lcov is unusable, for wt-carry-lcov.sh.
 set -euo pipefail
 lcov=target/coverage/lcov.info
 if [ ! -f "$lcov" ]; then

@@ -80,6 +80,9 @@
             # reason for a gate to go red.
             cargo-nextest
             cargo-outdated
+            # `wt` forks and lands worktrees: `just fork` and `just land` run
+            # it, and .config/wt.toml holds the hooks it fires.
+            worktrunk
             # `just count-tests` parses nextest's JSON listing with jq.
             jq
             clippy

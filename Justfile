@@ -52,19 +52,23 @@ status:
 outdatty-update:
     outdatty update
 
-[doc("Fork a worktree for delegated work")]
+# `wt` places it at `../canibump.<slug>` unless the user configures otherwise.
+# Extra flags go to `wt switch`, e.g. `--base=@` to branch from HEAD, not main.
+[doc("Fork a sibling worktree on a new branch")]
 [group("daily")]
-[no-exit-message]
 [positional-arguments]
-fork SLUG BASE='HEAD':
-    scripts/fork.sh "$@"
+fork SLUG *ARGS:
+    wt switch --create --yes "$@"
 
-[doc("Land a forked branch if its gate is fresh")]
+# Run in the worktree. `--no-squash --no-commit` keeps each commit's `Refs:`
+# footer and refuses a dirty tree instead of committing it; the `pre-merge`
+# hooks in .config/wt.toml run the gate and the wip check before the
+# fast-forward.
+[doc("Gate, fast-forward the branch onto main and remove its worktree")]
 [group("daily")]
-[no-exit-message]
 [positional-arguments]
-integrate BRANCH:
-    scripts/integrate.sh "$@"
+land *ARGS:
+    wt merge --no-squash --no-commit --yes "$@"
 
 # Writes the schema next to the binary for `#:schema` lines in canibump.toml;
 # ~/.nix's `just install canibump` relies on both.
