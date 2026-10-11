@@ -15,7 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   wontfix issue reads dead, and a broken check never reads as landed.
 - `state` waits on an issue, PR or MR on GitHub, GitLab, Gitea, Forgejo,
   Codeberg, Redmine and Jira, self-hosted ones included. A closed GitLab
-  issue counts only when a merged MR closed it.
+  issue counts only when a merged MR closed it, and Redmine trusts the
+  server's `is_closed` over the status name.
 - `reached` waits for a commit or a merged PR to land in a branch, a tag, or
   the first tag matching a pattern, on GitHub or any git remote. Tags sort in
   one version order that covers semver, `v`-tags, dates and builds like

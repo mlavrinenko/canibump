@@ -1,6 +1,6 @@
-//! Redmine through its REST API. Status names are per instance, so the
-//! name decides a rejection or a duplicate, and `is_closed` (or a closing
-//! name on instances too old to send it) a fix.
+//! Redmine through its REST API. Status names are per instance, so `is_closed`
+//! says whether an issue is over and the name only says why (rejected,
+//! duplicate, else fixed). Instances too old to send it get the name's guess.
 
 use std::collections::HashMap;
 
@@ -37,24 +37,35 @@ struct StatusDto {
     is_closed: Option<bool>,
 }
 
+/// Names that mean it will not land.
+const NOT_PLANNED: &[&str] = &[
+    "rejected",
+    "reject",
+    "won't fix",
+    "wont fix",
+    "invalid",
+    "declined",
+    "abandoned",
+];
+
+/// Names that mean it is finished, for instances that send no `is_closed`.
+const FINISHED: &[&str] = &["closed", "resolved", "done", "fixed"];
+
+/// `is_closed` says whether the issue is over, and the name only says why.
+/// An instance too old to send it gets the name's guess at both.
 fn state_of(status: &StatusDto) -> ItemState {
     let has = |phrases: &[&str]| names_any(&status.name, phrases);
-    if has(&[
-        "rejected",
-        "reject",
-        "won't fix",
-        "wont fix",
-        "invalid",
-        "declined",
-        "abandoned",
-    ]) {
+    let closed = status
+        .is_closed
+        .unwrap_or_else(|| has(NOT_PLANNED) || has(&["duplicate"]) || has(FINISHED));
+    if !closed {
+        ItemState::Open
+    } else if has(NOT_PLANNED) {
         ItemState::NotPlanned
     } else if has(&["duplicate"]) {
         ItemState::Duplicate
-    } else if status.is_closed == Some(true) || has(&["closed", "resolved", "done", "fixed"]) {
-        ItemState::Completed
     } else {
-        ItemState::Open
+        ItemState::Completed
     }
 }
 

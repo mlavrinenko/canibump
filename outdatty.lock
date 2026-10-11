@@ -36,8 +36,8 @@ groups:
       src/provider/lazy.rs: 817837bceb2dc6c47334a080140c57f5f85693182b67089c47274e70ca845b21
       src/provider/memo.rs: 0d3770c9b68e611d4f56e2bec07707d90c30e611a4754202f74339f4cc77cba9
       src/provider/mod.rs: c1d127315b09e43c437dac406d312a61eb2a29e84052b4b16c7e56c1f76cfb36
-      src/provider/redmine.rs: 0117a8686cc3764ed822c114da186f857da6af96575ce56e5142e6d693d8bbf3
-      src/provider/redmine_tests.rs: db2ded0a62a86569040e84386804fb83b1b76cf76866f235e7e0595a85753c0b
+      src/provider/redmine.rs: 5a49267d56c7d75ea515f2fe47bd108ef42a67b05e2e0f0ca54da8593b566e05
+      src/provider/redmine_tests.rs: a33588988b2039fd2ae1bdb730cbaefe862ba52de93ced604d5ba8cbdb850766
       src/provider/repology.rs: b61ccb7a0bd73dfc2cc24c950ddbd06b2fb8bac568395d1ebf962d543db46070
       src/provider/repology_tests.rs: 0564819b59b92b6ff2cae8c3ccb265f49a1543ba7f2e397fe1621f799c34ef56
       src/refs.rs: bfa389cbe4fbdd0ea23293a0344bbf5f41693183ceb6633fb31d47a74fab383a
@@ -75,7 +75,7 @@ groups:
     source:
       Cargo.toml: ee75eaa636b331fed70cc2d022bc8d0f1ec15cfe5197a8e7b0592fed5adec9f3
     dependents:
-      CHANGELOG.md: 698f29971239a1402045619fe14b53d24789ea0bb604cbe8760c46d6507baa98
+      CHANGELOG.md: 47ce840de77f281f2d2594a698906e9a0795d54ff86d84546496a82d2d7e8ebf
   schema:
     source:
       src/auth.rs: 13b2e1d778b5a76ebddbfeca85533ced64a9ab6c0eb84cea1438e0631be1bb21
@@ -111,8 +111,8 @@ groups:
       src/provider/lazy.rs: 817837bceb2dc6c47334a080140c57f5f85693182b67089c47274e70ca845b21
       src/provider/memo.rs: 0d3770c9b68e611d4f56e2bec07707d90c30e611a4754202f74339f4cc77cba9
       src/provider/mod.rs: c1d127315b09e43c437dac406d312a61eb2a29e84052b4b16c7e56c1f76cfb36
-      src/provider/redmine.rs: 0117a8686cc3764ed822c114da186f857da6af96575ce56e5142e6d693d8bbf3
-      src/provider/redmine_tests.rs: db2ded0a62a86569040e84386804fb83b1b76cf76866f235e7e0595a85753c0b
+      src/provider/redmine.rs: 5a49267d56c7d75ea515f2fe47bd108ef42a67b05e2e0f0ca54da8593b566e05
+      src/provider/redmine_tests.rs: a33588988b2039fd2ae1bdb730cbaefe862ba52de93ced604d5ba8cbdb850766
       src/provider/repology.rs: b61ccb7a0bd73dfc2cc24c950ddbd06b2fb8bac568395d1ebf962d543db46070
       src/provider/repology_tests.rs: 0564819b59b92b6ff2cae8c3ccb265f49a1543ba7f2e397fe1621f799c34ef56
       src/refs.rs: bfa389cbe4fbdd0ea23293a0344bbf5f41693183ceb6633fb31d47a74fab383a
