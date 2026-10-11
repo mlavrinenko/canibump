@@ -139,7 +139,7 @@ jobs:
     needs: [meta, build, publish]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/download-artifact@v8.0.1
+      - uses: actions/download-artifact@v8.0.2
         with:
           merge-multiple: true
 
