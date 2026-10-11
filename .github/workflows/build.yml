@@ -44,7 +44,7 @@ jobs:
       # Cross-platform release binaries are built with rustup rather than Nix
       # (Nix on the Windows/macOS runners is impractical). Pinned to a commit, so
       # the channel must be given explicitly; it tracks rust-toolchain.toml.
-      - uses: dtolnay/rust-toolchain@3c5f7ea28cd621ae0bf5283f0e981fb97b8a7af9 # stable channel pinned below
+      - uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # stable channel pinned below
         with:
           toolchain: stable
           targets: ${{ matrix.target }}
