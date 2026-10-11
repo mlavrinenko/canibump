@@ -59,10 +59,12 @@
   workarounds wait on; `just canibump` checks it (network-bound, outside
   `just check`). When you comment a workaround, add its blocker with a real
   upstream item you opened; keep the file:line in each note true.
-- Delegated work forks with `just fork <slug>` (a sibling worktree
-  `../canibump-<slug>` on a new branch, dev shell allowed) and lands with
-  `just integrate <branch>`, which fast-forwards only on a fresh gate and
-  removes the worktree.
+- Delegated work forks with `just fork <slug>` (a sibling worktree on a new
+  branch, `../canibump.<slug>` by default, dev shell allowed) and lands with
+  `just land` run in that worktree: it gates, checks no named task is left
+  `wip`, fast-forwards main and removes the worktree. Both wrap
+  [worktrunk](https://worktrunk.dev); [.config/wt.toml](.config/wt.toml) holds
+  the hooks. Never run a bare `wt merge`: it squashes away the `Refs:` footers.
 - Work is tracked with [MindTape](https://github.com/mlavrinenko/mindtape) in
   `truth/tasks/` (load the `mindtape` skill; `mt ls @agent` lists open agent work).
   Commits follow Conventional Commits; a work commit names its task in a
