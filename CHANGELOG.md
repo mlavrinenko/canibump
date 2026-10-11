@@ -7,125 +7,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+
 ### Added
 
-- `canibump.toml` manifest: `[[blocker]]` entries with an `id`, a `note` and a
-  `state = "github:owner/repo#N"` condition, plus `[settings]` `ttl` and
-  `cache`. A manifest error prints once, naming the manifest as given and, for
-  a blocker, the line it starts on: ``canibump.toml:4: blocker `x`: ...``.
-- Each check ends `waiting`, `bumpable`, `dead` or `failed`. A merged PR or an
-  issue closed as completed is bumpable; closed unmerged, not planned,
-  duplicate or closed without a reason is dead; a provider error is failed.
-- GitHub issues and PRs through octocrab. The token comes from `GITHUB_TOKEN`,
-  `GH_TOKEN` or `gh auth token`, else requests go unauthenticated. 401, 403,
-  404 and rate limits fail the check, saying which.
-- `canibump` checks every blocker and prints one line each; `--json` prints a
-  document. The exit code says what showed up; see Changed.
-- Results land in `$XDG_CACHE_HOME/canibump/state/<manifest path>.json` with
-  `checked_at` and `fresh_until`; fresh ones are reused unless `--refresh`.
-  `canibump status` reads only that file, and `status --path` prints it.
-- `reached = "github:o/r#N"` or `"github:o/r@sha"` with `in = { branch = ... }`,
-  `{ tag = ... }` or `{ tags = "v*", since = "0.5.0" }`: bumpable once the
-  commit, or the PR's merge commit, is there. A pattern names the first tag
-  that has it, found by binary search over tags in version order.
-- Versions compare by one total order, so a mixed tag list sorts the same
-  whatever the input order: a letter prefix drops (`b7012` = `7012`), a letter
-  suffix is a pre-release, `+build` metadata is ignored and `1.0.0-rc9` sorts
-  before `1.0.0-rc10`. Numbers rank above letters at the same position, so
-  `1.0.0-1` is later than `1.0.0-rc` and `1.0.0-alpha.1` later than
-  `1.0.0-alpha.beta`, which semver ranks the other way round. The `semver`
-  dependency is gone.
-- GitHub answers `reached` through the compare API and lists tags through
-  `git/matching-refs`, so no clone is needed.
-- `reached = "git:<url>@sha"` works on any git remote: gix fetches only the
-  refs asked about into a bare repo under `~/.cache/canibump/git/` and checks
-  ancestry in-process, so a remote the size of llvm costs a paint down to the
-  fork point, not a walk of its whole history. A short sha that starts two
-  commits there fails and asks for more digits, rather than matching the first.
-- `version = "repology:<project>"` (with `repo`, optional `srcname`) or
-  `version = "deps.dev:<system>/<name>"` with `at-least = "<version>"`:
-  bumpable once the highest version there reaches the bound.
-- Repology and deps.dev clients. Repology is asked once per project per
-  run, at most once a second, with a User-Agent naming canibump.
-  `CANIBUMP_GITHUB_API`, `CANIBUMP_REPOLOGY_API` and `CANIBUMP_DEPSDEV_API`
-  point a provider elsewhere.
-- `[[blocker.all]]` and `[[blocker.any]]` chain steps, nested as deep as you
-  like. An all-of stops at its first step that does not hold; an any-of
-  resolves on its first that does. `at-least = { step = "<id>" }` uses the
-  tag an earlier `reached` step found. Loading refuses a reference to a step
-  that may not have held, such as one inside an `any`.
-- GitLab issues (`gitlab:group/proj#N`) and MRs (`!N`), self-hosted with
-  `gitlab:host/group/proj`. A closed issue is completed only when an MR
-  closed it. Tokens come from glab's config and `GITLAB_TOKEN` for
-  `GITLAB_HOST`, each sent only to its own host.
-- Gitea and Forgejo items: `gitea:host/owner/repo#N`, `forgejo:...` and
-  `codeberg:owner/repo#N`. A PR reads merged or closed unmerged; a closed
-  issue reads closed without a reason, since Gitea keeps none. Tokens come
-  from tea's config logins and `GITEA_TOKEN` for `GITEA_HOST`.
-- Redmine (`redmine:host#N`) and Jira (`jira:host#KEY-N`) issues, with a
-  path when the instance lives under one. Status and resolution names match
-  on whole words, so `Abandoned` reads dead rather than done. Credentials:
-  `REDMINE_API_KEY` for `REDMINE_URL`; `JIRA_TOKEN`, or `JIRA_USER` with
-  `JIRA_API_TOKEN`, for `JIRA_URL`.
-- `canibump schema` prints a JSON Schema for `canibump.toml`, generated from the
-  manifest types and committed as `schema/canibump.schema.json`. Point taplo or
-  tombi at it with a `#:schema` first line; `just install` also writes it to
-  `~/.config/canibump/`.
-- A run starts a provider only when a blocker needs it, once. A manifest
-  with no GitHub blocker never runs `gh auth token`, and a fully cached run
-  starts nothing.
-- A run fetches each item's state and each PR's merge commit once, however
-  many steps or blockers ask, and askers that overlap share one request. A
-  failed fetch is kept too. GitHub reads a PR's state from `/issues/N` alone
-  (`pull_request.merged_at`) and fetches `/pulls/N` only for the merge commit,
-  so a chain that waits on a PR, then on its release, spends two calls before
-  the tag search instead of five.
-- A run checks up to eight blockers at once and prints them in manifest
-  order, so it takes about as long as its slowest blocker, not the sum of
-  them. Steps inside one `all`/`any` still run in turn. Blockers asking
-  Repology about one project share a single request, and requests stay a
-  second apart; blockers on one git remote take turns at its clone and
-  fetch.
-- The status word is colored on a terminal: bumpable green, dead magenta,
-  failed red, waiting dimmed. `--color auto|always|never` and `NO_COLOR`
-  decide; pipes and `--json` stay plain. A dead line ends with the blocker's
-  note, as a bumpable one does, and a stale line reads
-  `(stale, checked 7h ago)` rather than a raw instant. Columns align by
-  chars, so a non-ASCII id no longer shifts them.
-- `canibump completions <bash|zsh|fish|elvish|powershell>` prints a completion
-  script generated from the CLI definition, so it cannot drift from the flags.
-  The flake package installs bash, zsh and fish completions and
-  `share/canibump/canibump.schema.json`; the README shows the Nix install and
-  one line of setup per shell.
-- `canibump status <id>` answers for one blocker from the state file, by exit
-  code: 0 bumpable, 1 waiting, 2 anything else. Dead, failed, an id the
-  manifest or the state file lacks, a result checked against an older
-  condition and every error, a bad manifest or a corrupt state file included,
-  exit 2, because a caller reads 1 as waiting. It prints that blocker's line,
-  or with `--json` a report holding only it, and refuses `--path`.
-
-### Changed
-
-- The exit code counts a dead blocker too: 0 when nothing counted showed up,
-  else 8 plus 1 for bumpable, 2 for dead and 4 for failed, summed, so a bare
-  bumpable exits 9 and bumpable with dead 11. A check that failed was 11 and
-  is 12; 1 is still an unusable manifest or cache. `--fail-on`, comma-separated
-  or repeated, or `[settings] fail-on = ["failed"]` picks which of the three
-  count (the flag wins, `fail-on = []` never fails), and `canibump status`
-  follows it. `--help`, the README, docs/manifest.md and the site state the
-  table.
-
-### Fixed
-
-- The state file is written through `<state>.json.<pid>.tmp`, so two runs on
-  one manifest, a cron job and a shell, no longer share a temp file and rename
-  a torn one into place. A failed write or rename removes its temp file.
-- A provider that cannot start, say a `CANIBUMP_GITHUB_API` that is no URL,
-  fails only its own blockers, and their line says why:
-  `failed  x  github: API URL ...`. It used to read
-  `no provider for GitHub items`, with the reason lost to a log nobody saw.
-  Errors name a kind by its manifest scheme (`github`, `deps.dev`), not a
-  Rust type.
-- A state file that cannot be read warns on stderr with
-  `canibump: warning: ignoring <path>: <reason>` and the run goes on. `log`
-  and `env_logger` are gone, so nothing prints into the void.
+- `canibump` reads `canibump.toml`, checks every blocker and prints one line
+  each, `waiting`, `bumpable`, `dead` or `failed`. A closed-unmerged PR or a
+  wontfix issue reads dead, and a broken check never reads as landed.
+- `state` waits on an issue, PR or MR on GitHub, GitLab, Gitea, Forgejo,
+  Codeberg, Redmine and Jira, self-hosted ones included.
+- `reached` waits for a commit or a merged PR to land in a branch, a tag, or
+  the first tag matching a pattern, on GitHub or any git remote. Tags sort in
+  one version order that covers semver, `v`-tags, dates and builds like
+  `b7012`.
+- `version` waits for a package version on Repology (distros, nixpkgs
+  channels) or deps.dev (crates.io, npm, PyPI, Go, Maven, NuGet, RubyGems).
+- `[[blocker.all]]` and `[[blocker.any]]` chain steps, like merged, then
+  released, then in nixpkgs, and a step can use the tag an earlier one found.
+- The exit code is 8 plus 1 for bumpable, 2 for dead and 4 for failed, summed,
+  so a script tests one bit. `--fail-on` or `[settings] fail-on` picks what
+  counts.
+- Results land in a state file other tools read offline, and stay fresh for
+  6 hours by default. `canibump status` reads it without network, and
+  `canibump status <id>` answers for one blocker by exit code.
+- `--json` prints the results as JSON.
+- Tokens come from what you already use: `gh`, glab and tea configs, or
+  environment variables. Each goes only to its own host, and only when a
+  blocker needs it.
+- Each question is asked once per run, up to eight blockers at once, and
+  Repology gets at most one request a second.
+- `canibump schema` prints the manifest's JSON Schema, so taplo and tombi give
+  completion and hover docs. `canibump completions <shell>` prints tab
+  completion, and the Nix package installs both.

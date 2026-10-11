@@ -3,7 +3,7 @@
 
 [[blocker]]
 id = "llama-blocking-sync"
-note = "apps/llama-cpp-16gb.nix: drop the GGML_CUDA_BLOCKING_SYNC postPatch (keep the env var)"
+note = "pkgs/llama-cpp.nix: drop the GGML_CUDA_BLOCKING_SYNC postPatch (keep the env var)"
 
 # The PR merges...
 [[blocker.all]]

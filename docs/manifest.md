@@ -6,7 +6,7 @@ Everything a manifest can say. The [README](../README.md) has the quick tour.
 
 Each blocker takes exactly one condition.
 
-`state` waits on an issue, PR or MR. Merged or closed as completed is bumpable.
+`state` waits on an issue, PR or MR. Merged, or closed as completed, is bumpable.
 
 ```toml
 state = "github:serde-rs/serde#2590"
@@ -17,16 +17,16 @@ state = "github:serde-rs/serde#2590"
 # state = "jira:issues.apache.org/jira#KAFKA-42"       # a path when Jira lives under one
 ```
 
-GitLab keeps no close reason, so a closed GitLab issue counts only when an MR
-closed it. Gitea keeps none either, so a closed Gitea issue reads `dead`;
-point at the PR instead. Redmine and Jira say why by status or resolution
-name, matched on whole words, so `Rejected`, `Won't Fix`, `Invalid` or
-`Abandoned` read dead and `Fixed` or `Done` read bumpable.
+GitLab and Gitea keep no close reason. A closed GitLab issue counts only when
+an MR closed it, and a closed Gitea issue reads `dead`, so point at the PR
+instead. Redmine and Jira say why by status or resolution name, matched on
+whole words: `Rejected`, `Won't Fix`, `Invalid` or `Abandoned` read dead,
+`Fixed` or `Done` read bumpable.
 
-`reached` waits for a commit, or a PR's merge commit, to land in a branch, a tag, or
-any tag matching a pattern. With a pattern, canibump names the first tag
-that has it, in version order. One order covers semver, `v`-tags, dates and
-builds like `b7012`:
+`reached` waits for a commit, or a PR's merge commit, to land in a branch, a
+tag, or any tag matching a pattern. With a pattern, canibump names the first
+tag that has it, in version order. One order covers semver, `v`-tags, dates
+and builds like `b7012`.
 
 ```
 v1.0.0 = 1.0.0 = 1.0.0+build     # a letter prefix and +build drop
@@ -42,13 +42,11 @@ in = { branch = "master" }
 # in = { tags = "v*", since = "1.0.180" }
 ```
 
-GitHub answers through its API, no clone. A `git:` remote gets a bare clone of
-just the refs you ask about under `~/.cache/canibump/git/`, via gix. If two
-commits there start with your short sha, the check fails and asks for more digits.
+A short sha that matches two commits fails and asks for more digits.
 
-`version` waits for a package to reach some version. Repology covers distro repos,
-nixpkgs channels included (`nix_unstable`, `nix_stable_25_11`). deps.dev
-covers `cargo`, `npm`, `pypi`, `go`, `maven`, `nuget` and `rubygems`.
+`version` waits for a package to reach some version. Repology covers distro
+repos, nixpkgs channels included (`nix_unstable`, `nix_stable_25_11`).
+deps.dev covers `cargo`, `npm`, `pypi`, `go`, `maven`, `nuget` and `rubygems`.
 
 ```toml
 version = "repology:llama.cpp"
@@ -60,27 +58,16 @@ at-least = "0.6.0"
 # at-least = "2.0.0"
 ```
 
-canibump asks Repology once per project per run, at most once a second, with
-a User-Agent naming itself, as Repology's API rules ask. Blockers that ask
-about one project at the same time share that one request.
-
 ## Chains
 
 Real blockers come in chains. `[[blocker.all]]` holds when every step does,
-stopping at the first that doesn't; `[[blocker.any]]` when one does. Steps
-nest, and an `id` hands the tag a `reached` step found to a later step. A
-`step` reference may only point at a step that surely held by then: an earlier
-step of the same `all`, or of an enclosing `all`. An `any` may resolve through
-another step, so ids inside it are out of reach after it; canibump refuses such
-a manifest at load. Put both steps in one `all`.
-
-Steps run in turn, since each may hand a value on. Whole blockers run side by
-side, eight at a time.
+stopping at the first that doesn't. `[[blocker.any]]` holds when one does.
+Steps nest, and an `id` hands the tag a `reached` step found to a later step.
 
 ```toml
 [[blocker]]
 id = "llama-blocking-sync"
-note = "apps/llama-cpp-16gb.nix: drop the GGML_CUDA_BLOCKING_SYNC postPatch"
+note = "pkgs/llama-cpp.nix: drop the GGML_CUDA_BLOCKING_SYNC postPatch"
 
 [[blocker.all]]
 id = "merged"
@@ -98,22 +85,18 @@ srcname = "llama-cpp"
 at-least = { step = "released" }
 ```
 
-That one is real. It guards a patch in the author's NixOS flake.
-
 ```console
 $ canibump
 waiting   llama-blocking-sync  merged: github:ggml-org/llama.cpp#26487 is open
 ```
 
-A dead or failed step never lets the chain read bumpable. In an any-of, a
-failed step beats a waiting one, and the whole thing is dead only when every
-step is.
+A `step` reference may only point at a step that surely held by then: an
+earlier step of the same `all`, or of an enclosing one. An `any` may resolve
+through another step, so canibump refuses a manifest that reaches into it.
+Put both steps in one `all`.
 
-A run asks each question once. Name the same PR in three steps, or in three
-blockers, and its state and its merge commit are fetched once, even when the
-asks overlap. That chain costs GitHub two calls before the tag search:
-`/issues/26487` for the state, `/pulls/26487` for the merge commit. A failed
-fetch is kept too, so every asker hears the same reason.
+A dead or failed step never lets the chain read bumpable. In an `any`, failed
+beats waiting, and the whole thing is dead only when every step is.
 
 ## Cache
 
@@ -128,26 +111,20 @@ Every run writes `$XDG_CACHE_HOME/canibump/state/<absolute manifest path>.json`
    "spec": "reached = ..."}]}
 ```
 
-Results stay fresh for `[settings] ttl = "6h"` (the default). Move the file
-with `--cache FILE` or `[settings] cache = "FILE"` (relative to the
-manifest). A failed check is never fresh, so the next run retries it.
-
-A state file canibump cannot parse is dropped with a warning on stderr, and
-the run rewrites it:
-
-```text
-canibump: warning: ignoring /home/me/.cache/canibump/state/...json: not a canibump state file: expected value at line 1 column 1
-```
+Results stay fresh for `[settings] ttl = "6h"`, the default. A failed check is
+never fresh, so the next run retries it. Move the file with `--cache FILE` or
+`[settings] cache = "FILE"`, relative to the manifest. A state file canibump
+can't parse is dropped with a warning, and the run rewrites it.
 
 ## Exit codes
 
-A run exits 0 when nothing counted showed up, else 8 plus 1 for bumpable, 2 for
-dead and 4 for failed, summed: bumpable and dead together exit 11. 1 is an
-unusable manifest or cache, 2 a bad argument. `canibump status` follows the same rules.
+A run exits 0 when nothing counted showed up, else 8 plus 1 for bumpable, 2
+for dead and 4 for failed, summed, so bumpable and dead exit 11. 1 is an
+unusable manifest or cache, 2 a bad argument.
 
-All three count unless `[settings] fail-on` lists the ones that do. The
-`--fail-on` flag beats it. `waiting` never counts, so neither can name it, and
-a status that does not count still prints its line.
+All three count unless `[settings] fail-on` lists the ones that do, and
+`--fail-on` beats it. `waiting` never counts. A status that doesn't count
+still prints its line.
 
 ```toml
 [settings]
@@ -155,40 +132,33 @@ fail-on = ["failed"]  # dead and bumpable print, the run still exits 0
 # fail-on = []        # never fail
 ```
 
-`canibump status <id>` answers for one blocker from the state file alone, with
-its own codes. 0 is bumpable and 1 is waiting. 2 is anything else, because a
-caller reads 1 as waiting: dead, failed, an id the manifest or the state file
-lacks, a result checked against an older condition than the manifest's now,
-and every error, a bad manifest or an unreadable state file included. Its
-stdout is that blocker's line, or with `--json` a report holding only it. It
-takes no `--path`.
+`canibump status <id>` answers for one blocker from the state file alone. 0 is
+bumpable, 1 waiting, and 2 anything else: dead, failed, an unknown id, a
+result checked against an older condition, and every error. It prints that
+blocker's line, or with `--json` a report holding only it.
 
 ```console
 $ canibump status serde-pin; echo $?
 bumpable  serde-pin  github:serde-rs/serde#2590 merged (Cargo.toml: unpin serde)
 0
-$ canibump status nope; echo $?
-canibump: no blocker `nope` in canibump.toml
-2
 ```
 
 ## Auth
 
-GitHub takes `GITHUB_TOKEN`, then `GH_TOKEN`, then whatever `gh auth token`
-says. No token works too, just with GitHub's tighter rate limit.
-GitLab takes glab's config per host and `GITLAB_TOKEN` for `GITLAB_HOST`
-(default gitlab.com). Gitea takes tea's config logins and `GITEA_TOKEN` for
-`GITEA_HOST`. Redmine takes `REDMINE_API_KEY` for `REDMINE_URL`. Jira takes
-`JIRA_TOKEN`, or `JIRA_USER` with `JIRA_API_TOKEN`, for `JIRA_URL`. A token
-only ever goes to its own host. Credentials are read when a blocker first
-needs them: a manifest with no GitHub blocker never runs `gh`, and a run that
-reuses every cached result reads none.
+| Target | Token |
+| --- | --- |
+| GitHub | `GITHUB_TOKEN`, `GH_TOKEN`, then `gh auth token`; none works too, with a tighter rate limit |
+| GitLab | glab's config per host, `GITLAB_TOKEN` for `GITLAB_HOST` (default gitlab.com) |
+| Gitea | tea's config logins, `GITEA_TOKEN` for `GITEA_HOST` |
+| Redmine | `REDMINE_API_KEY` for `REDMINE_URL` |
+| Jira | `JIRA_TOKEN`, or `JIRA_USER` with `JIRA_API_TOKEN`, for `JIRA_URL` |
 
+A token only ever goes to its own host, and only when a blocker needs it.
 
 ## Schema
 
-`canibump schema` prints a JSON Schema for the manifest, generated from the
-types that parse it and committed as
-[schema/canibump.schema.json](../schema/canibump.schema.json). A test fails
-when the two differ; `just schema` regenerates the file. The README shows the
-`#:schema` line that wires it into taplo and tombi.
+`canibump schema` prints the manifest's JSON Schema, generated from the types
+that parse it and committed as
+[schema/canibump.schema.json](../schema/canibump.schema.json). `just install`
+writes a copy to `~/.config/canibump/`, and the Nix package ships one as
+`share/canibump/canibump.schema.json`, so an editor can point at it offline.

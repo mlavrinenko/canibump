@@ -31,6 +31,7 @@ groups:
     dependents:
       - README.md
       - docs/manifest.md
+      - docs/architecture.md
 
   # The JSON schema is generated from the manifest types, so a source change
   # flags the committed file and the docs that show how to wire it in.
@@ -41,6 +42,7 @@ groups:
       - schema/canibump.schema.json
       - README.md
       - docs/manifest.md
+      - docs/architecture.md
 
   # A package change (version, dependencies, metadata) should land in the
   # changelog.
