@@ -9,6 +9,7 @@ use std::io;
 use std::path::{Path, PathBuf};
 
 use jiff::{SignedDuration, Timestamp};
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use thiserror::Error;
 
@@ -18,7 +19,7 @@ use crate::outcome::Status;
 pub const VERSION: u32 = 1;
 
 /// The whole state file.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct StateFile {
     /// [`VERSION`] when written.
     pub version: u32,
@@ -29,7 +30,7 @@ pub struct StateFile {
 }
 
 /// One blocker's last result.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct Entry {
     /// The blocker id.
     pub id: String,
@@ -39,9 +40,11 @@ pub struct Entry {
     pub status: Status,
     /// Why, in one line.
     pub detail: String,
-    /// When the check ran.
+    /// When the check ran, RFC 3339.
+    #[schemars(with = "String")]
     pub checked_at: Timestamp,
-    /// Until when the result is reused without a new check.
+    /// Until when the result is reused without a new check, RFC 3339.
+    #[schemars(with = "String")]
     pub fresh_until: Timestamp,
     /// The condition it was checked against.
     pub spec: String,

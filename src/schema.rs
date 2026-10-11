@@ -97,8 +97,23 @@ pub(crate) struct AnySchema {
     any: Vec<StepSchema>,
 }
 
-/// The schema as pretty JSON with a trailing newline.
+/// The manifest's schema as pretty JSON with a trailing newline.
 #[must_use]
 pub fn render() -> String {
     format!("{:#}\n", schema_for!(RawManifest).as_value())
+}
+
+/// The schema of the `--json` report, as pretty JSON with a trailing newline.
+#[must_use]
+pub fn render_report() -> String {
+    format!(
+        "{:#}\n",
+        schema_for!(crate::report::Report<'static>).as_value()
+    )
+}
+
+/// The schema of the state file, as pretty JSON with a trailing newline.
+#[must_use]
+pub fn render_state() -> String {
+    format!("{:#}\n", schema_for!(crate::cache::StateFile).as_value())
 }

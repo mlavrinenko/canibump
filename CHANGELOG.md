@@ -29,7 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Results land in a state file other tools read offline, and stay fresh for
   6 hours by default. `canibump status` reads it without network, and
   `canibump status <id>` answers for one blocker by exit code.
-- `--json` prints the results as JSON.
+- `--json` prints the results as JSON. `canibump schema report` and
+  `canibump schema state` print JSON Schemas of it and of the state file,
+  generated from the code.
 - Tokens come from what you already use: `gh`, glab and tea configs, or
   environment variables. Each goes only to its own host, and only when a
   blocker needs it.

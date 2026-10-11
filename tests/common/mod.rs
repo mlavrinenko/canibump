@@ -116,3 +116,12 @@ pub fn repo_of(kinds: &[&str], settings: &str) -> Repo {
     }
     repo
 }
+
+/// A repo whose one blocker, `waits`, is open upstream, and its `--json` run.
+pub fn waiting_json_run() -> (Repo, Value) {
+    let repo = Repo::new(&blocker("waits", 1));
+    repo.issue(1, 200, &open());
+    let output = repo.cmd().arg("--json").output().expect("runs");
+    let report = serde_json::from_slice(&output.stdout).expect("json");
+    (repo, report)
+}

@@ -1,11 +1,15 @@
-//! The JSON Schema for `canibump.toml`: generated from the manifest types,
-//! committed, and checked against real manifests.
+//! The JSON Schemas for `canibump.toml`, `--json` and the state file:
+//! generated from the types, committed, and checked against real files.
+
+mod common;
 
 use std::path::PathBuf;
 
 use assert_cmd::Command;
 use jsonschema::Validator;
 use serde_json::Value;
+
+use common::waiting_json_run;
 
 fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
@@ -133,4 +137,66 @@ fn a_misspelled_key_is_rejected() {
 fn two_conditions_in_one_blocker_are_rejected() {
     let text = "[[blocker]]\nid = \"a\"\nnote = \"n\"\nstate = \"github:o/r#1\"\nreached = \"github:o/r#1\"\nin = { branch = \"main\" }\n";
     assert!(!validator().is_valid(&manifest(text)));
+}
+
+fn committed_at(name: &str) -> String {
+    std::fs::read_to_string(root().join("schema").join(name)).expect("the schema is committed")
+}
+
+fn validator_of(name: &str) -> Validator {
+    let schema: Value = serde_json::from_str(&committed_at(name)).expect("the schema is JSON");
+    jsonschema::validator_for(&schema).expect("the schema is a valid JSON Schema")
+}
+
+fn errors(validator: &Validator, instance: &Value) -> Vec<String> {
+    validator
+        .iter_errors(instance)
+        .map(|error| error.to_string())
+        .collect()
+}
+
+#[test]
+fn committed_report_and_state_schemas_match_the_generated_ones() {
+    assert!(
+        committed_at("report.schema.json") == canibump::schema::render_report(),
+        "schema/report.schema.json is stale: run `just schema`"
+    );
+    assert!(
+        committed_at("state.schema.json") == canibump::schema::render_state(),
+        "schema/state.schema.json is stale: run `just schema`"
+    );
+}
+
+#[test]
+fn schema_subcommand_prints_each_schema_by_name() {
+    for (what, file) in [
+        ("manifest", "canibump.schema.json"),
+        ("report", "report.schema.json"),
+        ("state", "state.schema.json"),
+    ] {
+        let dir = tempfile::tempdir().expect("tempdir");
+        Command::cargo_bin(env!("CARGO_PKG_NAME"))
+            .expect("binary should build")
+            .current_dir(dir.path())
+            .args(["schema", what])
+            .assert()
+            .success()
+            .stdout(committed_at(file));
+    }
+}
+
+#[test]
+fn a_real_report_and_its_state_file_validate() {
+    let (repo, report) = waiting_json_run();
+    assert_eq!(
+        errors(&validator_of("report.schema.json"), &report),
+        Vec::<String>::new()
+    );
+    let state: Value =
+        serde_json::from_str(&std::fs::read_to_string(repo.cache_path()).expect("state file"))
+            .expect("json");
+    assert_eq!(
+        errors(&validator_of("state.schema.json"), &state),
+        Vec::<String>::new()
+    );
 }

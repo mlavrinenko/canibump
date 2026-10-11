@@ -9,7 +9,7 @@ use httpmock::Method::GET;
 use predicates::prelude::*;
 use serde_json::{Value, json};
 
-use common::{Repo, blocker, fixed, gh_calls, open};
+use common::{Repo, blocker, fixed, gh_calls, open, waiting_json_run};
 
 #[test]
 fn prints_one_line_per_blocker_and_exits_9_when_one_is_bumpable() {
@@ -168,10 +168,7 @@ fn status_without_a_cache_says_to_run_a_check() {
 
 #[test]
 fn json_check_output_lists_entries() {
-    let repo = Repo::new(&blocker("waits", 1));
-    repo.issue(1, 200, &open());
-    let output = repo.cmd().arg("--json").output().expect("runs");
-    let report: Value = serde_json::from_slice(&output.stdout).expect("json");
+    let (_repo, report) = waiting_json_run();
     assert_eq!(report.pointer("/entries/0/id"), Some(&json!("waits")));
     assert_eq!(report.pointer("/entries/0/status"), Some(&json!("waiting")));
     assert_eq!(report.pointer("/entries/0/stale"), Some(&json!(false)));

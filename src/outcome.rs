@@ -1,9 +1,10 @@
 //! What a check found.
 
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 /// The state of a blocker, or of one step of it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 #[serde(rename_all = "lowercase")]
 pub enum Status {
     /// Upstream has not landed it yet.

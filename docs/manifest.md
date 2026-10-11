@@ -162,3 +162,8 @@ that parse it and committed as
 [schema/canibump.schema.json](../schema/canibump.schema.json). `just install`
 writes a copy to `~/.config/canibump/`, and the Nix package ships one as
 `share/canibump/canibump.schema.json`, so an editor can point at it offline.
+
+`canibump schema report` and `canibump schema state` print the schemas of
+`--json` and the state file, committed beside it as
+[schema/report.schema.json](../schema/report.schema.json) and
+[schema/state.schema.json](../schema/state.schema.json).

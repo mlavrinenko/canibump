@@ -84,9 +84,12 @@ which do. `canibump status <id>` has its own codes, 0 bumpable, 1 waiting,
 
 ## Interop usage
 
-Pass `--json` to get machine-readable data. Every run also saves the results
-to a state file other tools can read offline (`canibump status --path` says
-where).
+Pass `--json` to get machine-readable data. See
+[its schema](schema/report.schema.json). Every run also saves the results to a
+state file other tools can read offline, see
+[its schema](schema/state.schema.json). `canibump status --path` says where it
+is, and `canibump schema report` or `canibump schema state` prints the schema
+that matches your binary.
 
 ## Editor support
 

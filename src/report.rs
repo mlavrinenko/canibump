@@ -183,7 +183,7 @@ fn is_stale(entry: &Entry, now: Timestamp) -> bool {
 }
 
 /// The `--json` document.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, JsonSchema)]
 pub struct Report<'a> {
     /// The manifest checked.
     pub manifest: &'a Path,
@@ -196,7 +196,7 @@ pub struct Report<'a> {
 }
 
 /// One blocker in the `--json` document.
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, JsonSchema)]
 pub struct Row<'a> {
     /// The blocker id.
     pub id: &'a str,
@@ -206,9 +206,11 @@ pub struct Row<'a> {
     pub status: Status,
     /// Why.
     pub detail: &'a str,
-    /// When it was checked.
+    /// When it was checked, RFC 3339.
+    #[schemars(with = "String")]
     pub checked_at: Timestamp,
-    /// Until when the result is reused.
+    /// Until when the result is reused, RFC 3339.
+    #[schemars(with = "String")]
     pub fresh_until: Timestamp,
     /// Past `fresh_until`.
     pub stale: bool,

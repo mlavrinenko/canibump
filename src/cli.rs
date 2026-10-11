@@ -2,7 +2,7 @@
 
 use anstream::AutoStream;
 use anyhow::{Context as _, Result, bail};
-use clap::{Args, ColorChoice, CommandFactory as _, Parser, Subcommand};
+use clap::{Args, ColorChoice, CommandFactory as _, Parser, Subcommand, ValueEnum};
 use clap_complete::Shell;
 use jiff::Timestamp;
 use std::io::Write as _;
@@ -77,13 +77,40 @@ pub enum Command {
         #[arg(long, conflicts_with = "id")]
         path: bool,
     },
-    /// Print the JSON Schema for canibump.toml and exit.
-    Schema,
+    /// Print a JSON Schema and exit: canibump.toml's, the `--json` report's or the state file's.
+    Schema {
+        /// What it describes.
+        #[arg(value_enum, default_value_t)]
+        of: SchemaOf,
+    },
     /// Print a shell completion script and exit.
     Completions {
         /// The shell to complete for.
         shell: Shell,
     },
+}
+
+/// What `canibump schema` describes.
+#[derive(Debug, Clone, Copy, Default, ValueEnum)]
+pub enum SchemaOf {
+    /// `canibump.toml`.
+    #[default]
+    Manifest,
+    /// The `--json` report.
+    Report,
+    /// The state file.
+    State,
+}
+
+impl SchemaOf {
+    /// The schema as pretty JSON with a trailing newline.
+    fn render(self) -> String {
+        match self {
+            Self::Manifest => crate::schema::render(),
+            Self::Report => crate::schema::render_report(),
+            Self::State => crate::schema::render_state(),
+        }
+    }
 }
 
 impl Command {
@@ -92,7 +119,7 @@ impl Command {
         match self {
             Self::Check(_) => "check",
             Self::Status { .. } => "status",
-            Self::Schema => "schema",
+            Self::Schema { .. } => "schema",
             Self::Completions { .. } => "completions",
         }
     }
@@ -127,8 +154,8 @@ fn dispatch(cli: &Cli) -> Result<u8> {
         Some(other) if cli.check.refresh => {
             bail!("--refresh goes with check, not {}", other.name())
         }
-        Some(Command::Schema) => {
-            print(cli, &crate::schema::render())?;
+        Some(Command::Schema { of }) => {
+            print(cli, &of.render())?;
             Ok(report::EXIT_OK)
         }
         Some(Command::Completions { shell }) => {

@@ -1,0 +1,106 @@
+{
+  "$defs": {
+    "Row": {
+      "description": "One blocker in the `--json` document.",
+      "properties": {
+        "checked_at": {
+          "description": "When it was checked, RFC 3339.",
+          "type": "string"
+        },
+        "detail": {
+          "description": "Why.",
+          "type": "string"
+        },
+        "fresh_until": {
+          "description": "Until when the result is reused, RFC 3339.",
+          "type": "string"
+        },
+        "id": {
+          "description": "The blocker id.",
+          "type": "string"
+        },
+        "note": {
+          "description": "The blocker note.",
+          "type": "string"
+        },
+        "stale": {
+          "description": "Past `fresh_until`.",
+          "type": "boolean"
+        },
+        "status": {
+          "$ref": "#/$defs/Status",
+          "description": "What the check found."
+        }
+      },
+      "required": [
+        "id",
+        "note",
+        "status",
+        "detail",
+        "checked_at",
+        "fresh_until",
+        "stale"
+      ],
+      "type": "object"
+    },
+    "Status": {
+      "description": "The state of a blocker, or of one step of it.",
+      "oneOf": [
+        {
+          "const": "waiting",
+          "description": "Upstream has not landed it yet.",
+          "type": "string"
+        },
+        {
+          "const": "bumpable",
+          "description": "Landed: the workaround can go.",
+          "type": "string"
+        },
+        {
+          "const": "dead",
+          "description": "Will not land as declared (closed unmerged, wontfix, duplicate).",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "description": "The check itself failed (network, auth, rate limit).",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The `--json` document.",
+  "properties": {
+    "cache": {
+      "description": "The state file holding these results.",
+      "type": "string"
+    },
+    "entries": {
+      "description": "One row per blocker.",
+      "items": {
+        "$ref": "#/$defs/Row"
+      },
+      "type": "array"
+    },
+    "exit_code": {
+      "description": "The process exit code these results map to.",
+      "format": "uint8",
+      "maximum": 255,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "manifest": {
+      "description": "The manifest checked.",
+      "type": "string"
+    }
+  },
+  "required": [
+    "manifest",
+    "cache",
+    "exit_code",
+    "entries"
+  ],
+  "title": "Report",
+  "type": "object"
+}

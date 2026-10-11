@@ -1,0 +1,100 @@
+{
+  "$defs": {
+    "Entry": {
+      "description": "One blocker's last result.",
+      "properties": {
+        "checked_at": {
+          "description": "When the check ran, RFC 3339.",
+          "type": "string"
+        },
+        "detail": {
+          "description": "Why, in one line.",
+          "type": "string"
+        },
+        "fresh_until": {
+          "description": "Until when the result is reused without a new check, RFC 3339.",
+          "type": "string"
+        },
+        "id": {
+          "description": "The blocker id.",
+          "type": "string"
+        },
+        "note": {
+          "description": "The blocker note.",
+          "type": "string"
+        },
+        "spec": {
+          "description": "The condition it was checked against.",
+          "type": "string"
+        },
+        "status": {
+          "$ref": "#/$defs/Status",
+          "description": "What the check found."
+        }
+      },
+      "required": [
+        "id",
+        "note",
+        "status",
+        "detail",
+        "checked_at",
+        "fresh_until",
+        "spec"
+      ],
+      "type": "object"
+    },
+    "Status": {
+      "description": "The state of a blocker, or of one step of it.",
+      "oneOf": [
+        {
+          "const": "waiting",
+          "description": "Upstream has not landed it yet.",
+          "type": "string"
+        },
+        {
+          "const": "bumpable",
+          "description": "Landed: the workaround can go.",
+          "type": "string"
+        },
+        {
+          "const": "dead",
+          "description": "Will not land as declared (closed unmerged, wontfix, duplicate).",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "description": "The check itself failed (network, auth, rate limit).",
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "The whole state file.",
+  "properties": {
+    "entries": {
+      "description": "One entry per blocker, in manifest order.",
+      "items": {
+        "$ref": "#/$defs/Entry"
+      },
+      "type": "array"
+    },
+    "manifest": {
+      "description": "The manifest these entries come from.",
+      "type": "string"
+    },
+    "version": {
+      "description": "[`VERSION`] when written.",
+      "format": "uint32",
+      "minimum": 0,
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "manifest",
+    "entries"
+  ],
+  "title": "StateFile",
+  "type": "object"
+}

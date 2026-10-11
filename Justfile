@@ -163,11 +163,12 @@ outdated:
     cargo outdated --workspace
 
 # Through a temp file, so a failed build never truncates the schema.
-[doc("Regenerate schema/canibump.schema.json from the manifest types")]
+[doc("Regenerate the JSON Schemas in schema/ from the types")]
 [group("extra")]
 schema:
-    cargo run --quiet -- schema > schema/canibump.schema.json.tmp
-    mv schema/canibump.schema.json.tmp schema/canibump.schema.json
+    cargo run --quiet -- schema manifest > schema/canibump.schema.json.tmp && mv schema/canibump.schema.json.tmp schema/canibump.schema.json
+    cargo run --quiet -- schema report > schema/report.schema.json.tmp && mv schema/report.schema.json.tmp schema/report.schema.json
+    cargo run --quiet -- schema state > schema/state.schema.json.tmp && mv schema/state.schema.json.tmp schema/state.schema.json
 
 [doc("Mutation-test what this branch changed")]
 [group("extra")]
