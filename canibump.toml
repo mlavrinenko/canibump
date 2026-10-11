@@ -7,7 +7,7 @@
 # PATH.
 [[blocker]]
 id = "llvm-cov-path-fallback"
-note = "flake.nix:95-96: drop the LLVM_COV and LLVM_PROFDATA exports, keep the matching LLVM on PATH"
+note = "flake.nix:97-98: drop the LLVM_COV and LLVM_PROFDATA exports, keep the matching LLVM on PATH"
 
 [[blocker.all]]
 id = "merged"

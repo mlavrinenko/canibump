@@ -57,18 +57,20 @@ groups:
       .config/nextest.toml: ec97d2444d9bf38aae8499d53eac3ffbbab47593637e3a324452ee72bec0ef0b
       .config/wt.toml: 7c06507d109ff5168d8bed19c9d700989abd6239cd9f800ef9cc43be17e79be7
       .mmz/config.yaml: 5fe884e850d612ceafdf6dbd1fb631a85bd6b1519e925267ee8e5914a6fa872f
-      Justfile: 47af2891dcb50071f85db8e7cca2cb92d7e26efe718ed18ee9996f9616887035
-      flake.nix: b4da658c812ef139c72803763ce5f035075107e4fb2ffa2b2724f497ede8effa
+      Justfile: 0d970656ac686be7646f2b0881468cc41f644c7df7c42047da36c9f8643eaa66
+      flake.nix: 6a005137ce0489bdc848d1345c82fb045dde4c7acb0f5485b686a5794c706022
+      release.toml: 0874f00ae73873868e5ace0bb2df30bb7f8b1be0a3a6186c4ec528c997f676a1
       scripts/cover.sh: cb57da07f22031060d9f653d924d85887e788b90bec391fbac29435cd287633d
       scripts/crap.sh: 3e015b2b77eb7a36b8d80b961aa9aef47b3be9c57ca6c2948450c8b764f13cc9
       scripts/eject.sh: 9fed177e7d200c062466f4c317c452280af8072de914f1eeb9ceb2a33cc97621
       scripts/quiet.sh: 7e05bb0d5be2959ede47c7eb33b9203e0446702ea178cdb596951df9e8b3fb73
-      scripts/release.sh: 9ca4b58bdfb13c8c83c493442d5523c48baa22a51ef4a58b84e6717e64fab31b
+      scripts/release-ci.sh: ed02a07820a1d3282d3269fd48ca6940d101ecfd98ac496d60cf2326769e7fba
+      scripts/release-hook.sh: 91afbe17d97053194cb2bb9819c8f68f5cd81c18eb087b1388beae48c3c4a83d
       scripts/wt-carry-lcov.sh: 39b537a8a380b6fd1c88064bcfb2149a2207ba0ff390bf29c4bfa6e4b26fc650
     dependents:
-      AGENTS.md: 7bd5e95b60b61b26442068cff63a1263c0607d020e496bbbd2f315e2f189c36a
-      CONTRIBUTING.md: 411d1fe8e730390519fef058c2efaa88b5edbbd4f1d3eea8d30c454b55d31f89
-      canibump.toml: ae7017e43e9ecb4c8e7a59bda1826005093650819f63cde74af7976f86dd8348
+      AGENTS.md: 91132ea056b16ce68a1b8b09a86e302f53aa675f79de40e86b3d59749c2a4b0f
+      CONTRIBUTING.md: eee363413f03752e19643f58fd174bcf5d7e6992b1c47841b50e72a21282dce7
+      canibump.toml: ba28454319e787094e40afda101ffa7bd0ce5fe844198cfdcfb23c3651d7de36
   release-notes:
     source:
       Cargo.toml: ee75eaa636b331fed70cc2d022bc8d0f1ec15cfe5197a8e7b0592fed5adec9f3

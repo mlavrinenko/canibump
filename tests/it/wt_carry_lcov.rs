@@ -7,6 +7,7 @@
 //! Unix only: the script needs `bash`, `git` and `awk`.
 #![cfg(unix)]
 
+use crate::common::shell::{commit, git, stderr, write};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 use std::time::{Duration, SystemTime};
@@ -85,30 +86,6 @@ impl Pair {
     fn carried(&self) -> Option<String> {
         std::fs::read_to_string(self.primary().join(LCOV)).ok()
     }
-}
-
-fn stderr(out: &Output) -> String {
-    String::from_utf8_lossy(&out.stderr).into_owned()
-}
-
-fn git(dir: &Path, args: &[&str]) {
-    let out = Command::new("git")
-        .args(args)
-        .current_dir(dir)
-        .env("GIT_CONFIG_NOSYSTEM", "1")
-        .output()
-        .expect("git runs");
-    assert!(out.status.success(), "git {args:?}:\n{}", stderr(&out));
-}
-
-fn write(path: &Path, content: &str) {
-    std::fs::create_dir_all(path.parent().expect("parent")).expect("mkdir");
-    std::fs::write(path, content).expect("write");
-}
-
-fn commit(dir: &Path, message: &str) {
-    git(dir, &["add", "-A"]);
-    git(dir, &["commit", "-q", "-m", message]);
 }
 
 /// Set `path`'s mtime to `secs` seconds in the past.

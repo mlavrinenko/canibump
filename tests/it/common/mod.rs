@@ -11,6 +11,8 @@ use httpmock::{Mock, MockServer};
 use serde_json::{Value, json};
 use tempfile::TempDir;
 
+pub mod shell;
+
 pub struct Repo {
     pub dir: TempDir,
     pub server: MockServer,

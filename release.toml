@@ -1,0 +1,18 @@
+# cargo-release config for `just release VERSION`. Run it through that recipe:
+# the recipe adds the CI wait before the tag, which cargo-release lacks.
+allow-branch = ["main"]
+# release.yml publishes on the tag push, never this machine.
+publish = false
+tag-prefix = ""
+tag-name = "v{{version}}"
+tag-message = "v{{version}}"
+pre-release-commit-message = "chore(release): {{version}}"
+# Dates the entries under [Unreleased]. Idempotent: it matches only while
+# entries (a `###` heading) follow [Unreleased], so a re-run after a red CI
+# finds nothing, which min = 0 allows, and never dates twice. A release with no
+# entries is refused by the hook, which runs after this.
+pre-release-replacements = [
+  { file = "CHANGELOG.md", search = '## \[Unreleased\](\n+### )', replace = "## [Unreleased]\n\n## [{{version}}] - {{date}}${1}", min = 0, max = 1 },
+]
+# The checks cargo-release lacks, run once per release (and in a dry run).
+pre-release-hook = ["bash", "scripts/release-hook.sh"]

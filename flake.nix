@@ -73,6 +73,8 @@
             cargo-machete
             cargo-mutants
             cargo-deny
+            # The bump, CHANGELOG dating and commit behind `just release`.
+            cargo-release
             # cargo-nextest is the test runner `just test` gates on — doctests
             # run in a separate `cargo test --doc` pass, which is why `just
             # test` spells out both. cargo-outdated is a dev aid, deliberately

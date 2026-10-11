@@ -7,6 +7,7 @@ mod common;
 mod completions;
 mod exit_codes;
 mod package;
+mod release_hook;
 mod schema;
 mod status_id;
 mod wt_carry_lcov;

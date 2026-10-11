@@ -148,13 +148,29 @@ cover:
 crap:
     scripts/crap.sh
 
-# Push main, wait for ci.yml on that commit, tag only if it is green.
-[doc("Release: just release 0.1.0 [--dry-run]")]
+# cargo-release bumps, dates CHANGELOG.md, runs scripts/release-hook.sh (every
+# refusal), commits and pushes main; the tag waits for ci.yml to go green on it.
+[arg('DRY_RUN', long='dry-run', value='true', help='run every check, then say what would be pushed')]
+[arg('VERSION', pattern='\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?', help='semver, no leading v (e.g. 0.1.0)')]
+[doc("Release: bump, date, push main, wait for CI, then tag (--dry-run first)")]
+[extension('.sh')]
 [group("extra")]
 [no-exit-message]
-[positional-arguments]
-release VERSION *FLAGS:
-    scripts/release.sh "$@"
+[script]
+release VERSION $DRY_RUN='':
+    args=(--no-confirm)
+    [ -n "$DRY_RUN" ] || args+=(--execute)
+    cargo release {{ VERSION }} "${args[@]}" --no-tag
+    if [ -n "$DRY_RUN" ]; then
+        echo "dry run: every check passed"
+        echo "would push main, wait for ci.yml on it, then tag and push 'v{{ VERSION }}'"
+        exit 0
+    fi
+    scripts/release-ci.sh {{ VERSION }}
+    cargo release tag "${args[@]}"
+    cargo release push "${args[@]}" \
+        || { git tag -d "v{{ VERSION }}" >/dev/null; echo "error: origin rejected the push of 'v{{ VERSION }}'" >&2; echo "hint: re-run just release {{ VERSION }}" >&2; exit 1; }
+    echo "pushed 'v{{ VERSION }}'; follow it with: gh run list --workflow release.yml --limit 1"
 
 [doc("Audit dependencies: advisories, licenses, bans (needs network)")]
 [group("extra")]

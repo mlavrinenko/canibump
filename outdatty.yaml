@@ -66,6 +66,7 @@ groups:
     source:
       - flake.nix
       - Justfile
+      - release.toml
       - "scripts/**"
       - .config/nextest.toml
       - .config/wt.toml
