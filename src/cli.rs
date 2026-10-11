@@ -8,7 +8,7 @@ use jiff::Timestamp;
 use std::io::Write as _;
 use std::path::{Path, PathBuf};
 
-use crate::cache::{self, StateFile};
+use crate::cache::{self, Entry, StateFile};
 use crate::manifest::Manifest;
 use crate::provider::defaults;
 use crate::report::{self, Actionable, Exit, Report};
@@ -235,8 +235,34 @@ fn results(cache_path: &Path) -> Result<StateFile> {
 
 fn status(cli: &Cli, manifest: &Manifest, cache_path: &Path) -> Result<u8> {
     let state = results(cache_path)?;
+    let state = StateFile {
+        entries: current_entries(manifest, state.entries),
+        ..state
+    };
     let code = report::exit_code(&state.entries, counted(cli, manifest));
     output(cli, cache_path, &state, Timestamp::now(), code)
+}
+
+/// The entries the manifest still holds under the condition they were checked
+/// against. One of a blocker the manifest dropped is skipped; one checked
+/// against another condition is no answer, so it is warned about and left out.
+fn current_entries(manifest: &Manifest, entries: Vec<Entry>) -> Vec<Entry> {
+    entries
+        .into_iter()
+        .filter(|entry| {
+            let Some(blocker) = manifest.blockers.iter().find(|one| one.id == entry.id) else {
+                return false;
+            };
+            let current = entry.spec == blocker.spec;
+            if !current {
+                eprintln!(
+                    "canibump: warning: `{}` was checked against an older condition: run `canibump`",
+                    entry.id
+                );
+            }
+            current
+        })
+        .collect()
 }
 
 /// `status <id>`: one blocker's cached result, answered by exit code. A result

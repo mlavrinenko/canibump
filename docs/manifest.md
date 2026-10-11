@@ -146,6 +146,11 @@ bumpable  serde-pin  github:serde-rs/serde#2590 merged (Cargo.toml: unpin serde)
 0
 ```
 
+A bare `canibump status` prints the state file as it stands, minus what the
+manifest has moved past. A result checked against an older condition is not
+counted and earns a warning on stderr, and a blocker the manifest dropped is
+skipped.
+
 ## Auth
 
 | Target | Token |

@@ -1,5 +1,6 @@
 //! End-to-end: `canibump status <id>` answers one blocker by exit code,
-//! offline: 0 bumpable, 1 waiting, 2 anything else.
+//! offline: 0 bumpable, 1 waiting, 2 anything else. A bare `status` counts no
+//! result checked against another condition.
 
 use predicates::prelude::*;
 use serde_json::{Value, json};
@@ -58,14 +59,7 @@ fn json_holds_only_that_entry_and_the_answer_as_its_exit_code() {
             .expect("runs");
         assert_eq!(output.status.code(), Some(code), "{id}");
         let report: Value = serde_json::from_slice(&output.stdout).expect("json");
-        let ids: Vec<&Value> = report
-            .get("entries")
-            .and_then(Value::as_array)
-            .expect("entries")
-            .iter()
-            .filter_map(|row| row.get("id"))
-            .collect();
-        assert_eq!(ids, [&json!(id)]);
+        assert_eq!(entry_ids(&report), [&json!(id)]);
         assert_eq!(report.get("exit_code"), Some(&json!(code)));
     }
 }
@@ -164,4 +158,55 @@ fn flags_that_do_not_go_with_an_id_are_refused_as_unknown_too() {
         .assert()
         .code(2)
         .stderr("canibump: --refresh goes with check, not status\n");
+}
+
+#[test]
+fn a_bare_status_does_not_count_a_result_of_an_older_condition() {
+    let repo = checked();
+    write_manifest(&repo, &(blocker("waits", 1) + &blocker("bumpable", 9)));
+    repo.cmd()
+        .arg("status")
+        .assert()
+        .code(0)
+        .stdout("waiting   waits  github:o/r#1 is open\n")
+        .stderr(
+            "canibump: warning: `bumpable` was checked against an older condition: run `canibump`\n",
+        );
+}
+
+#[test]
+fn a_bare_status_skips_a_blocker_the_manifest_dropped() {
+    let repo = checked();
+    write_manifest(&repo, &blocker("waits", 1));
+    repo.cmd()
+        .arg("status")
+        .assert()
+        .code(0)
+        .stdout("waiting   waits  github:o/r#1 is open\n")
+        .stderr("");
+}
+
+#[test]
+fn a_bare_status_json_holds_only_the_current_entries() {
+    let repo = checked();
+    write_manifest(&repo, &(blocker("waits", 1) + &blocker("bumpable", 9)));
+    let output = repo
+        .cmd()
+        .args(["--json", "status"])
+        .output()
+        .expect("runs");
+    assert_eq!(output.status.code(), Some(0));
+    let report: Value = serde_json::from_slice(&output.stdout).expect("json");
+    assert_eq!(entry_ids(&report), [&json!("waits")]);
+}
+
+/// The `id` of each entry of a `--json` report.
+fn entry_ids(report: &Value) -> Vec<&Value> {
+    report
+        .get("entries")
+        .and_then(Value::as_array)
+        .expect("entries")
+        .iter()
+        .filter_map(|row| row.get("id"))
+        .collect()
 }

@@ -7,7 +7,7 @@ groups:
       src/auth_tests.rs: 8f5e20b47c8c1d34cad8d63ffc63de43d8334a0c0ea06fd4e19b28942c265eb5
       src/cache.rs: 2e72a4e0ea0110393c8788307d2988d44663263614296c1efe96b8e57b8fedaf
       src/cache_tests.rs: c49552e2ef56fa54feccee38b6a661cfaf9ca253f2379824b664f14e8bc96cc0
-      src/cli.rs: 158ee9f33eb4ab1c1423bdcc889b133f97b6dc20a75c2272a0cbf9c008255660
+      src/cli.rs: c0acaf52466661de790acd52279c4469b701fed3b20620ca47ca059a43d1381e
       src/condition.rs: ef77d42a13d23e95a735b650d299268e66c6ffe6c1dc3b84102990565fe93664
       src/eval.rs: ccfc8e69bf6659258ae8de87154b4599418d5c3bbb479e3712f4fb02c9fc85e7
       src/eval_chain_tests.rs: 318c5939aaffde9a2c7afe0a2fb9a8faa304f7c243d8c14578143cbe0aad8d1b
@@ -51,7 +51,7 @@ groups:
     dependents:
       README.md: 3c551f06ee500646d02fd3d3eb05d8354212911f58ffc5b2ec64d57ad96e209d
       docs/architecture.md: 40c1387109718056fbcb0eb4ae5463537f757fb441cf858eb0b5bdf491ead52c
-      docs/manifest.md: 7c5f072becaa1b01a7362db84202a8600376d74fd84caf174e57f9e19a8813ff
+      docs/manifest.md: 4a69f5035c6e4c5c6cc465377ac8f71c00a51ded4f2765b29258ebd19b9f2843
   dev-docs:
     source:
       .config/nextest.toml: ec97d2444d9bf38aae8499d53eac3ffbbab47593637e3a324452ee72bec0ef0b
@@ -75,14 +75,14 @@ groups:
     source:
       Cargo.toml: ee75eaa636b331fed70cc2d022bc8d0f1ec15cfe5197a8e7b0592fed5adec9f3
     dependents:
-      CHANGELOG.md: 9a235c6282e771a96a1448b63caa4ebd5a2ce0c89ec11615b7632e861d8b4f65
+      CHANGELOG.md: 3a721361246fb947fc8b3f292b09379127b99f87199cd5ae4e4c01c613ce770d
   schema:
     source:
       src/auth.rs: 13b2e1d778b5a76ebddbfeca85533ced64a9ab6c0eb84cea1438e0631be1bb21
       src/auth_tests.rs: 8f5e20b47c8c1d34cad8d63ffc63de43d8334a0c0ea06fd4e19b28942c265eb5
       src/cache.rs: 2e72a4e0ea0110393c8788307d2988d44663263614296c1efe96b8e57b8fedaf
       src/cache_tests.rs: c49552e2ef56fa54feccee38b6a661cfaf9ca253f2379824b664f14e8bc96cc0
-      src/cli.rs: 158ee9f33eb4ab1c1423bdcc889b133f97b6dc20a75c2272a0cbf9c008255660
+      src/cli.rs: c0acaf52466661de790acd52279c4469b701fed3b20620ca47ca059a43d1381e
       src/condition.rs: ef77d42a13d23e95a735b650d299268e66c6ffe6c1dc3b84102990565fe93664
       src/eval.rs: ccfc8e69bf6659258ae8de87154b4599418d5c3bbb479e3712f4fb02c9fc85e7
       src/eval_chain_tests.rs: 318c5939aaffde9a2c7afe0a2fb9a8faa304f7c243d8c14578143cbe0aad8d1b
@@ -125,7 +125,7 @@ groups:
       src/version_tests.rs: f914fa5918e6747ab85d18a542e073f8ab11252de65143c49d105ccde8a4c9c3
     dependents:
       README.md: 3c551f06ee500646d02fd3d3eb05d8354212911f58ffc5b2ec64d57ad96e209d
-      docs/manifest.md: 7c5f072becaa1b01a7362db84202a8600376d74fd84caf174e57f9e19a8813ff
+      docs/manifest.md: 4a69f5035c6e4c5c6cc465377ac8f71c00a51ded4f2765b29258ebd19b9f2843
       schema/canibump.schema.json: 43fd8c54915035c83daf838d5cd595943898e66423ea52729cdd866b1d1e6096
       schema/report.schema.json: 3959630b0b339e89cd796232b1c42b106e1f5a7844894bb2cdaacaec6c48ec5d
       schema/state.schema.json: 4e9bac260e4803a0889470dc91510da8decd23a7d8c1bb9379848323d054ae44
