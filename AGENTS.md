@@ -46,14 +46,20 @@
   `cargo llvm-cov nextest`, so a test cannot pass under the gate and fail under
   coverage (or the reverse) with nothing saying so.
 - Release only with `just release X.Y.Z`, after `just release X.Y.Z --dry-run`
-  passes; never `cargo publish` by hand, and don't push main first. The recipe
-  refuses a dirty tree, an origin/main that main lacks commits of, an existing
-  tag, a version already on crates.io, a CHANGELOG without a dated `X.Y.Z`
-  section, stale gates and a failing `cargo publish --dry-run`. Then it pushes
-  main, waits for `ci.yml` on that commit, and tags only if it is green; a red
-  run leaves main pushed and no tag. A release whose workflow failed
-  is finished on the same tag with `gh workflow run <release workflow> -f
-  tag=vX.Y.Z`; a pushed tag never moves.
+  passes; never `cargo publish` by hand, never bump `Cargo.toml` or date the
+  CHANGELOG yourself, and don't push main first. Keep the release's entries
+  under `[Unreleased]`: [cargo-release](https://github.com/crate-ci/cargo-release)
+  (`release.toml`) bumps the version, dates them and commits. Its
+  `pre-release-hook`, [scripts/release-hook.sh](scripts/release-hook.sh),
+  refuses a dirty tree, a branch but main, an origin/main that main lacks
+  commits of, an existing tag, a version already on crates.io, a CHANGELOG with
+  nothing to release, failing gates (`just check`) and a failing
+  `cargo publish --dry-run`. Then the recipe pushes main, waits for `ci.yml` on
+  that commit (`scripts/release-ci.sh`), and tags only if it is green; a red run
+  leaves main pushed and no tag, and a re-run after fixing it changes nothing
+  the first run did. A release whose workflow failed is finished on the same
+  tag with `gh workflow run <release workflow> -f tag=vX.Y.Z`; a pushed tag
+  never moves.
 - Eating your own dog food: the tool should use itself if applicable.
   [canibump.toml](canibump.toml) lists the upstream items this repo's own
   workarounds wait on; `just canibump` checks it (network-bound, outside
