@@ -28,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   channels) or deps.dev (crates.io, npm, PyPI, Go, Maven, NuGet, RubyGems).
 - `[[blocker.all]]` and `[[blocker.any]]` chain steps, like merged, then
   released, then in nixpkgs, and a step can use the tag an earlier one found.
+  `at-least = { step = ... }` refuses any other key, like every manifest table.
 - The exit code is 8 plus 1 for bumpable, 2 for dead and 4 for failed, summed,
   so a script tests one bit. `--fail-on` or `[settings] fail-on` picks what
   counts.

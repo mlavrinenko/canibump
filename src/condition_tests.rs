@@ -41,3 +41,38 @@ fn reached_refuses_a_target_with_no_history_provider() {
         );
     }
 }
+
+fn bound(at_least: &str) -> Result<Condition, String> {
+    condition(&format!(
+        "version = \"deps.dev:cargo/x\"\nat-least = {at_least}\n"
+    ))
+}
+
+#[test]
+fn at_least_takes_a_version_or_a_step() {
+    let at_least = |text| match bound(text) {
+        Ok(Condition::Version(version)) => Some(version.at_least),
+        _ => None,
+    };
+    assert_eq!(at_least("\"1.2\""), Some(Bound::Version("1.2".to_owned())));
+    assert_eq!(
+        at_least("{ step = \"r\" }"),
+        Some(Bound::Step("r".to_owned()))
+    );
+}
+
+#[test]
+fn at_least_refuses_any_other_shape() {
+    let shape = "`at-least` takes a version or { step = \"<id>\" }";
+    for (text, message) in [
+        (
+            "{ step = \"r\", typo = 1 }",
+            format!("{shape}, not key `typo`"),
+        ),
+        ("1", shape.to_owned()),
+        ("{}", shape.to_owned()),
+        ("{ step = 1 }", shape.to_owned()),
+    ] {
+        assert_eq!(bound(text), Err(message), "{text}");
+    }
+}

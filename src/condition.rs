@@ -136,8 +136,8 @@ pub(crate) struct RawVersion {
 }
 
 /// The lowest version that resolves a `version` condition.
-#[derive(Deserialize, JsonSchema)]
-#[serde(untagged)]
+#[derive(JsonSchema)]
+#[serde(untagged, deny_unknown_fields)]
 #[schemars(rename = "Bound")]
 pub(crate) enum RawBound {
     /// A literal version.
@@ -147,6 +147,29 @@ pub(crate) enum RawBound {
         /// The `id` of that step.
         step: String,
     },
+}
+
+/// By hand, since an untagged derive drops unknown keys and says only
+/// "did not match any variant" for a bad shape.
+impl<'de> Deserialize<'de> for RawBound {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        use serde::de::Error as _;
+        let shape = "`at-least` takes a version or { step = \"<id>\" }";
+        match Value::deserialize(deserializer)? {
+            Value::String(version) => Ok(Self::Version(version)),
+            Value::Table(mut table) => {
+                let step = table.remove("step");
+                if let Some(key) = table.keys().next() {
+                    return Err(D::Error::custom(format!("{shape}, not key `{key}`")));
+                }
+                match step {
+                    Some(Value::String(step)) => Ok(Self::Step { step }),
+                    _ => Err(D::Error::custom(shape)),
+                }
+            }
+            _ => Err(D::Error::custom(shape)),
+        }
+    }
 }
 
 /// Where a `reached` commit has to arrive: exactly one of `branch`, `tag` or
