@@ -120,6 +120,32 @@ fn is_ancestor(
     }
 }
 
+/// Deletes the local refs `spec` writes into that are not in `kept`, the ones
+/// the remote mapped this fetch.
+///
+/// The bare clone outlives the run, so a branch deleted or a tag retracted
+/// upstream would otherwise keep answering from its stale local copy.
+fn prune(
+    repo: &gix::Repository,
+    spec: &str,
+    kept: &HashSet<gix::bstr::BString>,
+) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
+    let local = spec.rsplit(':').next().unwrap_or(spec);
+    let owned: Vec<gix::Reference<'_>> = match local.strip_suffix('*') {
+        Some(prefix) => repo
+            .references()?
+            .prefixed(prefix)?
+            .collect::<Result<_, _>>()?,
+        None => repo.try_find_reference(local)?.into_iter().collect(),
+    };
+    for reference in owned {
+        if !kept.contains(reference.name().as_bstr()) {
+            reference.delete()?;
+        }
+    }
+    Ok(())
+}
+
 impl GitRemotes {
     /// Remotes cloned under `cache`.
     #[must_use]
@@ -203,10 +229,17 @@ impl Inner {
             )
             .map_err(|error| fail(&error))?
             .receive(gix::progress::Discard, &gix::interrupt::IS_INTERRUPTED);
-        match outcome {
-            Ok(_) | Err(gix::remote::fetch::Error::NoMapping { .. }) => {}
+        let kept = match outcome {
+            Ok(outcome) => outcome
+                .ref_map
+                .mappings
+                .into_iter()
+                .filter_map(|mapping| mapping.local)
+                .collect(),
+            Err(gix::remote::fetch::Error::NoMapping { .. }) => HashSet::new(),
             Err(error) => return Err(fail(&error)),
-        }
+        };
+        prune(repo, spec, &kept).map_err(|error| fail(&error))?;
         let key = (url.to_owned(), spec.to_owned());
         self.fetched
             .lock()

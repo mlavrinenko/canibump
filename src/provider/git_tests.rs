@@ -262,3 +262,60 @@ fn the_clone_dir_is_named_after_the_url() {
         PathBuf::from("/c/https___example.org_a_b.git.git")
     );
 }
+
+/// Deletes `name` in the upstream repo at `url`.
+fn delete_upstream(url: &str, name: &str) {
+    let repo = gix::open(url).expect("open upstream");
+    repo.find_reference(name)
+        .expect("ref")
+        .delete()
+        .expect("delete");
+}
+
+#[tokio::test]
+async fn a_branch_deleted_upstream_since_an_earlier_run_reads_not_found() {
+    let up = upstream();
+    let (cache, earlier, source) = remote(&up.url);
+    let side = branch("side");
+    assert_eq!(earlier.contains(&source, &up.c4, &side).await, Ok(true));
+    delete_upstream(&up.url, "refs/heads/side");
+    let later = GitRemotes::new(cache.path().to_owned());
+    let result = later.contains(&source, &up.c4, &side).await;
+    assert!(matches!(result, Err(CheckError::NotFound(_))), "{result:?}");
+}
+
+#[tokio::test]
+async fn a_tag_retracted_upstream_since_an_earlier_run_is_gone() {
+    let up = upstream();
+    let (cache, earlier, source) = remote(&up.url);
+    assert_eq!(
+        earlier.tags(&source, "v").await.map(|tags| tags.len()),
+        Ok(2)
+    );
+    assert_eq!(
+        earlier.contains(&source, &up.c3, &tag("v0.2.0")).await,
+        Ok(true)
+    );
+    delete_upstream(&up.url, "refs/tags/v0.2.0");
+    let later = GitRemotes::new(cache.path().to_owned());
+    assert_eq!(
+        later.tags(&source, "v").await,
+        Ok(vec!["v0.1.0".to_owned()])
+    );
+    let result = later.contains(&source, &up.c3, &tag("v0.2.0")).await;
+    assert!(matches!(result, Err(CheckError::NotFound(_))), "{result:?}");
+}
+
+#[tokio::test]
+async fn a_remote_with_no_tags_left_lists_none() {
+    let up = upstream();
+    let (cache, earlier, source) = remote(&up.url);
+    assert_eq!(
+        earlier.tags(&source, "v").await.map(|tags| tags.len()),
+        Ok(2)
+    );
+    delete_upstream(&up.url, "refs/tags/v0.1.0");
+    delete_upstream(&up.url, "refs/tags/v0.2.0");
+    let later = GitRemotes::new(cache.path().to_owned());
+    assert_eq!(later.tags(&source, "v").await, Ok(vec![]));
+}

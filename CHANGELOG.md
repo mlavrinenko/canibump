@@ -24,6 +24,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   merge commit. Tags sort in one version order that covers semver, `v`-tags,
   dates and builds like `b7012`, where a missing `.0` counts as zero (`2.0` is
   `2.0.0`). A fix shipped on an old release line only still finds its tag.
+  A branch or tag deleted upstream stops counting on the next run.
 - `version` waits for a package version on Repology (distros, nixpkgs
   channels) or deps.dev (crates.io, npm, PyPI, Go, Maven, NuGet, RubyGems).
 - `[[blocker.all]]` and `[[blocker.any]]` chain steps, like merged, then
