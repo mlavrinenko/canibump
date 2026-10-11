@@ -142,19 +142,23 @@ async fn answers_containment_for_branches_and_tags() {
         let (remotes, source, sha) = (remotes.clone(), source.clone(), sha.to_owned());
         async move { remotes.contains(&source, &sha, &target).await }
     };
-    assert_eq!(contains(&up.c2, tag("v0.1.0")).await, Ok(true));
-    assert_eq!(contains(&up.c3, tag("v0.1.0")).await, Ok(false));
+    assert_eq!(contains(&up.c2, tag("v0.1.0")).await, Ok(Reach::Holds));
+    // Fetching v0.1.0 brings nothing later, so c3 is unseen and tells nothing.
+    assert_eq!(contains(&up.c3, tag("v0.1.0")).await, Ok(Reach::Apart));
     assert_eq!(
         contains(up.c3.get(..7).expect("short"), branch("main")).await,
-        Ok(true)
+        Ok(Reach::Holds)
     );
     assert_eq!(
         contains(&up.c3.to_ascii_uppercase(), branch("main")).await,
-        Ok(true)
+        Ok(Reach::Holds)
     );
-    assert_eq!(contains(&up.c2, branch("main")).await, Ok(true));
-    assert_eq!(contains(&up.c4, branch("main")).await, Ok(false));
-    assert_eq!(contains(&up.c4, branch("side")).await, Ok(true));
+    assert_eq!(contains(&up.c2, branch("main")).await, Ok(Reach::Holds));
+    assert_eq!(contains(&up.c4, branch("main")).await, Ok(Reach::Apart));
+    assert_eq!(contains(&up.c4, branch("side")).await, Ok(Reach::Holds));
+    // Once main brought c3, v0.1.0 reads as a point before it, c4 as apart.
+    assert_eq!(contains(&up.c3, tag("v0.1.0")).await, Ok(Reach::Before));
+    assert_eq!(contains(&up.c4, tag("v0.2.0")).await, Ok(Reach::Apart));
     let missing = contains(&up.c2, tag("v9")).await;
     assert!(
         matches!(missing, Err(CheckError::NotFound(_))),
@@ -194,7 +198,7 @@ async fn blockers_asking_one_remote_together_do_not_race_the_clone_or_the_fetch(
         futures_util::future::join_all(contains),
         remotes.tags(&source, "v")
     );
-    assert_eq!(answers, vec![Ok(true); asks.len()]);
+    assert_eq!(answers, vec![Ok(Reach::Holds); asks.len()]);
     assert_eq!(tags.map(|names| names.len()), Ok(2));
 }
 
@@ -205,14 +209,20 @@ async fn a_sha_the_history_lacks_reads_waiting() {
     let main = branch("main");
     // Unknown digits, and a tree that no commit history can contain.
     for sha in ["deadbeef", up.tree.as_str()] {
-        assert_eq!(remotes.contains(&source, sha, &main).await, Ok(false));
+        assert_eq!(
+            remotes.contains(&source, sha, &main).await,
+            Ok(Reach::Apart)
+        );
     }
     // A commit that is here but shares no ancestor with main.
     assert_eq!(
         remotes.contains(&source, &up.c5, &branch("orphan")).await,
-        Ok(true)
+        Ok(Reach::Holds)
     );
-    assert_eq!(remotes.contains(&source, &up.c5, &main).await, Ok(false));
+    assert_eq!(
+        remotes.contains(&source, &up.c5, &main).await,
+        Ok(Reach::Apart)
+    );
 }
 
 #[tokio::test]
@@ -269,7 +279,10 @@ async fn a_branch_deleted_upstream_since_an_earlier_run_reads_not_found() {
     let up = upstream();
     let (cache, earlier, source) = remote(&up.url);
     let side = branch("side");
-    assert_eq!(earlier.contains(&source, &up.c4, &side).await, Ok(true));
+    assert_eq!(
+        earlier.contains(&source, &up.c4, &side).await,
+        Ok(Reach::Holds)
+    );
     delete_upstream(&up.url, "refs/heads/side");
     let later = GitRemotes::new(cache.path().to_owned());
     let result = later.contains(&source, &up.c4, &side).await;
@@ -286,7 +299,7 @@ async fn a_tag_retracted_upstream_since_an_earlier_run_is_gone() {
     );
     assert_eq!(
         earlier.contains(&source, &up.c3, &tag("v0.2.0")).await,
-        Ok(true)
+        Ok(Reach::Holds)
     );
     delete_upstream(&up.url, "refs/tags/v0.2.0");
     let later = GitRemotes::new(cache.path().to_owned());

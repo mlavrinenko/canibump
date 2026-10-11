@@ -14,7 +14,7 @@ use std::sync::{Arc, Mutex, PoisonError};
 use async_trait::async_trait;
 use gix::remote::Direction;
 
-use super::{CheckError, CodeHost, GitRef};
+use super::{CheckError, CodeHost, GitRef, Reach};
 use crate::refs::{ItemRef, Source, redacted};
 
 /// Git remotes, cloned bare under one cache dir.
@@ -284,7 +284,7 @@ impl Inner {
         Ok(())
     }
 
-    fn contains(&self, source: &Source, sha: &str, target: &GitRef) -> Result<bool, CheckError> {
+    fn contains(&self, source: &Source, sha: &str, target: &GitRef) -> Result<Reach, CheckError> {
         let (spec, local) = match target {
             GitRef::Tag(name) => (
                 format!("+refs/tags/{name}:refs/tags/{name}"),
@@ -299,10 +299,18 @@ impl Inner {
         let missing = || CheckError::NotFound(format!("{source}: {}", target.name()));
         let mut reference = repo.find_reference(local.as_str()).map_err(|_| missing())?;
         let tip = reference.peel_to_id().map_err(|_| missing())?.detach();
+        // The fetch brought the ref's whole history, so a commit missing from
+        // it is not in the ref; whether the ref leads to it, nobody here knows.
         let Some(commit) = resolve(&repo, source, sha)? else {
-            return Ok(false);
+            return Ok(Reach::Apart);
         };
-        is_ancestor(&repo, source, commit, tip)
+        Ok(if is_ancestor(&repo, source, commit, tip)? {
+            Reach::Holds
+        } else if is_ancestor(&repo, source, tip, commit)? {
+            Reach::Before
+        } else {
+            Reach::Apart
+        })
     }
 
     fn tags(&self, source: &Source, prefix: &str) -> Result<Vec<String>, CheckError> {
@@ -344,7 +352,7 @@ impl CodeHost for GitRemotes {
         source: &Source,
         commit: &str,
         target: &GitRef,
-    ) -> Result<bool, CheckError> {
+    ) -> Result<Reach, CheckError> {
         let (owned, commit, target) = (source.clone(), commit.to_owned(), target.clone());
         self.blocking(source, move |inner| {
             inner.contains(&owned, &commit, &target)

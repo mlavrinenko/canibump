@@ -18,7 +18,7 @@ use std::sync::{Arc, Mutex, PoisonError};
 use async_trait::async_trait;
 use tokio::sync::OnceCell;
 
-use super::{CheckError, CodeHost, GitRef, Item, ItemState, Tracker};
+use super::{CheckError, CodeHost, GitRef, Item, ItemState, Reach, Tracker};
 use crate::refs::{ItemRef, Source};
 
 /// The answer to one question about one item, asked once.
@@ -102,7 +102,7 @@ impl CodeHost for MemoCodeHost {
         source: &Source,
         commit: &str,
         target: &GitRef,
-    ) -> Result<bool, CheckError> {
+    ) -> Result<Reach, CheckError> {
         self.inner.contains(source, commit, target).await
     }
 
@@ -118,7 +118,9 @@ mod tests {
 
     use async_trait::async_trait;
 
-    use crate::provider::{CheckError, CodeHost, GitRef, Item, ItemState, Registry, Tracker};
+    use crate::provider::{
+        CheckError, CodeHost, GitRef, Item, ItemState, Reach, Registry, Tracker,
+    };
     use crate::refs::{ItemRef, Source, SourceKind};
 
     /// Answers every question, counting how often it was asked.
@@ -158,9 +160,9 @@ mod tests {
             _source: &Source,
             _commit: &str,
             _target: &GitRef,
-        ) -> Result<bool, CheckError> {
+        ) -> Result<Reach, CheckError> {
             self.probes.fetch_add(1, Ordering::SeqCst);
-            Ok(true)
+            Ok(Reach::Holds)
         }
 
         async fn tags(&self, _source: &Source, _prefix: &str) -> Result<Vec<String>, CheckError> {
@@ -250,7 +252,10 @@ mod tests {
         let source = item(1).source;
         for _ in 0..2 {
             let target = GitRef::Tag("v1".to_owned());
-            assert_eq!(host.contains(&source, "abc1234", &target).await, Ok(true));
+            assert_eq!(
+                host.contains(&source, "abc1234", &target).await,
+                Ok(Reach::Holds)
+            );
             assert_eq!(host.tags(&source, "v").await, Ok(vec!["v1".to_owned()]));
         }
         assert_eq!(fake.probes.load(Ordering::SeqCst), 2);

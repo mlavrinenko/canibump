@@ -8,7 +8,7 @@ use crate::condition::{
     Bound, Condition, ReachedCondition, StateCondition, Step, VersionCondition, Within,
 };
 use crate::outcome::{Outcome, Status};
-use crate::provider::{CheckError, CodeHost, GitRef, ItemKind, ItemState, Registry};
+use crate::provider::{CheckError, CodeHost, GitRef, ItemKind, ItemState, Reach, Registry};
 use crate::refs::{ItemRef, Reachable, Source};
 use crate::version;
 
@@ -218,40 +218,61 @@ struct Found<'a> {
 }
 
 impl Found<'_> {
-    async fn holds(&self, tag: &str) -> Result<bool, CheckError> {
+    async fn reach(&self, tag: &str) -> Result<Reach, CheckError> {
         self.host
             .contains(self.source, self.sha, &GitRef::Tag(tag.to_owned()))
             .await
     }
 
-    /// The first of `tags` holding the commit, taking every tag after one
-    /// that holds it to hold it too.
+    /// The first of `tags` holding the commit, `None` when none does.
+    ///
+    /// A tag that holds it puts the first at or before it. One from before
+    /// it on its history puts the first after it, since an earlier tag that
+    /// held the commit would descend from a later one. A tag on another
+    /// branch says neither, so both its sides stay to search, the left one
+    /// first. With no such tag this is a binary search; each one met adds a
+    /// search of its sides, and no tag is asked twice, so the worst case is
+    /// one call per tag.
     async fn first_in<'t>(&self, tags: &'t [String]) -> Result<Option<&'t String>, CheckError> {
-        let (mut low, mut high) = (0, tags.len());
-        while low < high {
+        // Ranges left to search, the leftmost on top, each right of the last.
+        let mut ranges = vec![(0, tags.len())];
+        let mut first = None;
+        while let Some((low, high)) = ranges.pop() {
+            if low >= high {
+                continue;
+            }
             let middle = low + (high - low) / 2;
-            match tags.get(middle) {
-                Some(tag) if self.holds(tag).await? => high = middle,
-                Some(_) => low = middle + 1,
-                None => break,
+            let Some(tag) = tags.get(middle) else {
+                continue;
+            };
+            match self.reach(tag).await? {
+                Reach::Holds => {
+                    first = Some(tag);
+                    ranges.clear();
+                    ranges.push((low, middle));
+                }
+                Reach::Before => ranges.push((middle + 1, high)),
+                Reach::Apart => ranges.extend([(middle + 1, high), (low, middle)]),
             }
         }
-        Ok(tags.get(low))
+        Ok(first)
     }
 
     /// The first of `tags`, in version order, holding the commit.
     ///
     /// Containment need not grow with the version across lines: a fix merged
-    /// into 1.x only is in `v1.5.0` but not `v2.0.0`. Within a line it is
-    /// taken to, so this asks each line's newest tag, lowest line first, and
-    /// binary-searches the first line that holds it: one call per line plus
-    /// about log2 of that line, not one per tag.
+    /// into 1.x only is in `v1.5.0` but not `v2.0.0`. So this asks each
+    /// line's newest tag, lowest line first, and searches the older tags of
+    /// the first line whose newest holds it: one call per line plus about
+    /// log2 of that line, not one per tag. A line whose newest tag does not
+    /// hold the commit is taken to hold it nowhere, as an older line forked
+    /// before the fix reads just the same.
     async fn first_containing(&self, tags: &[String]) -> Result<Option<String>, CheckError> {
         for line in tags.chunk_by(|left, right| release_line(left) == release_line(right)) {
             let Some((newest, older)) = line.split_last() else {
                 continue;
             };
-            if self.holds(newest).await? {
+            if self.reach(newest).await?.holds() {
                 return Ok(Some(self.first_in(older).await?.unwrap_or(newest).clone()));
             }
         }
@@ -260,13 +281,12 @@ impl Found<'_> {
 
     async fn within(&self, target: GitRef) -> Result<Outcome, CheckError> {
         let (label, name) = (self.label, target.name());
-        Ok(
-            if self.host.contains(self.source, self.sha, &target).await? {
-                Outcome::new(Status::Bumpable, format!("{label} is in {name}"))
-            } else {
-                Outcome::new(Status::Waiting, format!("{label} is not in {name} yet"))
-            },
-        )
+        let reach = self.host.contains(self.source, self.sha, &target).await?;
+        Ok(if reach.holds() {
+            Outcome::new(Status::Bumpable, format!("{label} is in {name}"))
+        } else {
+            Outcome::new(Status::Waiting, format!("{label} is not in {name} yet"))
+        })
     }
 }
 

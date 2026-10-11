@@ -8,7 +8,7 @@ use octocrab::Octocrab;
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 
-use super::{CheckError, CodeHost, GitRef, Item, ItemKind, ItemState, Tracker};
+use super::{CheckError, CodeHost, GitRef, Item, ItemKind, ItemState, Reach, Tracker};
 use crate::refs::{ItemRef, Source};
 
 /// The public API root.
@@ -196,7 +196,7 @@ impl CodeHost for GitHub {
         source: &Source,
         commit: &str,
         target: &GitRef,
-    ) -> Result<bool, CheckError> {
+    ) -> Result<Reach, CheckError> {
         let (owner, repo) = repo_path(source)?;
         let name = target.name();
         let what = format!("{source}: {commit}...{name}");
@@ -206,10 +206,13 @@ impl CodeHost for GitHub {
                 &what,
             )
             .await?;
-        Ok(matches!(
-            compare.status,
-            CompareStatus::Ahead | CompareStatus::Identical
-        ))
+        // `base...head` with the commit as base: `ahead` means the ref has
+        // commits beyond it, `behind` that the ref is one of its ancestors.
+        Ok(match compare.status {
+            CompareStatus::Ahead | CompareStatus::Identical => Reach::Holds,
+            CompareStatus::Behind => Reach::Before,
+            CompareStatus::Diverged => Reach::Apart,
+        })
     }
 
     async fn tags(&self, source: &Source, prefix: &str) -> Result<Vec<String>, CheckError> {

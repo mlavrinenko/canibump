@@ -8,7 +8,7 @@ use super::*;
 use crate::condition::{Bound, ReachedCondition, StateCondition, Step, VersionCondition, Within};
 use crate::package::{IndexKind, PackageRef};
 use crate::provider::{
-    CheckError, CodeHost, GitRef, Item, ItemKind, ItemState, PackageIndex, Registry, Tracker,
+    CheckError, CodeHost, GitRef, Item, ItemKind, ItemState, PackageIndex, Reach, Registry, Tracker,
 };
 use crate::refs::{ItemRef, Source, SourceKind};
 
@@ -18,6 +18,8 @@ struct Fake {
     kinds: HashMap<u64, ItemKind>,
     merge_commits: HashMap<u64, String>,
     containing: HashSet<String>,
+    /// Refs on another branch than the commit; the rest come before it.
+    apart: HashSet<String>,
     tags: Vec<String>,
     host_error: Option<CheckError>,
     contains_calls: AtomicUsize,
@@ -54,13 +56,20 @@ impl CodeHost for Fake {
         _source: &Source,
         commit: &str,
         target: &GitRef,
-    ) -> Result<bool, CheckError> {
+    ) -> Result<Reach, CheckError> {
         self.contains_calls.fetch_add(1, Ordering::SeqCst);
         if let Some(error) = &self.host_error {
             return Err(error.clone());
         }
         assert_eq!(commit, "abc1234def");
-        Ok(self.containing.contains(target.name()))
+        let name = target.name();
+        Ok(if self.containing.contains(name) {
+            Reach::Holds
+        } else if self.apart.contains(name) {
+            Reach::Apart
+        } else {
+            Reach::Before
+        })
     }
 
     async fn tags(&self, _source: &Source, prefix: &str) -> Result<Vec<String>, CheckError> {
@@ -319,6 +328,66 @@ async fn binary_searches_within_a_line() {
         assert_eq!(found, Some(format!("{series}37")));
         assert!(calls <= 7, "{series}: {calls} calls");
     }
+}
+
+#[tokio::test]
+async fn a_tag_cut_from_another_branch_inside_a_line_is_no_evidence() {
+    let fake = Fake {
+        apart: HashSet::from(["v1.5.1".to_owned()]),
+        ..tagged(&["v1.5.0", "v1.5.1", "v1.5.2"], &["v1.5.0", "v1.5.2"])
+    };
+    assert_eq!(first_tag(fake).await.0.as_deref(), Some("v1.5.0"));
+    let after_the_first = Fake {
+        apart: HashSet::from(["v1.0.2".to_owned()]),
+        ..tagged(
+            &["v1.0.0", "v1.0.1", "v1.0.2", "v1.0.3"],
+            &["v1.0.1", "v1.0.3"],
+        )
+    };
+    assert_eq!(
+        first_tag(after_the_first).await.0.as_deref(),
+        Some("v1.0.1")
+    );
+}
+
+#[tokio::test]
+async fn tags_on_other_branches_cost_at_most_one_call_each() {
+    let line: Vec<String> = (0..64).map(|run| format!("v1.0.{run}")).collect();
+    let refs: Vec<&str> = line.iter().map(String::as_str).collect();
+    let holding = refs.get(37..).unwrap_or_default();
+    let apart = |picks: &[usize]| -> HashSet<String> {
+        picks
+            .iter()
+            .filter_map(|&run| line.get(run).cloned())
+            .collect()
+    };
+    // The probes a plain binary search makes land on another branch.
+    let scattered = Fake {
+        apart: apart(&[31, 47, 39, 35, 36]),
+        ..tagged(&refs, holding)
+    };
+    let (found, calls) = first_tag(scattered).await;
+    assert_eq!(found.as_deref(), Some("v1.0.37"));
+    assert_eq!(calls, 14, "7 with none apart");
+    // Every older tag apart: each is asked once, and the newest wins.
+    let all: Vec<usize> = (0..63).collect();
+    let everywhere = Fake {
+        apart: apart(&all),
+        ..tagged(&refs, &["v1.0.63"])
+    };
+    assert_eq!(
+        first_tag(everywhere).await,
+        (Some("v1.0.63".to_owned()), 64)
+    );
+}
+
+#[tokio::test]
+async fn a_line_whose_newest_tag_is_apart_reads_as_not_holding_it() {
+    let fake = Fake {
+        apart: HashSet::from(["v1.5.1".to_owned()]),
+        ..tagged(&["v1.5.0", "v1.5.1"], &["v1.5.0"])
+    };
+    assert_eq!(first_tag(fake).await, (None, 1));
 }
 
 #[tokio::test]

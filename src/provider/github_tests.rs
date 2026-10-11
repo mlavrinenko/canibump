@@ -3,7 +3,7 @@ use httpmock::{Mock, MockServer};
 use serde_json::json;
 
 use super::*;
-use crate::provider::{CodeHost, GitRef};
+use crate::provider::{CodeHost, GitRef, Reach};
 use crate::refs::Source;
 
 /// A client holding the token the `issue` mocks insist on.
@@ -254,10 +254,14 @@ async fn compares_a_commit_against_a_ref() {
         let github = github.clone();
         async move { github.contains(&source(), "abc1234", &target).await }
     };
-    assert_eq!(contains(GitRef::Branch("main".to_owned())).await, Ok(true));
-    assert_eq!(contains(GitRef::Tag("v1".to_owned())).await, Ok(true));
-    assert_eq!(contains(GitRef::Tag("old".to_owned())).await, Ok(false));
-    assert_eq!(contains(GitRef::Branch("fork".to_owned())).await, Ok(false));
+    for (target, reach) in [
+        (GitRef::Branch("main".to_owned()), Reach::Holds),
+        (GitRef::Tag("v1".to_owned()), Reach::Holds),
+        (GitRef::Tag("old".to_owned()), Reach::Before),
+        (GitRef::Branch("fork".to_owned()), Reach::Apart),
+    ] {
+        assert_eq!(contains(target.clone()).await, Ok(reach), "{target:?}");
+    }
     let missing = contains(GitRef::Tag("nope".to_owned())).await;
     assert!(
         matches!(missing, Err(CheckError::NotFound(_))),

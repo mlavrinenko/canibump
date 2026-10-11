@@ -20,10 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   reads bumpable.
 - `reached` waits for a commit or a merged PR to land in a branch, a tag, or
   the first tag matching a pattern, on GitHub or any git remote. The manifest
-  refuses a target anywhere else, and an issue reads failed even while open, since it
-  has no merge commit. Tags sort in one version order that covers semver, `v`-tags,
-  dates and builds like `b7012`, where a missing `.0` counts as zero (`2.0` is
-  `2.0.0`). A fix shipped on an old release line only still finds its tag.
+  refuses a target anywhere else, and an issue reads failed even while open,
+  since it has no merge commit. Tags sort in one version order that covers
+  semver, `v`-tags, dates and builds like `b7012`, where a missing `.0` counts
+  as zero (`2.0` is `2.0.0`). A fix shipped on an old release line only still
+  finds its tag, and a tag cut from another branch can't hide the first one.
   A branch or tag deleted upstream stops counting on the next run, and a git
   remote that stalls reads failed after five minutes.
 - `version` waits for a package version on Repology (distros, nixpkgs

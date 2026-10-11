@@ -127,6 +127,27 @@ impl GitRef {
     }
 }
 
+/// Where a ref stands against a commit.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Reach {
+    /// The ref's history holds the commit, or the ref is the commit.
+    Holds,
+    /// Not yet: the ref is an ancestor of the commit, a point on its history
+    /// from before it, so nothing the ref holds holds the commit either.
+    Before,
+    /// Neither holds the other: the ref is on another branch. This is also
+    /// the answer when the host cannot see the commit at all.
+    Apart,
+}
+
+impl Reach {
+    /// Whether the ref holds the commit.
+    #[must_use]
+    pub const fn holds(self) -> bool {
+        matches!(self, Self::Holds)
+    }
+}
+
 /// Answers what a repository's history holds.
 #[async_trait]
 pub trait CodeHost: Send + Sync {
@@ -137,7 +158,7 @@ pub trait CodeHost: Send + Sync {
     /// A [`CheckError`] when the host cannot say.
     async fn merge_commit(&self, item: &ItemRef) -> Result<Option<String>, CheckError>;
 
-    /// Whether `target` contains `commit` in its history.
+    /// Where `target` stands against `commit`.
     ///
     /// # Errors
     ///
@@ -147,7 +168,7 @@ pub trait CodeHost: Send + Sync {
         source: &Source,
         commit: &str,
         target: &GitRef,
-    ) -> Result<bool, CheckError>;
+    ) -> Result<Reach, CheckError>;
 
     /// Tag names starting with `prefix`, in any order.
     ///

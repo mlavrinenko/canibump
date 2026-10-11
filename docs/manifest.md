@@ -49,9 +49,11 @@ in = { branch = "master" }
 Tags fall into release lines by their first two numbers (`v1.4.2` and
 `v1.4.0-rc1` share `1.4`, all `b`-builds share one), so a fix shipped only on
 an old line, in `v1.5.0` but no `v2`, still counts. canibump asks each line's
-newest tag and binary-searches the first that has it, a call per line plus a
-few. Within a line, a later tag is taken to have what an earlier one has.
-`since` trims the lines to ask.
+newest tag, then binary-searches the first line whose newest has it, a call
+per line plus a few. A tag in that line cut from another branch can't make it
+name the wrong tag. It costs extra calls instead, never more than one per tag. A line whose newest tag
+lacks the commit counts as not having it, since an old line forked before the
+fix looks just the same. `since` trims the lines to ask.
 
 `version` waits for a package to reach some version. Repology covers distro
 repos, nixpkgs channels included (`nix_unstable`, `nix_stable_25_11`).
