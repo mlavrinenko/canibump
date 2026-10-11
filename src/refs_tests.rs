@@ -233,3 +233,30 @@ fn a_kind_displays_as_its_manifest_scheme() {
         assert!(SCHEMES.contains(&scheme), "{scheme} is no manifest scheme");
     }
 }
+
+#[test]
+fn a_git_remote_displays_without_its_secrets() {
+    let shown = |url: &str| {
+        Source::Git {
+            url: url.to_owned(),
+        }
+        .to_string()
+    };
+    assert_eq!(
+        shown("https://user:s3cret@example.org/a.git"),
+        "git:https://user:***@example.org/a.git"
+    );
+    assert_eq!(
+        shown("https://ghp_token@github.com/o/r.git"),
+        "git:https://***@github.com/o/r.git"
+    );
+    // An ssh user carries no secret, and an `@` past the host is the path's.
+    for url in [
+        "ssh://git@example.org/a.git",
+        "git@github.com:o/r.git",
+        "https://example.org/users/@me/a.git",
+        "/srv/a.git",
+    ] {
+        assert_eq!(shown(url), format!("git:{url}"));
+    }
+}

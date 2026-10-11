@@ -23,8 +23,8 @@ groups:
       src/provider/defaults.rs: 4b455db1d628c0182a3c163b2d81ce49f87ed849484e28f80db831b44572fa8a
       src/provider/depsdev.rs: 4a28482e40f193c927c8205526be3a829e30340347c7737ca74c486ef7a220f0
       src/provider/depsdev_tests.rs: 05e0e2cbfb8a9eea4a93d57a9ce3d0e78bd9de0dd401578f08057233a68fe5a7
-      src/provider/git.rs: 7b057f63514d8b12d88de57193d98dcafa033b88efe2fa9de2b3d52ef317cb76
-      src/provider/git_tests.rs: 084fdc7ff7383b3955e99de82b41f09bbe1eb5c63cacfa23750284f58d2e85ca
+      src/provider/git.rs: d5a3e8717fbb08fe4579deed9c012b0b6d3319ae66f4b72d357efc6130aa77bf
+      src/provider/git_tests.rs: 82ac535edffebcfabff120c83fbdd3bae72955e243e222d1d4e7f55a02f5144c
       src/provider/gitea.rs: 69fd53e1f3f07a6e8362e29c4a4a3c0c6396bfa10e0a6a387067f10611bbae38
       src/provider/gitea_tests.rs: 6951d8f6754580b73b2a3bbc7e370a3411774656109e0c7faf9fd05623c8e2a9
       src/provider/github.rs: 780bbddce10f31b57b3533bcddeb0c40be6074ce0610b4828c32a298a908bfc3
@@ -42,8 +42,8 @@ groups:
       src/provider/redmine_tests.rs: 5bd5bd706b2985ef90da48625ddc2332819b2e17fb9aa2db99ab5581e20cf5a4
       src/provider/repology.rs: b61ccb7a0bd73dfc2cc24c950ddbd06b2fb8bac568395d1ebf962d543db46070
       src/provider/repology_tests.rs: 0564819b59b92b6ff2cae8c3ccb265f49a1543ba7f2e397fe1621f799c34ef56
-      src/refs.rs: bfa389cbe4fbdd0ea23293a0344bbf5f41693183ceb6633fb31d47a74fab383a
-      src/refs_tests.rs: 8a844a1734b8452ec0162cf4ef43e0ced1679c922bdd3ea1bc963d170238dcd8
+      src/refs.rs: ad75a536a21fe9ef2d440d05d034439fa2cc3cd48bab875fb2870bd254b5fafd
+      src/refs_tests.rs: eb94a78389d64fbcfc43de2a90e992cb097f71cafcdaefa1480ac25dc3f417d1
       src/report.rs: cbfcc823d2c15dba6c5e036e447ef32dad565d7524ab34b685618ac945402bb0
       src/report_tests.rs: 06fd159adc52bb05165a003d6cbc0e68ad200675996b9be34b8647e6f9251899
       src/run.rs: fd7a87a671115e32943863324ad7206b0f6bcfaf8f3c678b24af0d96326714d6
@@ -77,7 +77,7 @@ groups:
     source:
       Cargo.toml: ee75eaa636b331fed70cc2d022bc8d0f1ec15cfe5197a8e7b0592fed5adec9f3
     dependents:
-      CHANGELOG.md: 3eac67a67cc835486966099b4e3ed5226f15c4b2e5636f1f012b657c8bea197a
+      CHANGELOG.md: 7b7cd73ed14c4c0ac86a174fb5e69c0ce64a45719bff0be733c6426fd76f16ff
   schema:
     source:
       src/auth.rs: 6a5bb1cfecfc78e2c5bd7c38d1a7fed3df7d3701a06d4be46bfaef161eba9df4
@@ -100,8 +100,8 @@ groups:
       src/provider/defaults.rs: 4b455db1d628c0182a3c163b2d81ce49f87ed849484e28f80db831b44572fa8a
       src/provider/depsdev.rs: 4a28482e40f193c927c8205526be3a829e30340347c7737ca74c486ef7a220f0
       src/provider/depsdev_tests.rs: 05e0e2cbfb8a9eea4a93d57a9ce3d0e78bd9de0dd401578f08057233a68fe5a7
-      src/provider/git.rs: 7b057f63514d8b12d88de57193d98dcafa033b88efe2fa9de2b3d52ef317cb76
-      src/provider/git_tests.rs: 084fdc7ff7383b3955e99de82b41f09bbe1eb5c63cacfa23750284f58d2e85ca
+      src/provider/git.rs: d5a3e8717fbb08fe4579deed9c012b0b6d3319ae66f4b72d357efc6130aa77bf
+      src/provider/git_tests.rs: 82ac535edffebcfabff120c83fbdd3bae72955e243e222d1d4e7f55a02f5144c
       src/provider/gitea.rs: 69fd53e1f3f07a6e8362e29c4a4a3c0c6396bfa10e0a6a387067f10611bbae38
       src/provider/gitea_tests.rs: 6951d8f6754580b73b2a3bbc7e370a3411774656109e0c7faf9fd05623c8e2a9
       src/provider/github.rs: 780bbddce10f31b57b3533bcddeb0c40be6074ce0610b4828c32a298a908bfc3
@@ -119,8 +119,8 @@ groups:
       src/provider/redmine_tests.rs: 5bd5bd706b2985ef90da48625ddc2332819b2e17fb9aa2db99ab5581e20cf5a4
       src/provider/repology.rs: b61ccb7a0bd73dfc2cc24c950ddbd06b2fb8bac568395d1ebf962d543db46070
       src/provider/repology_tests.rs: 0564819b59b92b6ff2cae8c3ccb265f49a1543ba7f2e397fe1621f799c34ef56
-      src/refs.rs: bfa389cbe4fbdd0ea23293a0344bbf5f41693183ceb6633fb31d47a74fab383a
-      src/refs_tests.rs: 8a844a1734b8452ec0162cf4ef43e0ced1679c922bdd3ea1bc963d170238dcd8
+      src/refs.rs: ad75a536a21fe9ef2d440d05d034439fa2cc3cd48bab875fb2870bd254b5fafd
+      src/refs_tests.rs: eb94a78389d64fbcfc43de2a90e992cb097f71cafcdaefa1480ac25dc3f417d1
       src/report.rs: cbfcc823d2c15dba6c5e036e447ef32dad565d7524ab34b685618ac945402bb0
       src/report_tests.rs: 06fd159adc52bb05165a003d6cbc0e68ad200675996b9be34b8647e6f9251899
       src/run.rs: fd7a87a671115e32943863324ad7206b0f6bcfaf8f3c678b24af0d96326714d6

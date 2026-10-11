@@ -255,14 +255,6 @@ async fn a_git_remote_has_no_merge_commits() {
     ));
 }
 
-#[test]
-fn the_clone_dir_is_named_after_the_url() {
-    assert_eq!(
-        clone_dir(Path::new("/c"), "https://example.org/a/b.git"),
-        PathBuf::from("/c/https___example.org_a_b.git.git")
-    );
-}
-
 /// Deletes `name` in the upstream repo at `url`.
 fn delete_upstream(url: &str, name: &str) {
     let repo = gix::open(url).expect("open upstream");
@@ -318,4 +310,37 @@ async fn a_remote_with_no_tags_left_lists_none() {
     delete_upstream(&up.url, "refs/tags/v0.2.0");
     let later = GitRemotes::new(cache.path().to_owned());
     assert_eq!(later.tags(&source, "v").await, Ok(vec![]));
+}
+
+#[test]
+fn the_clone_dir_is_named_after_the_url_and_its_hash() {
+    assert_eq!(
+        clone_dir(Path::new("/c"), "https://example.org/a/b.git").expect("hash"),
+        PathBuf::from("/c/https___example.org_a_b.git-ae9f785a26a8581a.git")
+    );
+}
+
+#[test]
+fn urls_that_differ_only_in_punctuation_get_their_own_clone_dirs() {
+    let cache = Path::new("/c");
+    assert_ne!(
+        clone_dir(cache, "/srv/a_b.git").expect("hash"),
+        clone_dir(cache, "/srv/a/b.git").expect("hash")
+    );
+}
+
+#[test]
+fn the_clone_dir_holds_no_credentials() {
+    assert_eq!(
+        clone_dir(Path::new("/c"), "https://user:s3cret@example.org/a/b.git").expect("hash"),
+        PathBuf::from("/c/https___user_____example.org_a_b.git-cadd697c4c03abd6.git")
+    );
+}
+
+#[test]
+fn a_long_url_names_a_clone_dir_a_file_system_takes() {
+    let url = format!("https://example.org/{}.git", "a".repeat(400));
+    let dir = clone_dir(Path::new("/c"), &url).expect("hash");
+    let name = dir.file_name().expect("name").len();
+    assert_eq!(name, SLUG_CHARS + 1 + HASH_DIGITS + ".git".len());
 }

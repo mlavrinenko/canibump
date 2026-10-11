@@ -337,6 +337,29 @@ fn parse(text: &str, expected: &'static str) -> Result<Reachable, RefError> {
     }))
 }
 
+/// `url` with its password, or an http(s) user that stands in for a token,
+/// shown as `***`, so a message or the state file never carries a secret.
+///
+/// Only a `scheme://` URL has userinfo. An ssh user alone is no secret, and
+/// an `@` past the host belongs to the path.
+#[must_use]
+pub fn redacted(url: &str) -> std::borrow::Cow<'_, str> {
+    let unchanged = std::borrow::Cow::Borrowed(url);
+    let Some((scheme, rest)) = url.split_once("://") else {
+        return unchanged;
+    };
+    let (authority, path) = rest.split_at(rest.find('/').unwrap_or(rest.len()));
+    let Some((userinfo, host)) = authority.rsplit_once('@') else {
+        return unchanged;
+    };
+    let user = match userinfo.split_once(':') {
+        Some((user, _)) => format!("{user}:***"),
+        None if scheme.starts_with("http") => "***".to_owned(),
+        None => return unchanged,
+    };
+    std::borrow::Cow::Owned(format!("{scheme}://{user}@{host}{path}"))
+}
+
 impl fmt::Display for SourceKind {
     /// The scheme a manifest writes for it.
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -355,7 +378,7 @@ impl fmt::Display for Source {
     fn fmt(&self, formatter: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::GitHub { owner, repo } => write!(formatter, "github:{owner}/{repo}"),
-            Self::Git { url } => write!(formatter, "git:{url}"),
+            Self::Git { url } => write!(formatter, "git:{}", redacted(url)),
             Self::GitLab { host, project } if host == GITLAB_COM => {
                 write!(formatter, "gitlab:{project}")
             }

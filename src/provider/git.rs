@@ -15,7 +15,7 @@ use async_trait::async_trait;
 use gix::remote::Direction;
 
 use super::{CheckError, CodeHost, GitRef};
-use crate::refs::{ItemRef, Source};
+use crate::refs::{ItemRef, Source, redacted};
 
 /// Git remotes, cloned bare under one cache dir.
 #[derive(Debug, Clone)]
@@ -33,10 +33,15 @@ struct Inner {
     turns: Mutex<HashMap<String, Arc<Mutex<()>>>>,
 }
 
-/// The bare repo a remote is fetched into.
-fn clone_dir(cache: &Path, url: &str) -> PathBuf {
-    let name: String = url
+/// The bare repo a remote is fetched into: a readable slug of the URL, its
+/// secrets redacted, then a hash of the whole URL.
+///
+/// The slug alone maps `a_b` and `a/b` to one name, while each URL has its
+/// own lock and fetch record; the hash keeps every URL in its own repo.
+fn clone_dir(cache: &Path, url: &str) -> Result<PathBuf, gix::hash::hasher::Error> {
+    let slug: String = redacted(url)
         .chars()
+        .take(SLUG_CHARS)
         .map(|char| {
             if char.is_ascii_alphanumeric() || matches!(char, '.' | '-') {
                 char
@@ -45,8 +50,18 @@ fn clone_dir(cache: &Path, url: &str) -> PathBuf {
             }
         })
         .collect();
-    cache.join(format!("{name}.git"))
+    let mut hasher = gix::hash::hasher(gix::hash::Kind::Sha1);
+    hasher.update(url.as_bytes());
+    let id = hasher.try_finalize()?;
+    let hash = id.to_hex_with_len(HASH_DIGITS);
+    Ok(cache.join(format!("{slug}-{hash}.git")))
 }
+
+/// How much of the URL names its clone dir, well under a file name's limit.
+const SLUG_CHARS: usize = 64;
+
+/// The hex digits of the URL's hash in its clone dir's name.
+const HASH_DIGITS: usize = 16;
 
 fn remote_url(source: &Source) -> Result<&str, CheckError> {
     match source {
@@ -192,8 +207,8 @@ impl Inner {
     }
 
     fn repo(&self, source: &Source) -> Result<gix::Repository, CheckError> {
-        let dir = clone_dir(&self.cache, remote_url(source)?);
         let fail = network(source);
+        let dir = clone_dir(&self.cache, remote_url(source)?).map_err(|error| fail(&error))?;
         if dir.exists() {
             return gix::open(dir).map_err(|error| fail(&error));
         }
