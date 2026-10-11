@@ -9,3 +9,4 @@ mod exit_codes;
 mod package;
 mod schema;
 mod status_id;
+mod wt_carry_lcov;
