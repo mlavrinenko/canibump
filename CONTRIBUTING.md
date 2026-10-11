@@ -128,8 +128,8 @@ shared helper, never shuffle tokens until the detector loses the scent.
 ## JSON Schema
 
 `schema/*.schema.json` come from the manifest, report and state types
-(`canibump schema [manifest|report|state]`), never from a hand edit. A test fails
-while a committed file is stale; `just schema` regenerates them, and
+(`canibump schema [manifest|report|state]`), never from a hand edit. A test
+fails while a committed file is stale; `just schema` regenerates them, and
 `just install` copies the manifest schema to `~/.config/canibump/`.
 
 ## Dependency Audits
@@ -190,7 +190,8 @@ Skip them for one commit with `git commit --no-verify`.
 
 Tasks are [MindTape](https://github.com/mlavrinenko/mindtape) files under
 `truth/tasks/`, configured in `.mindtape/config.toml`. `just check-tasks`
-(`mt check`) is a `just check` arm. A work commit carries a `Refs: <stem>`
-footer, and the task's `wip` or `done` flip rides with the work. The
-`commit-msg` hook holds both. The goals every open task rates itself against
-live in `truth/goals.typ` and `truth/process-goals.typ`.
+(`mt check`) is a `just check` arm, skipped in CI, whose dev shell has no
+MindTape yet. A work commit carries a `Refs: <stem>` footer, and the task's
+`wip` or `done` flip rides with the work. The `commit-msg` hook holds both. The
+goals every open task rates itself against live in `truth/goals.typ` and
+`truth/process-goals.typ`.
