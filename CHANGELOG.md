@@ -44,3 +44,5 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `canibump schema` prints the manifest's JSON Schema, so taplo and tombi give
   completion and hover docs. `canibump completions <shell>` prints tab
   completion, and the Nix package installs both.
+- The crate is a binary first. Its library is not a stable API, and its
+  modules stay out of the docs.

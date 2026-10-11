@@ -1,17 +1,27 @@
 //! canibump: can I bump yet? Checks the upstream blockers a repo's
 //! workarounds wait on and says which became resolved.
+//!
+//! This library exists for the `canibump` binary and its tests. It is not a
+//! stable API: its modules are hidden from the docs, and any of it may change
+//! in any release.
 
-pub mod auth;
-pub mod cache;
+mod auth;
+mod cache;
+#[doc(hidden)]
 pub mod cli;
-pub mod condition;
-pub mod eval;
+mod condition;
+mod eval;
+#[doc(hidden)]
 pub mod manifest;
-pub mod outcome;
-pub mod package;
+mod outcome;
+mod package;
+#[doc(hidden)]
 pub mod provider;
+#[doc(hidden)]
 pub mod refs;
+#[doc(hidden)]
 pub mod report;
-pub mod run;
+mod run;
+#[doc(hidden)]
 pub mod schema;
-pub mod version;
+mod version;

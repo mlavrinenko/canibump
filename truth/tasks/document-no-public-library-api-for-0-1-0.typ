@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: proposed(2026, 10, 11),
+  status: done(2026, 10, 11),
 )
 
 == Problem
@@ -45,12 +45,12 @@
 == TO-BE
 
 - 🟢 The crate doc says the library exists for the binary and its tests and is not a stable API.
-- 🟢 Every module is `#[doc(hidden)]`, and a module nothing outside the crate uses is `pub(crate)` where that costs no edit inside it, so `cargo doc` lists no API.
+- 🟢 Every module left public is `#[doc(hidden)]`, and a module nothing outside the crate uses is private where that costs no edit inside it, so `cargo doc` lists no API.
 
 
 == Changes
 
-- `src/lib.rs`: the crate doc, `pub(crate)` for the unused modules, `#[doc(hidden)] pub` for `cli`, `manifest`, `report` and `schema`.
+- `src/lib.rs`: the crate doc, a private `mod` for the unused ones, `#[doc(hidden)] pub` for `cli`, `manifest`, `report`, `schema`, and `provider` and `refs`, which `provider` links to. `provider` stays public because a private one flags `Registry::with_*` as dead code, and fixing that means editing `provider/mod.rs`.
 - `CHANGELOG.md`: a clause on the library under `[Unreleased]` if a bullet fits.
 
 
