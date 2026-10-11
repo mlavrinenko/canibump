@@ -44,7 +44,7 @@ fn the_default_path_mirrors_the_manifest_path() {
 }
 
 #[test]
-fn the_cache_home_prefers_xdg_then_home() {
+fn the_cache_home_prefers_xdg_then_home_then_localappdata() {
     let env = |vars: &'static [(&'static str, &'static str)]| {
         move |key: &str| {
             vars.iter()
@@ -59,6 +59,14 @@ fn the_cache_home_prefers_xdg_then_home() {
     assert_eq!(
         cache_home(env(&[("XDG_CACHE_HOME", ""), ("HOME", "/h")])),
         Some(PathBuf::from("/h/.cache"))
+    );
+    assert_eq!(
+        cache_home(env(&[("HOME", "/h"), ("LOCALAPPDATA", "/l")])),
+        Some(PathBuf::from("/h/.cache"))
+    );
+    assert_eq!(
+        cache_home(env(&[("HOME", ""), ("LOCALAPPDATA", "/l")])),
+        Some(PathBuf::from("/l"))
     );
     assert_eq!(cache_home(env(&[])), None);
 }

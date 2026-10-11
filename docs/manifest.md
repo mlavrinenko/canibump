@@ -112,7 +112,8 @@ beats waiting, and the whole thing is dead only when every step is.
 ## Cache
 
 Every run writes `$XDG_CACHE_HOME/canibump/state/<absolute manifest path>.json`
-(`~/.cache/...` without XDG), so other tools read the state offline.
+(`~/.cache/...` without XDG, `%LOCALAPPDATA%\...` on Windows), so other tools
+read the state offline.
 
 ```json
 {"version": 1, "manifest": "/home/me/repo/canibump.toml", "entries": [

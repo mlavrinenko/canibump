@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: proposed(2026, 10, 11),
+  status: done(2026, 10, 11),
 )
 
 == Problem
@@ -52,7 +52,7 @@
 
 - `src/cache_tests.rs`: the red test first, `cache_home` falling back to `LOCALAPPDATA`.
 - `src/cache.rs`: `cache_home` tries `LOCALAPPDATA` after `HOME`; the `NoHome` message names it.
-- `docs/manifest.md`, `src/cli.rs`: the default path names the Windows fallback.
+- `docs/manifest.md`: the default path names the Windows fallback.
 
 
 == Out of scope

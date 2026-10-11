@@ -35,10 +35,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - The exit code is 8 plus 1 for bumpable, 2 for dead and 4 for failed, summed,
   so a script tests one bit. `--fail-on` or `[settings] fail-on` picks what
   counts.
-- Results land in a state file other tools read offline, and stay fresh for
-  6 hours by default (`ttl = "1d"` and `"2w"` work too). `canibump status`
-  reads it without network and skips results of a changed or removed blocker,
-  and `canibump status <id>` answers for one blocker by exit code.
+- Results land in a state file other tools read offline (under
+  `%LOCALAPPDATA%` on Windows), and stay fresh for 6 hours by default
+  (`ttl = "1d"` and `"2w"` work too). `canibump status` reads it without
+  network and skips results of a changed or removed blocker, and
+  `canibump status <id>` answers for one blocker by exit code.
 - `--json` prints the results as JSON. `canibump schema report` and
   `canibump schema state` print JSON Schemas of it and of the state file,
   generated from the code.

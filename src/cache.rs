@@ -71,8 +71,8 @@ impl Entry {
 /// A state file that cannot be read or written.
 #[derive(Debug, Error)]
 pub enum CacheError {
-    /// No cache dir: neither `XDG_CACHE_HOME` nor `HOME` is set.
-    #[error("no cache dir: set XDG_CACHE_HOME or HOME, or pass --cache")]
+    /// No cache dir: none of `XDG_CACHE_HOME`, `HOME` and `LOCALAPPDATA` is set.
+    #[error("no cache dir: set XDG_CACHE_HOME, HOME or LOCALAPPDATA, or pass --cache")]
     NoHome,
     /// File system trouble.
     #[error("{path}: {reason}")]
@@ -135,6 +135,7 @@ fn cache_home(env: impl Fn(&str) -> Option<OsString>) -> Option<PathBuf> {
     set("XDG_CACHE_HOME")
         .map(PathBuf::from)
         .or_else(|| set("HOME").map(|home| PathBuf::from(home).join(".cache")))
+        .or_else(|| set("LOCALAPPDATA").map(PathBuf::from))
 }
 
 /// `<cache home>/canibump/state/<manifest path without the root>.json`.
