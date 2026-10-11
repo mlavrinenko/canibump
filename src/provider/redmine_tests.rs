@@ -90,6 +90,27 @@ async fn is_closed_false_keeps_a_closing_name_open() {
 }
 
 #[tokio::test]
+async fn a_negated_name_never_reads_completed() {
+    assert_states(vec![
+        (
+            json!({"name": "Not done", "is_closed": true}),
+            ItemState::ClosedNoReason,
+        ),
+        (
+            json!({"name": "Not fixed", "is_closed": true}),
+            ItemState::ClosedNoReason,
+        ),
+        (
+            json!({"name": "Won't do", "is_closed": true}),
+            ItemState::NotPlanned,
+        ),
+        (json!({"name": "Not done"}), ItemState::Open),
+        (json!({"name": "Won't do"}), ItemState::NotPlanned),
+    ])
+    .await;
+}
+
+#[tokio::test]
 async fn refuses_other_sources() {
     let redmine = Redmine::new(None, HashMap::new()).expect("client");
     let other: ItemRef = "github:o/r#1".parse().expect("ref");

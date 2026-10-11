@@ -8,7 +8,7 @@ use reqwest::{Client, Url};
 use serde::Deserialize;
 
 use super::http::{base, client, host_url, send_json};
-use super::{CheckError, ItemState, Tracker, names_any};
+use super::{CheckError, ItemState, Tracker, names_any, negated};
 pub use crate::auth::JiraAuth;
 use crate::refs::{ItemRef, Source};
 
@@ -67,6 +67,17 @@ const NOT_PLANNED: &[&str] = &[
     "works as designed",
 ];
 
+/// Resolutions that mean it landed.
+const COMPLETED: &[&str] = &[
+    "fixed",
+    "done",
+    "resolved",
+    "complete",
+    "completed",
+    "implemented",
+    "delivered",
+];
+
 fn state_of(fields: &FieldsDto) -> ItemState {
     if fields.status.status_category.key != "done" {
         return ItemState::Open;
@@ -79,15 +90,7 @@ fn state_of(fields: &FieldsDto) -> ItemState {
         ItemState::Duplicate
     } else if has(NOT_PLANNED) {
         ItemState::NotPlanned
-    } else if has(&[
-        "fixed",
-        "done",
-        "resolved",
-        "complete",
-        "completed",
-        "implemented",
-        "delivered",
-    ]) {
+    } else if !negated(&resolution.name) && has(COMPLETED) {
         ItemState::Completed
     } else {
         ItemState::ClosedNoReason

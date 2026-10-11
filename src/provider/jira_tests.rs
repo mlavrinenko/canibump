@@ -22,6 +22,9 @@ async fn maps_status_category_and_resolution() {
         (10, "done", Some("Not A Bug"), ItemState::NotPlanned),
         (11, "done", Some("Implemented"), ItemState::Completed),
         (12, "done", Some("Undone"), ItemState::ClosedNoReason),
+        (13, "done", Some("Not Done"), ItemState::ClosedNoReason),
+        (14, "done", Some("Not Fixed"), ItemState::ClosedNoReason),
+        (15, "done", Some("Won't Do"), ItemState::NotPlanned),
     ];
     for (number, category, resolution, _) in &cases {
         let resolution = resolution.map(|name| json!({"name": name}));

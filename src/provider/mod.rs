@@ -283,11 +283,45 @@ pub(crate) fn names_any(name: &str, phrases: &[&str]) -> bool {
     })
 }
 
+/// Whether a status or resolution `name` says no, as in `Not Done` or
+/// `Won't Do`, so a word like `done` in it does not mean the work landed.
+pub(crate) fn negated(name: &str) -> bool {
+    names_any(
+        name,
+        &[
+            "not", "no", "never", "won't", "can't", "cannot", "didn't", "isn't", "don't",
+        ],
+    )
+}
+
 #[cfg(test)]
 mod tests {
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     use super::*;
+
+    #[test]
+    fn a_name_with_a_negator_is_negated() {
+        for name in [
+            "Not Done",
+            "not fixed",
+            "Won't Do",
+            "Never fixed",
+            "Cannot Reproduce",
+        ] {
+            assert!(negated(name), "{name}");
+        }
+        for name in [
+            "Done",
+            "Fixed",
+            "Notable",
+            "Nothing",
+            "Known issue",
+            "Undone",
+        ] {
+            assert!(!negated(name), "{name}");
+        }
+    }
 
     struct Quiet;
 

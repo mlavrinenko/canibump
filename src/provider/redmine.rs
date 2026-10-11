@@ -9,7 +9,7 @@ use reqwest::{Client, Url};
 use serde::Deserialize;
 
 use super::http::{base, client, host_url, send_json};
-use super::{CheckError, ItemState, Tracker, names_any};
+use super::{CheckError, ItemState, Tracker, names_any, negated};
 use crate::refs::{ItemRef, Source};
 
 /// A Redmine client for any host.
@@ -39,6 +39,8 @@ struct StatusDto {
 
 /// Names that mean it will not land.
 const NOT_PLANNED: &[&str] = &[
+    "won't do",
+    "wont do",
     "rejected",
     "reject",
     "won't fix",
@@ -55,15 +57,17 @@ const FINISHED: &[&str] = &["closed", "resolved", "done", "fixed"];
 /// An instance too old to send it gets the name's guess at both.
 fn state_of(status: &StatusDto) -> ItemState {
     let has = |phrases: &[&str]| names_any(&status.name, phrases);
-    let closed = status
-        .is_closed
-        .unwrap_or_else(|| has(NOT_PLANNED) || has(&["duplicate"]) || has(FINISHED));
+    let closed = status.is_closed.unwrap_or_else(|| {
+        has(NOT_PLANNED) || has(&["duplicate"]) || (has(FINISHED) && !negated(&status.name))
+    });
     if !closed {
         ItemState::Open
     } else if has(NOT_PLANNED) {
         ItemState::NotPlanned
     } else if has(&["duplicate"]) {
         ItemState::Duplicate
+    } else if negated(&status.name) {
+        ItemState::ClosedNoReason
     } else {
         ItemState::Completed
     }

@@ -21,7 +21,7 @@ GitLab and Gitea keep no close reason. A closed GitLab issue counts only when
 a merged MR closed it, and a closed Gitea issue reads `dead`, so point at the PR
 instead. Redmine and Jira say why by status or resolution name, matched on
 whole words: `Rejected`, `Won't Fix`, `Invalid` or `Abandoned` read dead,
-`Fixed` or `Done` read bumpable.
+`Fixed` or `Done` read bumpable, `Not done` does not.
 
 `reached` waits for a commit, or a PR's merge commit, to land in a branch, a
 tag, or any tag matching a pattern. With a pattern, canibump names the first
