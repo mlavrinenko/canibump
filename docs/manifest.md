@@ -24,9 +24,10 @@ whole words: `Rejected`, `Won't Fix`, `Invalid` or `Abandoned` read dead,
 `Fixed` or `Done` read bumpable, `Not done` does not.
 
 `reached` waits for a commit, or a PR's merge commit, to land in a branch, a
-tag, or any tag matching a pattern. With a pattern, canibump names the first
-tag that has it, in version order. One order covers semver, `v`-tags, dates
-and builds like `b7012`.
+tag, or any tag matching a pattern. An issue has no merge commit, so it reads
+`failed` there. Wait on it with `state` instead. With a pattern, canibump names
+the first tag that has it, in version order. One order covers semver,
+`v`-tags, dates and builds like `b7012`.
 
 ```
 v1.0.0 = 1.0.0 = 1.0.0+build     # a letter prefix and +build drop

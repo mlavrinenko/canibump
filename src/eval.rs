@@ -132,7 +132,7 @@ fn short(sha: &str) -> &str {
 }
 
 /// The commit to follow and how to name it, or the outcome that ends the
-/// check before any history is read (an open or rejected PR).
+/// check before any history is read (an open or rejected PR, or an issue).
 async fn resolve_commit(
     target: &Reachable,
     registry: &Registry,
@@ -144,9 +144,21 @@ async fn resolve_commit(
         }
         Reachable::Item(item) => item,
     };
-    let state = item_state(item, registry).await?;
-    if state != ItemState::Merged {
-        return Ok(Err(state_outcome(item, state)));
+    match item_state(item, registry).await? {
+        ItemState::Merged => {}
+        state @ (ItemState::Open | ItemState::ClosedUnmerged) => {
+            return Ok(Err(state_outcome(item, state)));
+        }
+        // Only an issue closes with a reason; it has no merge commit to follow.
+        ItemState::Completed
+        | ItemState::NotPlanned
+        | ItemState::Duplicate
+        | ItemState::ClosedNoReason => {
+            return Ok(Err(Outcome::new(
+                Status::Failed,
+                format!("{item} is an issue, not a PR; wait on it with state"),
+            )));
+        }
     }
     let host = registry.code_host(item.source.kind())?;
     let sha = host

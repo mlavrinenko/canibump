@@ -194,6 +194,32 @@ async fn an_unmerged_pr_waits_or_is_dead() {
 }
 
 #[tokio::test]
+async fn an_issue_in_reached_fails_without_reading_history() {
+    for state in [
+        ItemState::Completed,
+        ItemState::NotPlanned,
+        ItemState::Duplicate,
+        ItemState::ClosedNoReason,
+    ] {
+        let fake = Fake {
+            states: HashMap::from([(1, Ok(state))]),
+            ..Fake::default()
+        };
+        let (outcome, fake) = reach(fake, "github:o/r#1", Within::Tag("v1".to_owned())).await;
+        assert_eq!(
+            outcome,
+            Outcome::new(
+                Status::Failed,
+                "github:o/r#1 is an issue, not a PR; wait on it with state"
+            ),
+            "{state:?}"
+        );
+        assert_eq!(fake.merge_calls.load(Ordering::SeqCst), 0, "{state:?}");
+        assert_eq!(fake.contains_calls.load(Ordering::SeqCst), 0, "{state:?}");
+    }
+}
+
+#[tokio::test]
 async fn a_merged_pr_without_a_merge_commit_fails() {
     let fake = Fake {
         states: HashMap::from([(1, Ok(ItemState::Merged))]),

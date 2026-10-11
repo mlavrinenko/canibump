@@ -19,9 +19,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   server's `is_closed` over the status name. A name like `Not done` never
   reads bumpable.
 - `reached` waits for a commit or a merged PR to land in a branch, a tag, or
-  the first tag matching a pattern, on GitHub or any git remote. Tags sort in
-  one version order that covers semver, `v`-tags, dates and builds like
-  `b7012`, where a missing `.0` counts as zero (`2.0` is `2.0.0`).
+  the first tag matching a pattern, on GitHub or any git remote. An issue there
+  reads failed, since it has no merge commit. Tags sort in one version order
+  that covers semver, `v`-tags, dates and builds like `b7012`, where a missing
+  `.0` counts as zero (`2.0` is `2.0.0`).
 - `version` waits for a package version on Repology (distros, nixpkgs
   channels) or deps.dev (crates.io, npm, PyPI, Go, Maven, NuGet, RubyGems).
 - `[[blocker.all]]` and `[[blocker.any]]` chain steps, like merged, then
