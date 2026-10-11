@@ -32,7 +32,7 @@
 
 == Problem
 
-+ `.just/scripts/fork.sh` and `integrate.sh` (301 lines), plus the `fork` and `integrate` recipes, ported mindtape's delegation here on 2026-10-10.
++ `scripts/fork.sh` and `integrate.sh` (215 lines), plus the `fork` and `integrate` recipes, ported mindtape's delegation here on 2026-10-10.
 + 🔴 mindtape replaced its copy with worktrunk (commit deacb817). Its task `configure-worktrunk-in-the-repo-so-a-fresh-clone-needs-no-host-setup` moves every hook into the repo, because hooks in ~/.nix don't travel with a clone. This port is now a second copy that drifts.
 
 
@@ -46,7 +46,7 @@
 
 == Changes
 
-- `.just/scripts/fork.sh`, `.just/scripts/integrate.sh`: deleted. mindtape's `wt-tasks-done.sh` and `wt-carry-gate.sh` replace them, unless `mt check --commits` with a `tip` rule and `mmz --import` have landed (their tasks in mindtape and mmz); then the hooks call those instead.
+- `scripts/fork.sh`, `scripts/integrate.sh`: deleted. mindtape's `wt-tasks-done.sh` and `wt-carry-gate.sh` replace them, unless `mt check --commits` with a `tip` rule and `mmz --import` have landed (their tasks in mindtape and mmz); then the hooks call those instead.
 - `.config/wt.toml`, `flake.nix`: as in mindtape, minus `just build-mt`. canibump has no dev `mt` build.
 - `Justfile`: `fork` and `land` replace `fork` and `integrate`.
 - `outdatty.yaml`: `dev-docs` sources follow the scripts. AGENTS.md says how to delegate.

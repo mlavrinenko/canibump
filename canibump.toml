@@ -27,5 +27,5 @@ at-least = { step = "released" }
 # nextest does not run doctests, so `just test` makes a second pass for them.
 [[blocker]]
 id = "nextest-doctests"
-note = "Justfile:81: drop the `cargo test --doc` pass from `test` (and the doctest remarks in CONTRIBUTING.md, AGENTS.md, flake.nix)"
+note = "Justfile:33: drop the `cargo test --doc` pass from `test` (and the doctest remarks in CONTRIBUTING.md, AGENTS.md, flake.nix)"
 state = "github:nextest-rs/nextest#16"

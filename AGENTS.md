@@ -3,16 +3,16 @@
 ## Agent Rules
 
 - See and use [Justfile](Justfile). Add any repeatable and regular operations there.
-  `set shell` already gives every recipe line `bash -eo pipefail`, so a new recipe
-  needs no `#!/usr/bin/env bash` + `set -eo pipefail` preamble. just runs each line
-  in a fresh shell though — add a shebang only when the body needs one shell across
-  lines (a variable read back later, a `trap`).
+  Every recipe gets a one-line `[doc()]` and a `[group()]`: `daily` is what bare
+  `just` lists, `gate` the arms of `just check`, `extra` the rest. A body over
+  ~5 lines goes to `scripts/`. `set shell` gives every line `bash -eo pipefail`,
+  each in a fresh shell.
 - At the end ensure that `just fix-check` is green.
 - Tests: inline `#[cfg(test)]` units; CLI/integration in `tests/` (`assert_cmd` + `predicates`). `just fix-check` auto-ejects inline tests from oversized files via `ejectest`.
-- Coverage and CRAP gates run separately (CI + `just validate`): `just cover`
-  then `just crap`. `just cover` uses `cargo-llvm-cov` (not tarpaulin) — it
-  merges child-process profraw, so subprocess-based e2e tests attribute
-  correctly. If `just crap` flags a function, add tests or reduce its
+- Coverage and CRAP gates run in CI, outside `just check`: `just cover` then
+  `just crap`, both silent on a pass. `just cover` uses `cargo-llvm-cov` (not
+  tarpaulin) — it merges child-process profraw, so subprocess-based e2e tests
+  attribute correctly. If `just crap` flags a function, add tests or reduce its
   branching — don't raise the threshold to dodge it.
 - Every arm of `just check` is `just mmz <subgate>`:
   [mmz](https://github.com/mlavrinenko/mmz) skips arms whose declared inputs are
@@ -21,6 +21,7 @@
   a silent skip. Don't wrap `just check` arms in `chronic`: a cache hit is already
   quiet, and a miss must stream its output.
 - Be careful with the context. Omit non-necessary command outputs using `chronic` or `grep`.
+  A recipe that prints on a green run wraps its command in `scripts/quiet.sh`.
 - [outdatty.yaml](outdatty.yaml) couples sources to dependents. When `just check`
   reports drift, update the listed dependents, run `just outdatty-update`, and
   commit the refreshed `outdatty.lock` with the change. Add a group whenever you
@@ -33,12 +34,12 @@
   doc comment on one, run `just schema`; a test fails while the file is stale.
   `just install` also writes it to `~/.config/canibump/`.
 - `just deny` (cargo-deny: advisories, licenses, bans) is not in `just check` —
-  it needs network. Run it after touching dependencies. Widen `deny.toml`'s
-  allow-list deliberately; never to silence a finding. `just outdated`
-  (cargo-outdated) is network-bound too and reports newer upstream releases;
-  it is a dev aid, never a gate.
+  it needs network. A green run prints nothing. Run it after touching
+  dependencies. Widen `deny.toml`'s allow-list deliberately; never to silence a
+  finding. `just outdated` (cargo-outdated) is network-bound too and reports
+  newer upstream releases; it is a dev aid, never a gate.
 - `just test` gates the suite on cargo-nextest, whose output level lives in
-  `.config/nextest.toml` — a green run prints only the summary, a red one
+  `.config/nextest.toml` — a green run prints only the summary line, a red one
   prints each failure's full output — plus a `cargo test --doc` pass, because
   nextest does not run doctests. `just cover` instruments that same runner via
   `cargo llvm-cov nextest`, so a test cannot pass under the gate and fail under

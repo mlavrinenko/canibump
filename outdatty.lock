@@ -54,15 +54,20 @@ groups:
   dev-docs:
     source:
       .config/nextest.toml: ec97d2444d9bf38aae8499d53eac3ffbbab47593637e3a324452ee72bec0ef0b
-      .just/scripts/fork.sh: e9d65629510264611ef912cfb6583c1f7fd874f811630471e7ecb426091a7bb3
-      .just/scripts/integrate.sh: fff6cf9c3839a2314e33745ebad19c455e10a9e8a2073b807ae80d4c3bf3ac53
-      .mmz/config.yaml: a95f71ec099100d0604cae74fb9b0e37ff24363e811cf3fa45eadfb7b5f562e3
-      Justfile: 86b1ae57b87e0b90d04734305fbf1007f067655e194c673fa38fabb478a07154
+      .mmz/config.yaml: d03188b6447962fe1d0c5b3e1ad4c80df8a325e6d031d2abf85579891946b1af
+      Justfile: 4008055f2b0c37b81e5c60c82ba13777035e0b0457f0a3f2bb66073e22bf42c5
       flake.nix: c823c1bf916d012c0c51f00988f87c6fc28f864357b63f668a01612b11ccb33e
+      scripts/cover.sh: cb57da07f22031060d9f653d924d85887e788b90bec391fbac29435cd287633d
+      scripts/crap.sh: c6ab7ca6bf13fd5ad855c3eea51d78a4a0d7035349018c098d4dfc0bc81f5039
+      scripts/eject.sh: 9fed177e7d200c062466f4c317c452280af8072de914f1eeb9ceb2a33cc97621
+      scripts/fork.sh: 66566e8566f61ebe7c6a3097408c15799440a15c6d2c91e2f295c8c5c275cc79
+      scripts/integrate.sh: 2c7eb26e455ab5129c0247a803386e63200bebaa228f24638d321b243c12c49e
+      scripts/quiet.sh: 7e05bb0d5be2959ede47c7eb33b9203e0446702ea178cdb596951df9e8b3fb73
+      scripts/release.sh: 9ca4b58bdfb13c8c83c493442d5523c48baa22a51ef4a58b84e6717e64fab31b
     dependents:
-      AGENTS.md: 20d1d8c2b06a2c172e1df443fda394198ce1c38f3308f96cca2188b53beb37b4
-      CONTRIBUTING.md: 4be81df860a81a76ae645d1567d94b93c6fb78c324ea642db3be081703b0159c
-      canibump.toml: 0c45ed38be3c847dcf7b9548c687709d05685dfd466a2653a01297dce7a188a7
+      AGENTS.md: 631f1f12d47bda77db3e086445fc19aacc60036291012a3c889dc7ddb9089a73
+      CONTRIBUTING.md: 7e6703b0c03bf4a7b75a0431f5f9480586a22d9f3fc5531255fc1ff160511c2b
+      canibump.toml: 9c865f89c093953fd6e929c769fa706d58dbaf5a9d2a0ee6e8e15ef6c5604613
   release-notes:
     source:
       Cargo.toml: ee75eaa636b331fed70cc2d022bc8d0f1ec15cfe5197a8e7b0592fed5adec9f3
