@@ -69,7 +69,7 @@ fn build_metadata_is_ignored() {
 }
 
 /// Semver, `v`-tags, `b`-builds, rc streams, `+build` and dates, mixed.
-const CORPUS: [&str; 24] = [
+const CORPUS: [&str; 29] = [
     "1.0.0",
     "v1.0.0",
     "1.0.0+zz",
@@ -80,6 +80,11 @@ const CORPUS: [&str; 24] = [
     "1.0rc1",
     "1.0rc10",
     "1.0",
+    "1.0.0.0",
+    "1",
+    "3.0",
+    "v3.0.0",
+    "1.0.0rc1",
     "1.0.1",
     "1.2",
     "1.2.1",
@@ -143,4 +148,29 @@ fn sorting_the_corpus_ignores_input_order() {
             .zip(&backward)
             .all(|(left, right)| compare(left, right).is_eq())
     );
+}
+
+#[test]
+fn missing_trailing_zeros_equal_the_written_ones() {
+    assert_eq!(compare("1.0", "1.0.0"), Ordering::Equal);
+    assert_eq!(compare("2.0", "2.0.0"), Ordering::Equal);
+    assert_eq!(compare("v3.0.0", "3.0"), Ordering::Equal);
+    assert_eq!(compare("1", "1.0.0.0"), Ordering::Equal);
+    assert_eq!(compare("1.0.0rc1", "1.0rc1"), Ordering::Equal);
+}
+
+#[test]
+fn a_zero_in_the_middle_still_counts() {
+    assert_eq!(compare("1.2", "1.2.1"), Ordering::Less);
+    assert_eq!(compare("1.0", "1.0.1"), Ordering::Less);
+    assert_eq!(compare("1", "1.0.0.1"), Ordering::Less);
+    assert_eq!(compare("1.0.5", "1.5"), Ordering::Less);
+    assert_eq!(compare("10", "1"), Ordering::Greater);
+}
+
+#[test]
+fn a_prerelease_stays_below_its_release_however_the_zeros_are_written() {
+    assert_eq!(compare("1.0.0rc1", "1.0"), Ordering::Less);
+    assert_eq!(compare("1.0rc1", "1.0.0"), Ordering::Less);
+    assert_eq!(compare("1.0.0-rc.1", "1"), Ordering::Less);
 }

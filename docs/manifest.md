@@ -30,6 +30,7 @@ and builds like `b7012`.
 
 ```
 v1.0.0 = 1.0.0 = 1.0.0+build     # a letter prefix and +build drop
+1.0 = 1.0.0                      # a missing trailing .0 counts as zero
 b999 < b1000                     # numbers compare as numbers
 1.0.0-rc9 < 1.0.0-rc10 < 1.0.0   # letters after the numbers mean pre-release
 ```
