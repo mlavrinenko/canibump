@@ -1,12 +1,10 @@
 //! End-to-end: `canibump status <id>` answers one blocker by exit code,
 //! offline: 0 bumpable, 1 waiting, 2 anything else.
 
-mod common;
-
 use predicates::prelude::*;
 use serde_json::{Value, json};
 
-use common::{Repo, blocker, open, repo_of};
+use crate::common::{Repo, blocker, open, repo_of};
 
 const OFFLINE: &str = "http://127.0.0.1:9";
 

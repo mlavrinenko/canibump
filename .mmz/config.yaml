@@ -28,7 +28,7 @@ scopes:
   # Everything that builds and tests the crate. Deliberately `src/**`, not
   # `src/**/*.rs`: an asset `include_str!`'d into the binary belongs in the
   # build's freshness too, and a Rust-only glob would silently drop it.
-  # `canibump.toml` is read by tests/schema.rs (the repo's own manifest must
+  # `canibump.toml` is read by tests/it/schema.rs (the repo's own manifest must
   # validate and load), so an edit to it re-runs the memoized suite.
   rust:
     - "src/**"

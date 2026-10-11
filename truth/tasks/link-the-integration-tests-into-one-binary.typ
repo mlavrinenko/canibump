@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: proposed(2026, 10, 11),
+  status: done(2026, 10, 11),
 )
 
 == Problem
@@ -49,7 +49,7 @@
 - `tests/fixtures/`: stays put. `tests/schema.rs` reaches it through the manifest dir, so it needs no change.
 - CONTRIBUTING.md: `tests/cli.rs` becomes `tests/it/cli.rs`.
 - The `tests/**` globs in `.mmz/config.yaml`, the `crap` excludes in the Justfile and `.mindtape/config.toml` still match, so leave them.
-- Check: 203 tests before and after (`just test`), and 1 integration executable instead of 7 from `cargo test --no-run`.
+- Check: 206 tests before and after (`just test`), and 1 integration executable instead of 7 from `cargo test --no-run`.
 
 == Rollback
 

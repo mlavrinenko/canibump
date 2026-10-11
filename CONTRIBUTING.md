@@ -44,7 +44,8 @@ coverage, so anything there goes untested.
 - Unit tests live inline in a `#[cfg(test)] mod tests` next to their code.
 - CLI and integration tests live in `tests/` and drive the binary with
   [`assert_cmd`](https://docs.rs/assert_cmd) and
-  [`predicates`](https://docs.rs/predicates), see `tests/cli.rs`.
+  [`predicates`](https://docs.rs/predicates), see `tests/it/cli.rs`. The files in `tests/it/` link into one binary: a
+  new one needs a `mod` line in `tests/it/main.rs`.
 - `just test` runs `cargo nextest run`, one process per test, plus
   `cargo test --doc`, which [nextest](https://nexte.st) skips. A green run
   prints the summary line. `just cover` instruments the same runner, so the
@@ -116,7 +117,7 @@ loses the scent.
 ## JSON Schema
 
 `schema/canibump.schema.json` is generated from the manifest types by
-`canibump schema`, never edited by hand. `tests/schema.rs` fails while the
+`canibump schema`, never edited by hand. `tests/it/schema.rs` fails while the
 committed file differs from the generated one; `just schema` regenerates it.
 `just install` also copies it to `~/.config/canibump/`.
 

@@ -1,11 +1,9 @@
 //! End-to-end: which statuses fail a run, and the exit code they add up to.
 
-mod common;
-
 use predicates::prelude::*;
 use serde_json::{Value, json};
 
-use common::repo_of;
+use crate::common::repo_of;
 
 #[test]
 fn a_dead_blocker_fails_the_run_with_10() {

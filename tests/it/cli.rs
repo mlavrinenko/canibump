@@ -1,7 +1,5 @@
 //! End-to-end: the built binary against an httpmock GitHub.
 
-mod common;
-
 use std::path::Path;
 
 use assert_cmd::Command;
@@ -9,7 +7,7 @@ use httpmock::Method::GET;
 use predicates::prelude::*;
 use serde_json::{Value, json};
 
-use common::{Repo, blocker, fixed, gh_calls, open, waiting_json_run};
+use crate::common::{Repo, blocker, fixed, gh_calls, open, waiting_json_run};
 
 #[test]
 fn prints_one_line_per_blocker_and_exits_9_when_one_is_bumpable() {

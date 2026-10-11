@@ -1,10 +1,8 @@
 //! End-to-end: `--color`, `NO_COLOR` and the pipe decide whether the status word is painted.
 
-mod common;
-
 use serde_json::{Value, json};
 
-use common::{Repo, blocker, fixed, open};
+use crate::common::{Repo, blocker, fixed, open};
 
 const WAITING: &str = "waiting   waits  github:o/r#1 is open\n";
 

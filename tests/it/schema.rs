@@ -1,15 +1,13 @@
 //! The JSON Schemas for `canibump.toml`, `--json` and the state file:
 //! generated from the types, committed, and checked against real files.
 
-mod common;
-
 use std::path::PathBuf;
 
 use assert_cmd::Command;
 use jsonschema::Validator;
 use serde_json::Value;
 
-use common::waiting_json_run;
+use crate::common::waiting_json_run;
 
 fn root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
