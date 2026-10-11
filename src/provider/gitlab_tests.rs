@@ -57,7 +57,12 @@ async fn a_closed_issue_is_completed_only_when_an_mr_closed_it() {
     let base = "/api/v4/projects/group%2Fproj/issues";
     mock(&server, &format!("{base}/1"), json!({"state": "opened"})).await;
     mock(&server, &format!("{base}/2"), json!({"state": "closed"})).await;
-    mock(&server, &format!("{base}/2/closed_by"), json!([{"iid": 7}])).await;
+    mock(
+        &server,
+        &format!("{base}/2/closed_by"),
+        json!([{"iid": 7, "state": "merged"}]),
+    )
+    .await;
     mock(&server, &format!("{base}/3"), json!({"state": "closed"})).await;
     mock(&server, &format!("{base}/3/closed_by"), json!([])).await;
     assert_eq!(
@@ -71,6 +76,40 @@ async fn a_closed_issue_is_completed_only_when_an_mr_closed_it() {
     assert_eq!(
         state(&server, "gitlab:group/proj#3").await,
         Ok(ItemState::ClosedNoReason)
+    );
+}
+
+#[tokio::test]
+async fn a_closed_issue_counts_only_when_a_closing_mr_merged() {
+    let server = MockServer::start_async().await;
+    let base = "/api/v4/projects/group%2Fproj/issues";
+    let cases = [
+        (1, json!([{"iid": 7, "state": "opened"}])),
+        (2, json!([{"iid": 7, "state": "closed"}])),
+        (
+            3,
+            json!([{"iid": 7, "state": "closed"}, {"iid": 8, "state": "merged"}]),
+        ),
+    ];
+    for (number, closers) in cases {
+        let issue = json!({"state": "closed"});
+        mock(&server, &format!("{base}/{number}"), issue).await;
+        mock(&server, &format!("{base}/{number}/closed_by"), closers).await;
+    }
+    assert_eq!(
+        state(&server, "gitlab:group/proj#1").await,
+        Ok(ItemState::ClosedNoReason),
+        "open MR"
+    );
+    assert_eq!(
+        state(&server, "gitlab:group/proj#2").await,
+        Ok(ItemState::ClosedNoReason),
+        "closed unmerged MR"
+    );
+    assert_eq!(
+        state(&server, "gitlab:group/proj#3").await,
+        Ok(ItemState::Completed),
+        "one merged MR among others"
     );
 }
 

@@ -5,7 +5,6 @@ use std::collections::HashMap;
 use async_trait::async_trait;
 use reqwest::{Client, Url};
 use serde::Deserialize;
-use serde::de::IgnoredAny;
 
 use super::http::{base, client, host_url, send_json};
 use super::{CheckError, ItemState, Tracker};
@@ -85,13 +84,14 @@ impl Tracker for GitLab {
         if issue.state != "closed" {
             return Ok(ItemState::Open);
         }
-        let closers: Vec<IgnoredAny> = self
+        // `closed_by` lists every MR that would close the issue, in any state.
+        let closers: Vec<ItemDto> = self
             .get(host, project, &["issues", &number, "closed_by"], &what)
             .await?;
-        Ok(if closers.is_empty() {
-            ItemState::ClosedNoReason
-        } else {
+        Ok(if closers.iter().any(|mr| mr.state == "merged") {
             ItemState::Completed
+        } else {
+            ItemState::ClosedNoReason
         })
     }
 }

@@ -18,7 +18,7 @@ state = "github:serde-rs/serde#2590"
 ```
 
 GitLab and Gitea keep no close reason. A closed GitLab issue counts only when
-an MR closed it, and a closed Gitea issue reads `dead`, so point at the PR
+a merged MR closed it, and a closed Gitea issue reads `dead`, so point at the PR
 instead. Redmine and Jira say why by status or resolution name, matched on
 whole words: `Rejected`, `Won't Fix`, `Invalid` or `Abandoned` read dead,
 `Fixed` or `Done` read bumpable.
