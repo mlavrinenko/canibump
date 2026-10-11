@@ -157,6 +157,15 @@ fn an_origin_main_that_main_lacks_commits_of_is_refused() {
 }
 
 #[test]
+fn an_origin_without_main_asks_for_a_first_push_by_hand() {
+    let release = Release::new();
+    let origin = release.dir.path().join("origin");
+    git(&origin, &["update-ref", "-d", "refs/heads/main"]);
+    let err = release.refuses(true, "origin has no main yet");
+    assert!(err.contains("hint: push it once by hand: git push -u origin main"));
+}
+
+#[test]
 fn an_existing_tag_is_refused_local_or_pushed() {
     let release = Release::new();
     git(&release.work(), &["tag", "v0.2.0"]);

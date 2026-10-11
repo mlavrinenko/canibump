@@ -163,7 +163,8 @@ which holds every refusal, and commits. The recipe pushes `main`, waits for
 `ci.yml` on it (`scripts/release-ci.sh`), which builds every release target
 (`build.yml`), and tags only if it is green. After a red run, fix `main` and
 re-run: the bump stays done. The tag push is the only publish path
-(`release.yml`), so never `cargo publish` by hand.
+(`release.yml`), so never `cargo publish` by hand. A repo's first release needs
+`main` pushed once by hand beforehand; the hook asks for it.
 
 ## MSRV
 

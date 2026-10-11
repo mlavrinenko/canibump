@@ -34,6 +34,12 @@ dirty=$(git status --porcelain | grep -Ev '^.. (Cargo\.toml|Cargo\.lock|CHANGELO
     || refuse "the working tree has uncommitted changes" "commit or discard them, then re-run"
 branch=$(git symbolic-ref --short -q HEAD || true)
 [ "$branch" = main ] || refuse "HEAD is on '${branch:-a detached commit}', not main" "git switch main"
+# Exit 2 is a reachable origin with no main: a repo's first release, whose
+# main is pushed once by hand, since the recipe pushes only after this hook.
+heads=0
+git ls-remote --exit-code --heads origin main >/dev/null || heads=$?
+[ "$heads" != 2 ] \
+    || refuse "origin has no main yet" "push it once by hand: git push -u origin main, then re-run"
 git fetch --quiet origin main || refuse "can't fetch 'origin main'" "check the network and the origin remote"
 git merge-base --is-ancestor origin/main HEAD \
     || refuse "origin/main has commits that main lacks" "git pull --ff-only origin main, then re-run"

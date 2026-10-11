@@ -47,11 +47,13 @@
   coverage (or the reverse) with nothing saying so.
 - Release only with `just release X.Y.Z`, after `just release X.Y.Z --dry-run`
   passes; never `cargo publish` by hand, never bump `Cargo.toml` or date the
-  CHANGELOG yourself, and don't push main first. Keep the release's entries
-  under `[Unreleased]`: [cargo-release](https://github.com/crate-ci/cargo-release)
-  (`release.toml`) bumps the version, dates them and commits. Its
-  `pre-release-hook`, [scripts/release-hook.sh](scripts/release-hook.sh),
-  refuses a dirty tree, a branch but main, an origin/main that main lacks
+  CHANGELOG yourself, and don't push main first. The one exception is a repo's
+  very first push of main, made once by hand, since the hook needs main on
+  origin. Keep the release's entries under `[Unreleased]`:
+  [cargo-release](https://github.com/crate-ci/cargo-release) (`release.toml`)
+  bumps the version, dates them and commits. Its `pre-release-hook`,
+  [scripts/release-hook.sh](scripts/release-hook.sh), refuses a dirty tree, a
+  branch but main, an origin with no main, an origin/main that main lacks
   commits of, an existing tag, a version already on crates.io, a CHANGELOG with
   nothing to release, failing gates (`just check`) and a failing
   `cargo publish --dry-run`. Then the recipe pushes main, waits for `ci.yml` on

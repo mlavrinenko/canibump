@@ -68,11 +68,11 @@ groups:
       scripts/eject.sh: 9fed177e7d200c062466f4c317c452280af8072de914f1eeb9ceb2a33cc97621
       scripts/quiet.sh: 7e05bb0d5be2959ede47c7eb33b9203e0446702ea178cdb596951df9e8b3fb73
       scripts/release-ci.sh: ed02a07820a1d3282d3269fd48ca6940d101ecfd98ac496d60cf2326769e7fba
-      scripts/release-hook.sh: 91afbe17d97053194cb2bb9819c8f68f5cd81c18eb087b1388beae48c3c4a83d
+      scripts/release-hook.sh: 23cd583eaf49d395d73abe7e4313e19719c4301c6e188f708befbdaa8fd9ec10
       scripts/wt-carry-lcov.sh: 39b537a8a380b6fd1c88064bcfb2149a2207ba0ff390bf29c4bfa6e4b26fc650
     dependents:
-      AGENTS.md: 91132ea056b16ce68a1b8b09a86e302f53aa675f79de40e86b3d59749c2a4b0f
-      CONTRIBUTING.md: eee363413f03752e19643f58fd174bcf5d7e6992b1c47841b50e72a21282dce7
+      AGENTS.md: 5934af0d9ce2b5accb67987f96183213137b9a352cc777f1ea807b8dd9ab64b3
+      CONTRIBUTING.md: 3e8d36936e83a55c30127a0875055ae56118dbba1a8a47e52d17031c4e89e0b4
       canibump.toml: ba28454319e787094e40afda101ffa7bd0ce5fe844198cfdcfb23c3651d7de36
   release-notes:
     source:
