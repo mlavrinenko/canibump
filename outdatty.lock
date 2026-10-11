@@ -23,8 +23,8 @@ groups:
       src/provider/defaults.rs: 4b455db1d628c0182a3c163b2d81ce49f87ed849484e28f80db831b44572fa8a
       src/provider/depsdev.rs: 4a28482e40f193c927c8205526be3a829e30340347c7737ca74c486ef7a220f0
       src/provider/depsdev_tests.rs: 05e0e2cbfb8a9eea4a93d57a9ce3d0e78bd9de0dd401578f08057233a68fe5a7
-      src/provider/git.rs: d5a3e8717fbb08fe4579deed9c012b0b6d3319ae66f4b72d357efc6130aa77bf
-      src/provider/git_tests.rs: 82ac535edffebcfabff120c83fbdd3bae72955e243e222d1d4e7f55a02f5144c
+      src/provider/git.rs: 2c0ce86600b6e034c572fa0e9069e04c44db71260269db65591715c8b00c5798
+      src/provider/git_tests.rs: ba0b7bf99d07bfcee001ac3d6137d91e617ab83d44f245d05329a9a8ed1fbce8
       src/provider/gitea.rs: 69fd53e1f3f07a6e8362e29c4a4a3c0c6396bfa10e0a6a387067f10611bbae38
       src/provider/gitea_tests.rs: 6951d8f6754580b73b2a3bbc7e370a3411774656109e0c7faf9fd05623c8e2a9
       src/provider/github.rs: 780bbddce10f31b57b3533bcddeb0c40be6074ce0610b4828c32a298a908bfc3
@@ -77,7 +77,7 @@ groups:
     source:
       Cargo.toml: ee75eaa636b331fed70cc2d022bc8d0f1ec15cfe5197a8e7b0592fed5adec9f3
     dependents:
-      CHANGELOG.md: 7b7cd73ed14c4c0ac86a174fb5e69c0ce64a45719bff0be733c6426fd76f16ff
+      CHANGELOG.md: 4ef1fa6ece46cb3ba6c49f3cea00499c428a5bb95cc92fd58d1b8e7fa1ba0a6f
   schema:
     source:
       src/auth.rs: 6a5bb1cfecfc78e2c5bd7c38d1a7fed3df7d3701a06d4be46bfaef161eba9df4
@@ -100,8 +100,8 @@ groups:
       src/provider/defaults.rs: 4b455db1d628c0182a3c163b2d81ce49f87ed849484e28f80db831b44572fa8a
       src/provider/depsdev.rs: 4a28482e40f193c927c8205526be3a829e30340347c7737ca74c486ef7a220f0
       src/provider/depsdev_tests.rs: 05e0e2cbfb8a9eea4a93d57a9ce3d0e78bd9de0dd401578f08057233a68fe5a7
-      src/provider/git.rs: d5a3e8717fbb08fe4579deed9c012b0b6d3319ae66f4b72d357efc6130aa77bf
-      src/provider/git_tests.rs: 82ac535edffebcfabff120c83fbdd3bae72955e243e222d1d4e7f55a02f5144c
+      src/provider/git.rs: 2c0ce86600b6e034c572fa0e9069e04c44db71260269db65591715c8b00c5798
+      src/provider/git_tests.rs: ba0b7bf99d07bfcee001ac3d6137d91e617ab83d44f245d05329a9a8ed1fbce8
       src/provider/gitea.rs: 69fd53e1f3f07a6e8362e29c4a4a3c0c6396bfa10e0a6a387067f10611bbae38
       src/provider/gitea_tests.rs: 6951d8f6754580b73b2a3bbc7e370a3411774656109e0c7faf9fd05623c8e2a9
       src/provider/github.rs: 780bbddce10f31b57b3533bcddeb0c40be6074ce0610b4828c32a298a908bfc3

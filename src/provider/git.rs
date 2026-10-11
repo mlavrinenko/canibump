@@ -174,14 +174,35 @@ impl GitRemotes {
         }
     }
 
+    /// Runs gix `work` for `source` off the runtime, and gives up on it after
+    /// [`DEADLINE`]: an `ssh://` remote that prompts or stalls reads failed
+    /// instead of holding the run forever.
+    ///
+    /// The work runs on a detached thread, not `spawn_blocking`: dropping a
+    /// runtime waits for every blocking task, so a fetch that never returns
+    /// would still hang the end of the run. An abandoned one dies with the
+    /// process.
     async fn blocking<T: Send + 'static>(
         &self,
+        source: &Source,
         work: impl FnOnce(&Inner) -> Result<T, CheckError> + Send + 'static,
     ) -> Result<T, CheckError> {
         let inner = Arc::clone(&self.inner);
-        tokio::task::spawn_blocking(move || work(&inner))
-            .await
-            .map_err(|error| CheckError::Network(format!("git worker: {error}")))?
+        let (answer, answered) = tokio::sync::oneshot::channel();
+        std::thread::Builder::new()
+            .name("git".to_owned())
+            .spawn(move || answer.send(work(&inner)))
+            .map_err(|error| CheckError::Network(format!("git worker: {error}")))?;
+        match tokio::time::timeout(DEADLINE, answered).await {
+            Ok(Ok(result)) => result,
+            Ok(Err(_)) => Err(CheckError::Network(format!(
+                "{source}: the git worker stopped without an answer"
+            ))),
+            Err(_) => Err(CheckError::Network(format!(
+                "{source}: no answer in {} s",
+                DEADLINE.as_secs()
+            ))),
+        }
     }
 }
 
@@ -300,6 +321,11 @@ impl Inner {
     }
 }
 
+/// How long one git check may take, a first clone included, before it reads
+/// failed. Generous next to the 30 s of an HTTP request, since a first fetch
+/// brings the whole history of the ref asked about.
+const DEADLINE: std::time::Duration = std::time::Duration::from_secs(300);
+
 /// The refspecs of tags start like this.
 const TAG_REFS: &str = "+refs/tags/";
 
@@ -319,14 +345,16 @@ impl CodeHost for GitRemotes {
         commit: &str,
         target: &GitRef,
     ) -> Result<bool, CheckError> {
-        let (source, commit, target) = (source.clone(), commit.to_owned(), target.clone());
-        self.blocking(move |inner| inner.contains(&source, &commit, &target))
-            .await
+        let (owned, commit, target) = (source.clone(), commit.to_owned(), target.clone());
+        self.blocking(source, move |inner| {
+            inner.contains(&owned, &commit, &target)
+        })
+        .await
     }
 
     async fn tags(&self, source: &Source, prefix: &str) -> Result<Vec<String>, CheckError> {
-        let (source, prefix) = (source.clone(), prefix.to_owned());
-        self.blocking(move |inner| inner.tags(&source, &prefix))
+        let (owned, prefix) = (source.clone(), prefix.to_owned());
+        self.blocking(source, move |inner| inner.tags(&owned, &prefix))
             .await
     }
 }

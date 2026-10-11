@@ -344,3 +344,39 @@ fn a_long_url_names_a_clone_dir_a_file_system_takes() {
     let name = dir.file_name().expect("name").len();
     assert_eq!(name, SLUG_CHARS + 1 + HASH_DIGITS + ".git".len());
 }
+
+/// A stand-in for a fetch that stalls: it answers only after five real
+/// seconds, so a deadline on virtual time fires first.
+fn stall() -> impl FnOnce(&Inner) -> Result<(), CheckError> + Send + 'static {
+    |_| {
+        std::thread::sleep(std::time::Duration::from_secs(5));
+        Ok(())
+    }
+}
+
+#[tokio::test(start_paused = true)]
+async fn a_git_call_that_never_answers_reads_failed() {
+    let (_cache, remotes, source) = remote("ssh://stalls.example/repo.git");
+    assert_eq!(
+        remotes.blocking(&source, stall()).await,
+        Err(CheckError::Network(
+            "git:ssh://stalls.example/repo.git: no answer in 300 s".to_owned()
+        ))
+    );
+}
+
+#[test]
+fn a_stalled_git_call_does_not_hold_up_the_end_of_the_run() {
+    let runtime = tokio::runtime::Builder::new_current_thread()
+        .enable_time()
+        .start_paused(true)
+        .build()
+        .expect("runtime");
+    let (_cache, remotes, source) = remote("ssh://stalls.example/repo.git");
+    let result = runtime.block_on(remotes.blocking(&source, stall()));
+    assert!(matches!(result, Err(CheckError::Network(_))), "{result:?}");
+    let started = std::time::Instant::now();
+    drop(runtime);
+    let waited = started.elapsed();
+    assert!(waited < std::time::Duration::from_secs(1), "{waited:?}");
+}
