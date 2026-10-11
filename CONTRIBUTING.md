@@ -11,10 +11,8 @@ just --list   # all of them, grouped
 ```
 
 Before you send a change, run `just fix-check`: clippy's fixes, the formatter,
-then `just check`.
-
-Recipes live in the [Justfile](Justfile); a body over about five lines goes in
-`scripts/`.
+then `just check`. Recipes live in the [Justfile](Justfile); a body over about
+five lines goes in `scripts/`.
 
 ## Worktrees
 
@@ -43,16 +41,12 @@ it) and a fresh coverage lcov to the primary checkout.
 All clippy lints are set to `deny`, so a violation does not compile. Key
 restrictions:
 
-- No `unwrap()`; use `?` with `anyhow` or `thiserror`
+- No `unwrap()` or `expect()`; propagate with `?`, `anyhow::Result` in the
+  binary, `thiserror::Error` for library errors callers match on
 - No `todo!()`, `unimplemented!()`, `unreachable!()`; handle every case
 - No `unsafe`, no wildcard imports (`use foo::*`)
 - Names of at least two characters
 - Functions: at most 70 lines, 5 arguments, cognitive complexity 20
-
-## Error Handling
-
-- `anyhow::Result` in the binary, `thiserror::Error` for library errors callers
-  match on. Propagate with `?`, never `unwrap()` or `expect()`.
 
 ## Project Structure
 
@@ -133,10 +127,10 @@ shared helper, never shuffle tokens until the detector loses the scent.
 
 ## JSON Schema
 
-`schema/canibump.schema.json` is generated from the manifest types by
-`canibump schema`, never edited by hand. `tests/it/schema.rs` fails while the
-committed file differs from the generated one; `just schema` regenerates it.
-`just install` also copies it to `~/.config/canibump/`.
+`schema/*.schema.json` come from the manifest, report and state types
+(`canibump schema [manifest|report|state]`), never from a hand edit. A test fails
+while a committed file is stale; `just schema` regenerates them, and
+`just install` copies the manifest schema to `~/.config/canibump/`.
 
 ## Dependency Audits
 
@@ -166,9 +160,10 @@ cites changes.
 under `[Unreleased]`. [cargo-release](https://github.com/crate-ci/cargo-release)
 (`release.toml`) bumps `Cargo.toml`, dates them, runs `scripts/release-hook.sh`,
 which holds every refusal, and commits. The recipe pushes `main`, waits for
-`ci.yml` on it (`scripts/release-ci.sh`) and tags only if it is green. After a
-red run, fix `main` and re-run: the bump stays done. The tag push is the only
-publish path (`release.yml`), so never `cargo publish` by hand.
+`ci.yml` on it (`scripts/release-ci.sh`), which builds every release target
+(`build.yml`), and tags only if it is green. After a red run, fix `main` and
+re-run: the bump stays done. The tag push is the only publish path
+(`release.yml`), so never `cargo publish` by hand.
 
 ## MSRV
 

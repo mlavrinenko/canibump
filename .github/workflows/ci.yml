@@ -88,6 +88,13 @@ jobs:
       - name: Advisories, licenses, bans
         run: nix develop --command just deny
 
+  # Every release target, so `just release` sees a broken one before it tags.
+  # Not on pull requests: the matrix is slow, and only main gets tagged.
+  build:
+    name: Build
+    if: github.event_name != 'pull_request'
+    uses: ./.github/workflows/build.yml
+
   msrv:
     name: MSRV
     runs-on: ubuntu-latest
