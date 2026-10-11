@@ -280,3 +280,21 @@ async fn lists_tags_by_prefix() {
     let tags = github(&server).tags(&source(), "v").await;
     assert_eq!(tags, Ok(vec!["v0.1.0".to_owned(), "v0.2.0".to_owned()]));
 }
+
+#[tokio::test]
+async fn tells_an_issue_from_a_pull_in_the_one_state_call() {
+    let server = MockServer::start_async().await;
+    let issues = issue(&server, 1, json!({"state": "open"})).await;
+    let pulls = pull(&server, 7, "open", None).await;
+    let github = authed(&server);
+    for (number, kind) in [(1, ItemKind::Issue), (7, ItemKind::Pull)] {
+        let item: ItemRef = format!("github:o/r#{number}").parse().expect("valid ref");
+        let found = Item {
+            state: ItemState::Open,
+            kind: Some(kind),
+        };
+        assert_eq!(github.item(&item).await, Ok(found), "#{number}");
+    }
+    assert_eq!(issues.calls_async().await, 1);
+    assert_eq!(pulls.calls_async().await, 1);
+}

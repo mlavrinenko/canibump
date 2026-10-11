@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: proposed(2026, 10, 11),
+  status: done(2026, 10, 11),
 )
 
 == Problem
@@ -53,6 +53,7 @@
 - `src/eval_tests.rs`: the red test first, an open issue in `reached` reading failed.
 - `src/provider/mod.rs`: the tracker reports whether a GitHub `#N` is an issue or a PR next to its state.
 - `src/provider/github.rs`: fill that from the issue's `pull_request` field.
+- `src/provider/memo.rs`: memoize state and kind as one answer, so `item_state` and `item` share a request.
 - `src/eval.rs`: `resolve_commit` fails on an issue whatever its state.
 
 

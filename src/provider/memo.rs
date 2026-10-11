@@ -2,8 +2,8 @@
 //!
 //! A chain may name one PR in several steps, and several blockers may name
 //! the same issue. The registry wraps every tracker and code host here, so
-//! each item's state and each merge commit is fetched once, however many ask
-//! and whichever provider answers. Askers that arrive while the request is
+//! each item's state and kind (one answer) and each merge commit is fetched
+//! once, however many ask and whichever provider answers. Askers that arrive while the request is
 //! in flight wait for it instead of sending their own. A failure is kept
 //! like an answer: a run never asks twice, and every asker hears the same
 //! reason.
@@ -18,7 +18,7 @@ use std::sync::{Arc, Mutex, PoisonError};
 use async_trait::async_trait;
 use tokio::sync::OnceCell;
 
-use super::{CheckError, CodeHost, GitRef, ItemState, Tracker};
+use super::{CheckError, CodeHost, GitRef, Item, ItemState, Tracker};
 use crate::refs::{ItemRef, Source};
 
 /// The answer to one question about one item, asked once.
@@ -52,24 +52,28 @@ impl<V: Clone> Memo<V> {
     }
 }
 
-/// A tracker that reads each item's state once.
+/// A tracker that reads each item once, its state and kind together.
 struct MemoTracker {
     inner: Arc<dyn Tracker>,
-    states: Memo<ItemState>,
+    items: Memo<Item>,
 }
 
 /// `inner`, asked about each item's state once.
 pub(super) fn tracker(inner: Arc<dyn Tracker>) -> Arc<dyn Tracker> {
     Arc::new(MemoTracker {
         inner,
-        states: Memo::new(),
+        items: Memo::new(),
     })
 }
 
 #[async_trait]
 impl Tracker for MemoTracker {
     async fn item_state(&self, item: &ItemRef) -> Result<ItemState, CheckError> {
-        self.states.ask(item, self.inner.item_state(item)).await
+        Ok(self.item(item).await?.state)
+    }
+
+    async fn item(&self, item: &ItemRef) -> Result<Item, CheckError> {
+        self.items.ask(item, self.inner.item(item)).await
     }
 }
 
@@ -114,7 +118,7 @@ mod tests {
 
     use async_trait::async_trait;
 
-    use crate::provider::{CheckError, CodeHost, GitRef, ItemState, Registry, Tracker};
+    use crate::provider::{CheckError, CodeHost, GitRef, Item, ItemState, Registry, Tracker};
     use crate::refs::{ItemRef, Source, SourceKind};
 
     /// Answers every question, counting how often it was asked.
@@ -199,6 +203,20 @@ mod tests {
         assert_eq!(fake.states.load(Ordering::SeqCst), 1);
         assert_eq!(state(&registry, 2).await, Ok(ItemState::Open));
         assert_eq!(fake.states.load(Ordering::SeqCst), 2);
+    }
+
+    #[tokio::test]
+    async fn an_items_state_and_kind_share_one_request() {
+        let (registry, fake) = registry(Counting::default());
+        let tracker = registry.tracker(SourceKind::GitHub).expect("tracker");
+        let first = item(1);
+        let (item, state) = tokio::join!(tracker.item(&first), state(&registry, 1));
+        let open = Item {
+            state: ItemState::Open,
+            kind: None,
+        };
+        assert_eq!((item, state), (Ok(open), Ok(ItemState::Open)));
+        assert_eq!(fake.states.load(Ordering::SeqCst), 1);
     }
 
     #[tokio::test]

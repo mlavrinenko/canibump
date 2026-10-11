@@ -8,7 +8,7 @@ use crate::condition::{
     Bound, Condition, ReachedCondition, StateCondition, Step, VersionCondition, Within,
 };
 use crate::outcome::{Outcome, Status};
-use crate::provider::{CheckError, CodeHost, GitRef, ItemState, Registry};
+use crate::provider::{CheckError, CodeHost, GitRef, ItemKind, ItemState, Registry};
 use crate::refs::{ItemRef, Reachable, Source};
 use crate::version;
 
@@ -144,20 +144,26 @@ async fn resolve_commit(
         }
         Reachable::Item(item) => item,
     };
-    match item_state(item, registry).await? {
-        ItemState::Merged => {}
-        state @ (ItemState::Open | ItemState::ClosedUnmerged) => {
-            return Ok(Err(state_outcome(item, state)));
-        }
-        // Only an issue closes with a reason; it has no merge commit to follow.
-        ItemState::Completed
-        | ItemState::NotPlanned
-        | ItemState::Duplicate
-        | ItemState::ClosedNoReason => {
+    let found = registry.tracker(item.source.kind())?.item(item).await?;
+    // An issue has no merge commit to follow, open or closed. Only an issue
+    // closes with a reason, so those states tell one even with no kind.
+    match (found.state, found.kind) {
+        (_, Some(ItemKind::Issue))
+        | (
+            ItemState::Completed
+            | ItemState::NotPlanned
+            | ItemState::Duplicate
+            | ItemState::ClosedNoReason,
+            _,
+        ) => {
             return Ok(Err(Outcome::new(
                 Status::Failed,
                 format!("{item} is an issue, not a PR; wait on it with state"),
             )));
+        }
+        (ItemState::Merged, _) => {}
+        (state @ (ItemState::Open | ItemState::ClosedUnmerged), _) => {
+            return Ok(Err(state_outcome(item, state)));
         }
     }
     let host = registry.code_host(item.source.kind())?;

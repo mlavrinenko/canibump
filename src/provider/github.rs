@@ -8,7 +8,7 @@ use octocrab::Octocrab;
 use serde::Deserialize;
 use serde::de::DeserializeOwned;
 
-use super::{CheckError, CodeHost, GitRef, ItemState, Tracker};
+use super::{CheckError, CodeHost, GitRef, Item, ItemKind, ItemState, Tracker};
 use crate::refs::{ItemRef, Source};
 
 /// The public API root.
@@ -151,6 +151,11 @@ fn pull_state(state: &ApiState, link: &PullLink) -> ItemState {
 #[async_trait]
 impl Tracker for GitHub {
     async fn item_state(&self, item: &ItemRef) -> Result<ItemState, CheckError> {
+        Ok(self.item(item).await?.state)
+    }
+
+    /// One `/issues/N` call: a PR rides along there as `pull_request`.
+    async fn item(&self, item: &ItemRef) -> Result<Item, CheckError> {
         let (owner, repo) = repo_path(&item.source)?;
         let number = item.number;
         let issue: IssueDto = self
@@ -160,8 +165,14 @@ impl Tracker for GitHub {
             )
             .await?;
         Ok(match &issue.pull_request {
-            Some(link) => pull_state(&issue.state, link),
-            None => issue_state(&issue.state, issue.state_reason.as_deref()),
+            Some(link) => Item {
+                state: pull_state(&issue.state, link),
+                kind: Some(ItemKind::Pull),
+            },
+            None => Item {
+                state: issue_state(&issue.state, issue.state_reason.as_deref()),
+                kind: Some(ItemKind::Issue),
+            },
         })
     }
 }

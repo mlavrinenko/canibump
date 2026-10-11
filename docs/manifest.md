@@ -26,7 +26,8 @@ whole words: `Rejected`, `Won't Fix`, `Invalid` or `Abandoned` read dead,
 `reached` waits for a commit, or a PR's merge commit, to land in a branch, a
 tag, or the first tag matching a pattern, in version order. It reads history
 on GitHub and any git remote, and a target elsewhere fails the manifest. An
-issue has no merge commit and reads `failed`, so wait on it with `state`. A
+issue has no merge commit and reads `failed`, open or closed, so wait on it
+with `state`. A
 short sha matching two commits fails and asks for more digits. One version
 order covers semver, `v`-tags, dates and builds like `b7012`.
 

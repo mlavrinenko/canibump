@@ -7,12 +7,15 @@ use async_trait::async_trait;
 use super::*;
 use crate::condition::{Bound, ReachedCondition, StateCondition, Step, VersionCondition, Within};
 use crate::package::{IndexKind, PackageRef};
-use crate::provider::{CheckError, CodeHost, GitRef, ItemState, PackageIndex, Registry, Tracker};
+use crate::provider::{
+    CheckError, CodeHost, GitRef, Item, ItemKind, ItemState, PackageIndex, Registry, Tracker,
+};
 use crate::refs::{ItemRef, Source, SourceKind};
 
 #[derive(Default)]
 struct Fake {
     states: HashMap<u64, Result<ItemState, CheckError>>,
+    kinds: HashMap<u64, ItemKind>,
     merge_commits: HashMap<u64, String>,
     containing: HashSet<String>,
     tags: Vec<String>,
@@ -30,6 +33,12 @@ impl Tracker for Fake {
             .get(&item.number)
             .cloned()
             .unwrap_or_else(|| Err(CheckError::NotFound(item.to_string())))
+    }
+
+    async fn item(&self, item: &ItemRef) -> Result<Item, CheckError> {
+        let state = self.item_state(item).await?;
+        let kind = self.kinds.get(&item.number).copied();
+        Ok(Item { state, kind })
     }
 }
 
@@ -186,6 +195,7 @@ async fn an_unmerged_pr_waits_or_is_dead() {
     ] {
         let fake = Fake {
             states: HashMap::from([(1, Ok(state))]),
+            kinds: HashMap::from([(1, ItemKind::Pull)]),
             ..Fake::default()
         };
         let (outcome, _) = reach(fake, "github:o/r#1", Within::Tag("v1".to_owned())).await;
@@ -195,14 +205,17 @@ async fn an_unmerged_pr_waits_or_is_dead() {
 
 #[tokio::test]
 async fn an_issue_in_reached_fails_without_reading_history() {
-    for state in [
-        ItemState::Completed,
-        ItemState::NotPlanned,
-        ItemState::Duplicate,
-        ItemState::ClosedNoReason,
+    // A closed issue tells by its state alone; an open one needs its kind.
+    for (state, kind) in [
+        (ItemState::Open, Some(ItemKind::Issue)),
+        (ItemState::Completed, None),
+        (ItemState::NotPlanned, Some(ItemKind::Issue)),
+        (ItemState::Duplicate, None),
+        (ItemState::ClosedNoReason, None),
     ] {
         let fake = Fake {
             states: HashMap::from([(1, Ok(state))]),
+            kinds: kind.map(|kind| (1, kind)).into_iter().collect(),
             ..Fake::default()
         };
         let (outcome, fake) = reach(fake, "github:o/r#1", Within::Tag("v1".to_owned())).await;
@@ -216,6 +229,7 @@ async fn an_issue_in_reached_fails_without_reading_history() {
         );
         assert_eq!(fake.merge_calls.load(Ordering::SeqCst), 0, "{state:?}");
         assert_eq!(fake.contains_calls.load(Ordering::SeqCst), 0, "{state:?}");
+        assert_eq!(fake.state_calls.load(Ordering::SeqCst), 1, "{state:?}");
     }
 }
 
