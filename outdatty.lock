@@ -51,13 +51,12 @@ groups:
     dependents:
       README.md: f1a49c06ba4c3d1cd800873180b672ab3e6a11ab17816a819b2c9505c3e6557a
       docs/manifest.md: 62e3e0dc7afb3341bb7e140cef1ed03e7f3e988350fdc829a82367853640bfbd
-      www/index.html: 1bd676c817657eae9bc859418840f1cc444bad177099363edf7225265228b891
   dev-docs:
     source:
       .config/nextest.toml: ec97d2444d9bf38aae8499d53eac3ffbbab47593637e3a324452ee72bec0ef0b
       .just/scripts/fork.sh: e9d65629510264611ef912cfb6583c1f7fd874f811630471e7ecb426091a7bb3
       .just/scripts/integrate.sh: fff6cf9c3839a2314e33745ebad19c455e10a9e8a2073b807ae80d4c3bf3ac53
-      .mmz/config.yaml: 2b2d84d67e442228d0608c5a740c52e3e2cc4055445d84b7358fc92e14a49d7b
+      .mmz/config.yaml: a95f71ec099100d0604cae74fb9b0e37ff24363e811cf3fa45eadfb7b5f562e3
       Justfile: 86b1ae57b87e0b90d04734305fbf1007f067655e194c673fa38fabb478a07154
       flake.nix: c823c1bf916d012c0c51f00988f87c6fc28f864357b63f668a01612b11ccb33e
     dependents:

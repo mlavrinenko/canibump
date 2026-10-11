@@ -13,7 +13,6 @@
 require_tracked:
   - "src/**"
   - "docs/**"
-  - "www/**"
   - "README.md"
   - "CHANGELOG.md"
   - "CONTRIBUTING.md"
@@ -31,7 +30,6 @@ groups:
     dependents:
       - README.md
       - docs/manifest.md
-      - www/index.html
 
   # The JSON schema is generated from the manifest types, so a source change
   # flags the committed file and the docs that show how to wire it in.
