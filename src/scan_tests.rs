@@ -249,3 +249,40 @@ fn a_ref_may_name_a_numbered_group() {
         ["a.nix:1 github:o/r#2 (n)"]
     );
 }
+
+#[test]
+fn reads_a_linked_file_but_never_enters_a_linked_directory_or_git() {
+    let dir = TempDir::new().expect("tempdir");
+    let outside = TempDir::new().expect("tempdir");
+    std::fs::write(outside.path().join("store.nix"), PIN).expect("write");
+    std::os::unix::fs::symlink(outside.path(), dir.path().join("result")).expect("link dir");
+    std::os::unix::fs::symlink(
+        outside.path().join("store.nix"),
+        dir.path().join("linked.nix"),
+    )
+    .expect("link file");
+    std::fs::create_dir(dir.path().join(".git")).expect("mkdir");
+    std::fs::write(dir.path().join(".git/hook.nix"), PIN).expect("write");
+    let manifest_path = dir.path().join("canibump.toml");
+    let manifest = Manifest::parse(NIX).expect("valid");
+    let files: Vec<PathBuf> = unlisted(&manifest, &manifest_path)
+        .into_iter()
+        .map(|hit| hit.file)
+        .collect();
+    assert_eq!(files, [PathBuf::from("linked.nix")]);
+}
+
+#[test]
+fn an_exclude_ending_in_globstar_prunes_its_directory() {
+    let scan =
+        Manifest::parse("[scan]\npaths = [\"**/*\"]\nexclude = [\"var/**\", \"tasks/*.typ\"]\n")
+            .expect("valid")
+            .scan
+            .expect("scan");
+    assert!(scan.prunes(Path::new("var")));
+    assert!(!scan.prunes(Path::new("variable")));
+    assert!(
+        !scan.prunes(Path::new("tasks")),
+        "tasks/sub/x.typ is not excluded"
+    );
+}

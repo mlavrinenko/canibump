@@ -16,7 +16,9 @@ waiting   llama-blocking-sync  github:ggml-org/llama.cpp#26487 is open
 unlisted  hosts/gpu.nix:41     github:NixOS/nixpkgs#412345 has no blocker
 ```
 
-`*` stays inside a directory and `**` crosses them. The manifest itself is
+`*` stays inside a directory and `**` crosses them, but never into `.git` or
+a symlinked directory, so a Nix `result` link can't drag in the store. An
+`exclude` ending in `/**` skips its directory unread. The manifest itself is
 never read, and neither is a line holding `canibump:ignore`, for a link
 that's just background reading. A file that isn't UTF-8 is skipped. Only a
 check scans, so `canibump status` prints no `unlisted` line.

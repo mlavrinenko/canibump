@@ -61,6 +61,8 @@ pub struct Scan {
     paths: Vec<Pattern>,
     /// Which of those to skip.
     exclude: Vec<Pattern>,
+    /// Directories to skip whole: each `exclude` ending in `/**`, minus it.
+    pruned: Vec<Pattern>,
     /// The catchers that are on, built-ins first.
     catchers: Vec<Catcher>,
 }
@@ -74,6 +76,21 @@ impl PartialEq for Scan {
 }
 
 impl Eq for Scan {}
+
+impl Scan {
+    /// Whether an `exclude` ending in `/**` skips the whole directory `dir`.
+    fn prunes(&self, dir: &Path) -> bool {
+        self.pruned
+            .iter()
+            .any(|skip| skip.matches_path_with(dir, MATCH))
+    }
+
+    /// Whether `paths` takes the file and `exclude` leaves it.
+    fn wants(&self, file: &Path) -> bool {
+        let matches = |pattern: &Pattern| pattern.matches_path_with(file, MATCH);
+        self.paths.iter().any(matches) && !self.exclude.iter().any(matches)
+    }
+}
 
 /// A regex that turns a link into a manifest ref.
 #[derive(Debug, Clone)]
@@ -139,9 +156,16 @@ impl RawScan {
         if self.paths.is_empty() {
             return Err("scan.paths: list at least one glob of files to read".to_owned());
         }
+        let pruned: Vec<String> = self
+            .exclude
+            .iter()
+            .filter_map(|text| text.strip_suffix("/**"))
+            .map(str::to_owned)
+            .collect();
         Ok(Scan {
             paths: globs("paths", &self.paths)?,
             exclude: globs("exclude", &self.exclude)?,
+            pruned: globs("exclude", &pruned)?,
             catchers: catchers(self.catchers)?,
         })
     }
@@ -239,7 +263,10 @@ pub fn unlisted(manifest: &Manifest, manifest_path: &Path) -> Vec<Hit> {
         return Vec::new();
     };
     let listed = listed(manifest);
-    let root = manifest_path.parent().unwrap_or_else(|| Path::new(""));
+    let root = manifest_path
+        .parent()
+        .filter(|dir| !dir.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
     let catchers: Vec<&Catcher> = scan.catchers.iter().collect();
     files(scan, root, manifest_path)
         .into_iter()
@@ -280,34 +307,36 @@ fn collect(condition: &Condition, refs: &mut HashSet<String>) {
 /// `root` and sorted.
 fn files(scan: &Scan, root: &Path, manifest_path: &Path) -> BTreeSet<PathBuf> {
     let manifest = manifest_path.canonicalize().ok();
-    let prefix = Pattern::escape(&root.to_string_lossy());
     let mut found = BTreeSet::new();
-    for pattern in &scan.paths {
-        let full = if prefix.is_empty() {
-            pattern.as_str().to_owned()
-        } else {
-            format!("{prefix}/{}", pattern.as_str())
+    let mut dirs = vec![PathBuf::new()];
+    while let Some(dir) = dirs.pop() {
+        let entries = match std::fs::read_dir(root.join(&dir)) {
+            Ok(entries) => entries,
+            Err(error) => {
+                eprintln!(
+                    "canibump: warning: scan: cannot list {}: {error}",
+                    root.join(&dir).display()
+                );
+                continue;
+            }
         };
-        let Ok(paths) = glob::glob_with(&full, MATCH) else {
-            continue;
-        };
-        for path in paths {
-            match path {
-                Ok(path) if path.is_file() && path.canonicalize().ok() != manifest => {
-                    let relative = path.strip_prefix(root).unwrap_or(&path).to_owned();
-                    found.insert(relative);
+        for entry in entries.flatten() {
+            let relative = dir.join(entry.file_name());
+            // A symlink's own type: a link to a directory is not one, so the
+            // walk never leaves the tree, say into /nix/store.
+            let is_dir = entry.file_type().is_ok_and(|kind| kind.is_dir());
+            if is_dir {
+                if relative != Path::new(".git") && !scan.prunes(&relative) {
+                    dirs.push(relative);
                 }
-                Ok(_) => {}
-                Err(error) => eprintln!("canibump: warning: scan: {error}"),
+            } else if scan.wants(&relative)
+                && root.join(&relative).is_file()
+                && root.join(&relative).canonicalize().ok() != manifest
+            {
+                found.insert(relative);
             }
         }
     }
-    found.retain(|file| {
-        !scan
-            .exclude
-            .iter()
-            .any(|skip| skip.matches_path_with(file, MATCH))
-    });
     found
 }
 
