@@ -1,7 +1,8 @@
 # canibump.toml
 
 Everything a manifest can say. The [README](../README.md) has the quick tour,
-and [scan.md](scan.md) the `[scan]` table that flags unlisted links.
+and [scan.md](scan.md) the `[scan]` table that flags unlisted links, plus a
+blocker's `sites` for files that take no comment.
 
 ## Conditions
 

@@ -232,7 +232,11 @@ fn the_json_report_lists_each_unmarked_blocker() {
         .expect("runs");
     let report: Value = serde_json::from_slice(&output.stdout).expect("json");
     assert_eq!(report.get("exit_code"), Some(&json!(42)));
-    assert_eq!(report.get("unmarked"), Some(&json!(["waits", "dead"])));
+    let detail = |id| json!({"id": id, "detail": format!("no canibump:{id} in the scanned files")});
+    assert_eq!(
+        report.get("unmarked"),
+        Some(&json!([detail("waits"), detail("dead")]))
+    );
     let (_, report) = crate::common::waiting_json_run();
     assert_eq!(report.get("unmarked"), Some(&json!([])));
 }
@@ -247,4 +251,26 @@ fn status_scans_as_a_check_does() {
         .code(56)
         .stdout(predicate::str::contains("unlisted  pin.nix:1"))
         .stdout(predicate::str::contains("unmarked  waits"));
+}
+
+#[test]
+fn a_site_declared_in_the_manifest_places_a_workaround_until_it_goes() {
+    let sites = "sites = [{ file = \"package.json\", pattern = '\"left-pad\"' }]\n";
+    let repo = repo_of(&["bumpable"], "");
+    let manifest = repo.dir.path().join("canibump.toml");
+    let text = std::fs::read_to_string(&manifest).expect("read") + sites;
+    std::fs::write(&manifest, text).expect("write");
+    let pin = repo.dir.path().join("package.json");
+    std::fs::write(&pin, "{\n  \"left-pad\": \"=1.3.0\"\n}\n").expect("write");
+    repo.cmd()
+        .assert()
+        .code(9)
+        .stdout(predicate::str::contains("\n          at package.json:2\n"));
+    std::fs::write(&pin, "{}\n").expect("write");
+    repo.cmd()
+        .assert()
+        .code(41)
+        .stdout(predicate::str::contains(
+            "unmarked  bumpable  no line of package.json matches `\"left-pad\"`\n",
+        ));
 }

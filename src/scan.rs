@@ -17,6 +17,7 @@ use serde::{Deserialize, Serialize};
 use crate::condition::{Condition, ReachedCondition, StateCondition};
 use crate::manifest::Manifest;
 use crate::refs::Reachable;
+use crate::sites::{self, Unmarked};
 
 /// A line holding this is never reported, and marks nothing.
 const IGNORE: &str = "canibump-ignore";
@@ -263,8 +264,8 @@ pub struct Hit {
     pub catcher: String,
 }
 
-/// A line of a scanned file holding a blocker's marker.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+/// A line holding a blocker's marker, or matching a site it declares.
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Serialize, JsonSchema)]
 pub struct Site {
     /// The file, relative to the manifest's directory.
     pub file: PathBuf,
@@ -280,8 +281,8 @@ pub struct Findings {
     pub hits: Vec<Hit>,
     /// Each marked blocker's sites, by file and line.
     pub sites: BTreeMap<String, Vec<Site>>,
-    /// The blockers no marker names, in manifest order.
-    pub unmarked: Vec<String>,
+    /// The blockers whose workaround no site places, in manifest order.
+    pub unmarked: Vec<Unmarked>,
 }
 
 /// What `manifest`'s `[scan]` finds. A file that is not UTF-8 is skipped;
@@ -290,32 +291,26 @@ pub struct Findings {
 #[must_use]
 pub fn find(manifest: &Manifest, manifest_path: &Path) -> Findings {
     let mut findings = Findings::default();
-    let Some(scan) = &manifest.scan else {
-        return findings;
-    };
-    let lookout = Lookout {
-        scan,
-        listed: listed(manifest),
-        ids: manifest
-            .blockers
-            .iter()
-            .map(|one| one.id.as_str())
-            .collect(),
-    };
     let root = manifest_path
         .parent()
         .filter(|dir| !dir.as_os_str().is_empty())
         .unwrap_or_else(|| Path::new("."));
-    for file in files(scan, root, manifest_path) {
-        let text = read(&root.join(&file));
-        lookout.read(&file, &text, &mut findings);
+    if let Some(scan) = &manifest.scan {
+        let lookout = Lookout {
+            scan,
+            listed: listed(manifest),
+            ids: manifest
+                .blockers
+                .iter()
+                .map(|one| one.id.as_str())
+                .collect(),
+        };
+        for file in files(scan, root, manifest_path) {
+            let text = read(&root.join(&file));
+            lookout.read(&file, &text, &mut findings);
+        }
     }
-    findings.unmarked = manifest
-        .blockers
-        .iter()
-        .filter(|one| !findings.sites.contains_key(&one.id))
-        .map(|one| one.id.clone())
-        .collect();
+    sites::settle(manifest, root, &mut findings);
     findings
 }
 

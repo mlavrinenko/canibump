@@ -18,6 +18,7 @@ use crate::condition::{Condition, check_steps, parse_condition};
 use crate::report::Actionable;
 use crate::scan::{RawScan, Scan};
 use crate::schema::BlockerSchema;
+use crate::sites::{self, Declared};
 
 const DEFAULT_TTL: SignedDuration = SignedDuration::from_hours(6);
 
@@ -58,6 +59,8 @@ pub struct Blocker {
     pub id: String,
     /// What workaround it guards.
     pub note: String,
+    /// Where it sits in files that take no comment.
+    pub sites: Vec<Declared>,
     /// When the workaround can go.
     pub condition: Condition,
     /// The condition's TOML, so a cached result is dropped once it changes.
@@ -285,12 +288,17 @@ fn parse_blocker(index: usize, line: usize, mut table: Table) -> Result<Blocker,
     let note = take_string(&mut table, "note")
         .ok_or_else(|| fail("missing `note`: say what workaround it guards".to_owned()))?
         .map_err(fail)?;
+    let sites = match table.remove("sites") {
+        Some(value) => sites::parse(value).map_err(fail)?,
+        None => Vec::new(),
+    };
     let spec = toml::to_string(&table).map_err(|error| fail(error.to_string()))?;
     let condition = parse_condition(table).map_err(fail)?;
     check_steps(&condition).map_err(fail)?;
     Ok(Blocker {
         id,
         note,
+        sites,
         condition,
         spec,
     })

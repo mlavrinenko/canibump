@@ -19,8 +19,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   bumpable or dead line prints each marked spot under it, `--json` gives every
   blocker its `sites`, and a marker naming no blocker prints as `unlisted`.
 - With `[scan]`, a blocker no marker names prints as `unmarked`, adds 32 to
-  the exit code and counts by default. `--json` lists those ids under
-  `unmarked`, and `canibump status` scans too.
+  the exit code and counts by default. `--json` lists each under `unmarked`
+  with its `id` and `detail`, and `canibump status` scans too.
+- A blocker's `sites = [{ file, pattern }]` places a workaround in a file that
+  takes no comment, like `package.json`. Each line the regex matches is a
+  site, and a site that matches nothing, or a missing file, prints as
+  `unmarked`.
 
 - An unlisted link adds 16 to the exit code and counts by default, and
   `fail-on` takes `unlisted`. `--json` lists each under `unlisted`.

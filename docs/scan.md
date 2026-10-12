@@ -67,8 +67,34 @@ unmarked  serde-pin  no canibump:serde-pin in the scanned files
 
 It adds 32 to the exit code, so one alone exits 40. Mark the workaround,
 widen `paths`, or drop the blocker. Leave `unmarked` out of `fail-on` to let
-it pass. `--json` lists the ids under `unmarked`. Without `[scan]` nothing is
-read, so nothing is unmarked.
+it pass. `--json` lists each under `unmarked` with its `id` and `detail`.
+Without `[scan]` only declared sites are read, so only they turn up unmarked.
+
+## Files that take no comment
+
+JSON has no comments, so a pin in `package.json` can't carry a marker. Point
+the blocker at it instead. `file` is relative to the manifest and `pattern`
+is a regex run over each line.
+
+```toml
+[[blocker]]
+id = "left-pad-pin"
+note = "unpin left-pad"
+state = "github:left-pad/left-pad#42"
+sites = [{ file = "package.json", pattern = '"left-pad": "=1\.3\.0"' }]
+```
+
+Every matching line is a site, listed with the markers. Declared sites are
+read with or without `[scan]`, and a blocker that declares any never needs a
+marker too. Once the pin goes, so does the match.
+
+```console
+$ canibump
+unmarked  left-pad-pin  no line of package.json matches `"left-pad": "=1\.3\.0"`
+```
+
+A missing file reads `package.json is missing`, also `unmarked`. A bad
+regex fails the manifest, naming the blocker.
 
 ## Catchers
 

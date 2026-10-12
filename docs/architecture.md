@@ -17,7 +17,8 @@ canibump reads a manifest, asks each upstream once, and saves what it found.
 5. **Scan** (`scan.rs`). With a `[scan]`, read the listed files offline for
    upstream links and `canibump:<id>` markers. A marker some blocker has is
    one of its sites; a link or marker no blocker names is unlisted, and a
-   blocker with no site is unmarked.
+   blocker with no site is unmarked. `sites.rs` reads the sites a blocker
+   declares in files that take no comment.
 6. **Report** (`report.rs`). One line per blocker or `--json`, a bumpable or
    dead one with its sites under it, an `unlisted` or `unmarked` line per
    scan find, and the exit code. The state file gets rewritten.

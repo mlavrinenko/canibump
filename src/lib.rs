@@ -25,4 +25,5 @@ mod run;
 mod scan;
 #[doc(hidden)]
 pub mod schema;
+mod sites;
 mod version;

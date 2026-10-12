@@ -47,7 +47,7 @@ bumpable  serde-pin            github:serde-rs/serde#2590 (110af31) is in v1.0.1
 | `dead` | closed unmerged, wontfix, duplicate or with no reason, so rethink the workaround |
 | `failed` | the check broke (network, auth, rate limit), never counts as landed |
 | `unlisted` | a link or marker in your files no blocker names, see [forgotten workarounds](#forgotten-workarounds) |
-| `unmarked` | a blocker no `canibump:<id>` in your files names, so its workaround may be gone |
+| `unmarked` | a blocker nothing in your files places, no `canibump:<id>` and no matching declared site, so its workaround may be gone |
 
 ## Possible conditions
 

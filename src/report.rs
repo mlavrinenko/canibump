@@ -14,6 +14,7 @@ use thiserror::Error;
 use crate::cache::Entry;
 use crate::outcome::Status;
 use crate::scan::{Findings, Site};
+use crate::sites::Unmarked;
 
 /// Exit code: nothing counted showed up, every check ran.
 pub const EXIT_OK: u8 = 0;
@@ -176,7 +177,7 @@ pub fn lines(entries: &[Entry], sites: &BTreeMap<String, Vec<Site>>, now: Timest
 }
 
 /// What `[scan]` found: one `unlisted` line per hit, where and the ref no
-/// blocker names, then one `unmarked` line per blocker no marker names.
+/// blocker names, then one `unmarked` line per blocker no site places.
 ///
 /// The status word carries ANSI styles, like [`lines`].
 #[must_use]
@@ -196,12 +197,9 @@ pub fn scan_lines(findings: &Findings) -> String {
             hit.reference
         );
     }
-    let width = widest(findings.unmarked.iter());
-    for id in &findings.unmarked {
-        let _ = writeln!(
-            out,
-            "{style}unmarked{style:#}  {id:width$}  no canibump:{id} in the scanned files"
-        );
+    let width = widest(findings.unmarked.iter().map(|one| &one.id));
+    for Unmarked { id, detail } in &findings.unmarked {
+        let _ = writeln!(out, "{style}unmarked{style:#}  {id:width$}  {detail}");
     }
     out
 }
@@ -260,8 +258,8 @@ pub struct Report<'a> {
     /// One row per upstream link or marker `[scan]` found that no blocker
     /// names.
     pub unlisted: Vec<Unlisted<'a>>,
-    /// The blockers `[scan]` found no `canibump:<id>` for.
-    pub unmarked: Vec<&'a str>,
+    /// The blockers whose workaround no site places, and why.
+    pub unmarked: Vec<&'a Unmarked>,
 }
 
 /// An upstream link no blocker lists, in the `--json` document.
@@ -352,7 +350,7 @@ impl<'a> Report<'a> {
                     catcher: &hit.catcher,
                 })
                 .collect(),
-            unmarked: findings.unmarked.iter().map(String::as_str).collect(),
+            unmarked: findings.unmarked.iter().collect(),
             entries,
             ..self
         }

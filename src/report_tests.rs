@@ -6,6 +6,7 @@ use std::collections::BTreeMap;
 use jiff::SignedDuration;
 
 use crate::scan::{Findings, Hit, Site};
+use crate::sites::Unmarked;
 
 fn now() -> Timestamp {
     Timestamp::from_second(1_800_000_000).expect("in range")
@@ -233,7 +234,13 @@ fn findings(unlisted: bool, unmarked: &[&str]) -> Findings {
     Findings {
         hits: if unlisted { vec![hit] } else { Vec::new() },
         sites: BTreeMap::new(),
-        unmarked: unmarked.iter().map(|id| (*id).to_owned()).collect(),
+        unmarked: unmarked
+            .iter()
+            .map(|id| Unmarked {
+                id: (*id).to_owned(),
+                detail: format!("no canibump:{id} in the scanned files"),
+            })
+            .collect(),
     }
 }
 

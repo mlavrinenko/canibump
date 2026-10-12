@@ -52,7 +52,7 @@
       "type": "object"
     },
     "Site": {
-      "description": "A line of a scanned file holding a blocker's marker.",
+      "description": "A line holding a blocker's marker, or matching a site it declares.",
       "properties": {
         "file": {
           "description": "The file, relative to the manifest's directory.",
@@ -125,6 +125,24 @@
         "catcher"
       ],
       "type": "object"
+    },
+    "Unmarked": {
+      "description": "A blocker [`crate::scan::find`] lists as unmarked, and why.",
+      "properties": {
+        "detail": {
+          "description": "Why, like `no canibump:<id> in the scanned files`.",
+          "type": "string"
+        },
+        "id": {
+          "description": "The blocker id.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "detail"
+      ],
+      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -160,9 +178,9 @@
       "type": "array"
     },
     "unmarked": {
-      "description": "The blockers `[scan]` found no `canibump:<id>` for.",
+      "description": "The blockers whose workaround no site places, and why.",
       "items": {
-        "type": "string"
+        "$ref": "#/$defs/Unmarked"
       },
       "type": "array"
     }

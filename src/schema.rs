@@ -15,6 +15,7 @@ use schemars::{JsonSchema, schema_for};
 
 use crate::condition::{RawReached, RawState, RawVersion};
 use crate::manifest::RawManifest;
+use crate::sites::RawSite;
 
 /// One workaround waiting on something upstream: an `id`, a `note` and
 /// exactly one condition.
@@ -49,6 +50,9 @@ pub(crate) struct BlockerOf<C> {
     id: String,
     /// What workaround it guards.
     note: String,
+    /// Where the workaround sits in files that take no comment, like JSON.
+    #[serde(default)]
+    sites: Vec<RawSite>,
     #[serde(flatten)]
     condition: C,
 }

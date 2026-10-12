@@ -74,6 +74,13 @@
         "note": {
           "description": "What workaround it guards.",
           "type": "string"
+        },
+        "sites": {
+          "description": "Where the workaround sits in files that take no comment, like JSON.",
+          "items": {
+            "$ref": "#/$defs/DeclaredSite"
+          },
+          "type": "array"
         }
       },
       "required": [
@@ -102,6 +109,13 @@
         "note": {
           "description": "What workaround it guards.",
           "type": "string"
+        },
+        "sites": {
+          "description": "Where the workaround sits in files that take no comment, like JSON.",
+          "items": {
+            "$ref": "#/$defs/DeclaredSite"
+          },
+          "type": "array"
         }
       },
       "required": [
@@ -131,6 +145,13 @@
         "reached": {
           "description": "The commit or PR: `github:owner/repo#N`, `github:owner/repo@<sha>` or\n`git:<remote url>@<sha>`.",
           "type": "string"
+        },
+        "sites": {
+          "description": "Where the workaround sits in files that take no comment, like JSON.",
+          "items": {
+            "$ref": "#/$defs/DeclaredSite"
+          },
+          "type": "array"
         }
       },
       "required": [
@@ -153,6 +174,13 @@
         "note": {
           "description": "What workaround it guards.",
           "type": "string"
+        },
+        "sites": {
+          "description": "Where the workaround sits in files that take no comment, like JSON.",
+          "items": {
+            "$ref": "#/$defs/DeclaredSite"
+          },
+          "type": "array"
         },
         "state": {
           "description": "The item: `github:owner/repo#N`, `gitlab:group/project!N`, `codeberg:owner/repo#N`,\n`gitea:host/owner/repo#N`, `forgejo:host/owner/repo#N`, `redmine:host#N` or\n`jira:host#KEY-N`.",
@@ -189,6 +217,13 @@
             "string",
             "null"
           ]
+        },
+        "sites": {
+          "description": "Where the workaround sits in files that take no comment, like JSON.",
+          "items": {
+            "$ref": "#/$defs/DeclaredSite"
+          },
+          "type": "array"
         },
         "srcname": {
           "description": "The package name in that repo, when it ships several.",
@@ -263,6 +298,25 @@
       },
       "required": [
         "id"
+      ],
+      "type": "object"
+    },
+    "DeclaredSite": {
+      "additionalProperties": false,
+      "description": "Where the workaround sits in a file that takes no comment, so no\n`canibump:<id>` marker can.",
+      "properties": {
+        "file": {
+          "description": "The file, relative to the manifest, like `\"package.json\"`.",
+          "type": "string"
+        },
+        "pattern": {
+          "description": "A regex run over each line; each line it matches is a site, like\n`'\"left-pad\": \"=1\\.3\\.0\"'`. Matching none prints `unmarked`.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file",
+        "pattern"
       ],
       "type": "object"
     },

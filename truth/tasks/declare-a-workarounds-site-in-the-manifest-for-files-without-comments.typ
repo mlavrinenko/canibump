@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: proposed(2026, 10, 13),
+  status: done(2026, 10, 13),
   links: depends-on(
     "report-a-blocker-whose-workaround-has-no-site-as-unmarked.typ",
   ),
@@ -44,15 +44,16 @@
 - 🟢 A blocker takes `sites = [{ file = "package.json", pattern = '"left-pad": "=1\.3\.0"' }]`: a path relative to the manifest and a regex run per line.
 - 🟢 Each line it matches is a site, printed and listed like a marker's.
 - 🟢 A declared site that matches nothing prints `unmarked`, so a removed pin still shows up.
-- 🟢 A file that is missing or a bad regex fails the manifest, naming the blocker.
+- 🟢 A missing file is a site that matches nothing: `unmarked  a  package.json is missing`. A bad regex fails the manifest, naming the blocker.
+- 🟢 Declared sites are read with or without `[scan]`. A blocker that declares sites is never unmarked for lacking a marker.
 
 
 == Changes
 
-- `src/manifest_tests.rs`: the red tests first: a declared site parses, a bad regex names its blocker.
+- `src/sites_tests.rs`: the red tests first: a declared site parses, a bad regex names its blocker.
 - `src/scan_tests.rs`: a matching line is a site, no match leaves the blocker unmarked.
-- `src/manifest.rs`, `src/schema.rs`: the `sites` key.
-- `src/scan.rs`: read declared files whether or not `paths` matches them.
+- `src/sites.rs`: parse the `sites` key and read the declared files; `src/manifest.rs` and `src/schema.rs` take it.
+- `src/scan.rs`, `src/report.rs`: fold declared sites into the findings; an unmarked line carries its reason.
 - `docs/scan.md`, `CHANGELOG.md`, `schema/*`.
 
 
