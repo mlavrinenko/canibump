@@ -78,7 +78,7 @@ Steps nest, and an `id` hands the tag a `reached` step found to a later step.
 ```toml
 [[blocker]]
 id = "llama-blocking-sync"
-note = "pkgs/llama-cpp.nix: drop the GGML_CUDA_BLOCKING_SYNC postPatch"
+note = "drop the GGML_CUDA_BLOCKING_SYNC postPatch"
 
 [[blocker.all]]
 id = "merged"
@@ -101,10 +101,9 @@ $ canibump
 waiting   llama-blocking-sync  merged: github:ggml-org/llama.cpp#26487 is open
 ```
 
-A `step` reference may only point at a step that surely held by then: an
-earlier step of the same `all`, or of an enclosing one. An `any` may resolve
-through another step, so canibump refuses a manifest that reaches into it.
-Put both steps in one `all`.
+A `step` reference may only point at an earlier step of the same `all`, or
+of an enclosing one, since those surely held. An `any` may resolve through
+another step, so canibump refuses a reference into it. Put both in one `all`.
 
 A dead or failed step never lets the chain read bumpable. In an `any`, failed
 beats waiting, and the whole thing is dead only when every step is.
@@ -117,18 +116,17 @@ read the state offline.
 
 ```json
 {"version": 1, "manifest": "/home/me/repo/canibump.toml", "entries": [
-  {"id": "serde-pin", "note": "Cargo.toml: unpin serde", "status": "bumpable",
+  {"id": "serde-pin", "note": "unpin serde", "status": "bumpable",
    "detail": "github:serde-rs/serde#2590 (110af31) is in v1.0.185",
    "checked_at": "2026-10-10T12:00:00Z", "fresh_until": "2026-10-10T18:00:00Z",
    "spec": "reached = ..."}]}
 ```
 
-Results stay fresh for `[settings] ttl = "6h"`, the default. It takes weeks,
-days, hours, minutes and seconds (`"1d"`, `"2w"`, `"1d12h"`), a day being 24
-hours. A failed check is never fresh, so the next run retries it. Move the
-file with `--cache FILE` or `[settings] cache = "FILE"`, relative to the
-manifest. A state file canibump can't parse is dropped with a warning, and the
-run rewrites it.
+Results stay fresh for `[settings] ttl = "6h"`, the default. It takes weeks
+down to seconds (`"2w"`, `"1d12h"`), a day being 24 hours. A failed check is
+never fresh, so the next run retries it. `--cache FILE` or `[settings] cache`
+moves the file, relative to the manifest. A state file canibump can't parse
+is dropped with a warning and rewritten.
 
 ## Exit codes
 
@@ -147,20 +145,20 @@ fail-on = ["failed"]  # dead and bumpable print, the run still exits 0
 # fail-on = []        # never fail
 ```
 
-`canibump status <id>` answers for one blocker from the state file alone. 0 is
-bumpable, 1 waiting, and 2 anything else: dead, failed, an unknown id, a
-result checked against an older condition, and every error. It prints that
-blocker's line, or with `--json` a report holding only it.
+`canibump status <id>` answers for one blocker without network. 0 is
+bumpable, 1 waiting, and 2 anything else, so dead, failed, an unknown id, an
+outdated condition and every error. It prints that blocker's line with its
+sites under it, or with `--json` a report holding only it.
 
 ```console
 $ canibump status serde-pin; echo $?
-bumpable  serde-pin  github:serde-rs/serde#2590 merged (Cargo.toml: unpin serde)
+bumpable  serde-pin  github:serde-rs/serde#2590 merged (unpin serde)
+          at Cargo.toml:12
 0
 ```
 
-A bare `canibump status` prints the state file minus what the manifest moved
-past. A result checked against an older condition is left out with a warning,
-and a dropped blocker is skipped.
+A bare `canibump status` prints the state file with every line's sites,
+skipping dropped blockers and warning about outdated conditions.
 
 ## Auth
 

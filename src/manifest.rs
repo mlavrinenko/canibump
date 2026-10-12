@@ -15,6 +15,7 @@ use thiserror::Error;
 use toml::{Spanned, Table, Value};
 
 use crate::condition::{Condition, check_steps, parse_condition};
+use crate::outcome::Status;
 use crate::report::Actionable;
 use crate::scan::{RawScan, Scan};
 use crate::schema::BlockerSchema;
@@ -50,6 +51,8 @@ pub struct Settings {
     pub cache: Option<PathBuf>,
     /// What fails the run; `None` counts all five, `Some([])` nothing.
     pub fail_on: Option<Vec<Actionable>>,
+    /// Which lines print their sites; `None` leaves it to the command.
+    pub sites_on: Option<Vec<Status>>,
 }
 
 /// One workaround waiting on something upstream.
@@ -190,6 +193,12 @@ pub(crate) struct RawSettings {
     /// Defaults to all five; `[]` never fails. `--fail-on` overrides it.
     #[serde(rename = "fail-on")]
     fail_on: Option<Vec<Actionable>>,
+    /// Which lines print the sites of their workaround under them: any of
+    /// `"waiting"`, `"bumpable"`, `"dead"` and `"failed"`. A check defaults
+    /// to bumpable and dead, `canibump status` to all four. `--sites-on`
+    /// overrides it.
+    #[serde(rename = "sites-on")]
+    sites_on: Option<Vec<Status>>,
 }
 
 impl Manifest {
@@ -244,6 +253,7 @@ impl Manifest {
                 ttl,
                 cache: raw.settings.cache,
                 fail_on: raw.settings.fail_on,
+                sites_on: raw.settings.sites_on,
             },
             blockers,
             scan,

@@ -373,6 +373,16 @@
             "null"
           ]
         },
+        "sites-on": {
+          "description": "Which lines print the sites of their workaround under them: any of\n`\"waiting\"`, `\"bumpable\"`, `\"dead\"` and `\"failed\"`. A check defaults\nto bumpable and dead, `canibump status` to all four. `--sites-on`\noverrides it.",
+          "items": {
+            "$ref": "#/$defs/Status"
+          },
+          "type": [
+            "array",
+            "null"
+          ]
+        },
         "ttl": {
           "description": "How long a result stays fresh before `canibump` re-checks it, like\n`\"6h\"`, `\"30m\"` or `\"1d\"`. Takes weeks, days, hours, minutes and\nseconds, a day being 24 hours. Defaults to 6 hours.",
           "type": [
@@ -382,6 +392,31 @@
         }
       },
       "type": "object"
+    },
+    "Status": {
+      "description": "The state of a blocker, or of one step of it.",
+      "oneOf": [
+        {
+          "const": "waiting",
+          "description": "Upstream has not landed it yet.",
+          "type": "string"
+        },
+        {
+          "const": "bumpable",
+          "description": "Landed: the workaround can go.",
+          "type": "string"
+        },
+        {
+          "const": "dead",
+          "description": "Will not land as declared (closed unmerged, wontfix, duplicate).",
+          "type": "string"
+        },
+        {
+          "const": "failed",
+          "description": "The check itself failed (network, auth, rate limit).",
+          "type": "string"
+        }
+      ]
     },
     "Step": {
       "anyOf": [

@@ -20,12 +20,12 @@ it for bash, zsh and fish.
 ```toml
 [[blocker]]
 id = "llama-blocking-sync"
-note = "pkgs/llama-cpp.nix: drop the GGML_CUDA_BLOCKING_SYNC postPatch"
+note = "drop the GGML_CUDA_BLOCKING_SYNC postPatch"
 state = "github:ggml-org/llama.cpp#26487"
 
 [[blocker]]
 id = "serde-pin"
-note = "Cargo.toml: unpin serde"
+note = "unpin serde"
 reached = "github:serde-rs/serde#2590"
 in = { tags = "v*" }
 ```
@@ -35,7 +35,7 @@ in = { tags = "v*" }
 ```console
 $ canibump
 waiting   llama-blocking-sync  github:ggml-org/llama.cpp#26487 is open
-bumpable  serde-pin            github:serde-rs/serde#2590 (110af31) is in v1.0.185 (Cargo.toml: unpin serde)
+bumpable  serde-pin            github:serde-rs/serde#2590 (110af31) is in v1.0.185 (unpin serde)
 ```
 
 ## Possible statuses

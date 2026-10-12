@@ -41,6 +41,23 @@ why an id takes only ASCII letters, digits, `_` and `-`. `canibump: foo` with
 a space, `canibump::path` and `xcanibump:foo` mark nothing. `--json` gives
 each blocker's `sites` as `{file, line}`.
 
+A check keeps waiting lines short, but `canibump status` lists every line's
+sites, and so does `canibump status <id>` for its one blocker.
+
+```console
+$ canibump status llama-blocking-sync
+waiting   llama-blocking-sync  github:ggml-org/llama.cpp#26487 is open
+          at pkgs/llama-cpp.nix:12
+```
+
+Want them elsewhere too? `sites-on` picks the statuses, and `--sites-on`
+beats it for one run.
+
+```toml
+[settings]
+sites-on = ["waiting", "bumpable", "dead", "failed"]
+```
+
 ## What gets read
 
 `*` stays inside a directory and `**` crosses them, but never into `.git` or

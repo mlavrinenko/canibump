@@ -1,10 +1,11 @@
 //! What a check found.
 
+use clap::ValueEnum;
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 /// The state of a blocker, or of one step of it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, JsonSchema, ValueEnum)]
 #[serde(rename_all = "lowercase")]
 pub enum Status {
     /// Upstream has not landed it yet.
@@ -18,6 +19,9 @@ pub enum Status {
 }
 
 impl Status {
+    /// Every status, in the order a run prints them.
+    pub const ALL: [Self; 4] = [Self::Waiting, Self::Bumpable, Self::Dead, Self::Failed];
+
     /// The word printed for this status.
     #[must_use]
     pub const fn label(self) -> &'static str {

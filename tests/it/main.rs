@@ -10,5 +10,6 @@ mod package;
 mod reached;
 mod release_hook;
 mod schema;
+mod sites_on;
 mod status_id;
 mod wt_carry_lcov;

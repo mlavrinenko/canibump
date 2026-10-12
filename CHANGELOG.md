@@ -25,6 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   takes no comment, like `package.json`. Each line the regex matches is a
   site, and a site that matches nothing, or a missing file, prints as
   `unmarked`.
+- `[settings] sites-on` and `--sites-on` pick which lines print their sites.
+  A check defaults to bumpable and dead, and `canibump status` and
+  `canibump status <id>` to every status.
 
 - An unlisted link adds 16 to the exit code and counts by default, and
   `fail-on` takes `unlisted`. `--json` lists each under `unlisted`.

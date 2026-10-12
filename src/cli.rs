@@ -10,8 +10,9 @@ use std::path::{Path, PathBuf};
 
 use crate::cache::{self, Entry, StateFile};
 use crate::manifest::Manifest;
+use crate::outcome::Status;
 use crate::provider::defaults;
-use crate::report::{self, Actionable, Exit, Report};
+use crate::report::{self, Actionable, Exit, Report, SITES_ON, Sites};
 use crate::run;
 use crate::scan::{self, Findings};
 
@@ -45,6 +46,17 @@ pub struct Cli {
         value_name = "STATUS"
     )]
     pub fail_on: Option<Vec<Actionable>>,
+    /// Which lines print the sites of their workaround, comma-separated or
+    /// repeated. Defaults to `[settings] sites-on`, else bumpable and dead for
+    /// a check and every status for `status`.
+    #[arg(
+        long,
+        global = true,
+        value_enum,
+        value_delimiter = ',',
+        value_name = "STATUS"
+    )]
+    pub sites_on: Option<Vec<Status>>,
     /// When to color the status words; `auto` honors the terminal and `NO_COLOR`.
     #[arg(long, global = true, value_enum, default_value_t = ColorChoice::Auto)]
     pub color: ColorChoice,
@@ -231,6 +243,7 @@ fn check(cli: &Cli, args: CheckArgs) -> Result<u8> {
         &Found {
             state: &state,
             findings: &findings,
+            sites_on: sites_on(cli, &manifest),
         },
         now,
         code,
@@ -260,6 +273,7 @@ fn status(cli: &Cli, manifest: &Manifest, cache_path: &Path) -> Result<u8> {
         &Found {
             state: &state,
             findings: &findings,
+            sites_on: sites_on(cli, manifest),
         },
         Timestamp::now(),
         code,
@@ -313,6 +327,10 @@ fn blocker_status(cli: &Cli, id: &str) -> Result<u8> {
         bail!("`{id}` was checked against an older condition: run `canibump`");
     }
     let code = report::blocker_exit_code(entry.status);
+    let findings = Findings {
+        sites: scan::find(&manifest, &cli.manifest).sites,
+        ..Findings::default()
+    };
     let state = StateFile {
         entries: vec![entry],
         ..state
@@ -322,7 +340,8 @@ fn blocker_status(cli: &Cli, id: &str) -> Result<u8> {
         &cache_path,
         &Found {
             state: &state,
-            findings: &Findings::default(),
+            findings: &findings,
+            sites_on: sites_on(cli, &manifest),
         },
         Timestamp::now(),
         code,
@@ -337,22 +356,42 @@ fn counted<'a>(cli: &'a Cli, manifest: &'a Manifest) -> &'a [Actionable] {
         .unwrap_or(&Actionable::ALL)
 }
 
+/// Which lines print their sites: the flag, else the manifest, else every
+/// status for `status` and bumpable and dead for a check.
+fn sites_on<'a>(cli: &'a Cli, manifest: &'a Manifest) -> &'a [Status] {
+    let listing = matches!(cli.command, Some(Command::Status { .. }));
+    cli.sites_on
+        .as_deref()
+        .or(manifest.settings.sites_on.as_deref())
+        .unwrap_or(if listing { &Status::ALL } else { &SITES_ON })
+}
+
 /// What a run found: the blockers' results, and what `[scan]` found.
 struct Found<'a> {
     state: &'a StateFile,
     findings: &'a Findings,
+    /// The statuses whose lines print their sites.
+    sites_on: &'a [Status],
 }
 
 /// Prints what was `found` as lines or JSON and returns `code`, the run's exit
 /// code.
 fn output(cli: &Cli, cache_path: &Path, found: &Found<'_>, now: Timestamp, code: u8) -> Result<u8> {
-    let Found { state, findings } = *found;
+    let Found {
+        state,
+        findings,
+        sites_on,
+    } = *found;
     let text = if cli.json {
         let report =
             Report::new(&state.manifest, cache_path, &state.entries, now, code).with_scan(findings);
         serde_json::to_string_pretty(&report)? + "\n"
     } else {
-        report::lines(&state.entries, &findings.sites, now) + &report::scan_lines(findings)
+        let sites = Sites {
+            of: &findings.sites,
+            on: sites_on,
+        };
+        report::lines(&state.entries, &sites, now) + &report::scan_lines(findings)
     };
     print(cli, &text)?;
     Ok(code)

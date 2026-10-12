@@ -25,6 +25,18 @@ pub const EXIT_ACTIONABLE: u8 = 8;
 
 const STATUS_WIDTH: usize = 8;
 
+/// Each blocker's sites, and the statuses whose lines print them.
+#[derive(Debug, Clone, Copy)]
+pub struct Sites<'a> {
+    /// Each blocker's sites, by id.
+    pub of: &'a BTreeMap<String, Vec<Site>>,
+    /// The statuses whose lines print their sites.
+    pub on: &'a [Status],
+}
+
+/// The statuses a check prints sites under unless told otherwise.
+pub const SITES_ON: [Status; 2] = [Status::Bumpable, Status::Dead];
+
 /// What can fail the run: every status but `waiting`, an unlisted link or
 /// marker, and an unmarked blocker.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, JsonSchema, ValueEnum)]
@@ -143,13 +155,13 @@ const AGE_UNITS: [(i64, &str); 3] = [(86_400, "d"), (3_600, "h"), (60, "m")];
 
 /// One line per entry: status, id, detail. A bumpable or dead entry adds its
 /// note, the workaround to drop or rethink; a stale one adds how long ago it
-/// was checked.
+/// was checked. An entry whose status `sites` names lists its sites under it.
 ///
 /// The status word carries ANSI styles. Write the text through an
 /// [`anstream::AutoStream`], which keeps them on a terminal and strips them
 /// everywhere else.
 #[must_use]
-pub fn lines(entries: &[Entry], sites: &BTreeMap<String, Vec<Site>>, now: Timestamp) -> String {
+pub fn lines(entries: &[Entry], sites: &Sites<'_>, now: Timestamp) -> String {
     let id_width = widest(entries.iter().map(|entry| &entry.id));
     let mut out = String::new();
     for entry in entries {
@@ -160,8 +172,7 @@ pub fn lines(entries: &[Entry], sites: &BTreeMap<String, Vec<Site>>, now: Timest
             "{style}{label}{style:#}{:pad$}  {:id_width$}  {}",
             "", entry.id, entry.detail
         );
-        let acts = matches!(entry.status, Status::Bumpable | Status::Dead);
-        if acts {
+        if matches!(entry.status, Status::Bumpable | Status::Dead) {
             let _ = write!(line, " ({})", entry.note);
         }
         if is_stale(entry, now) {
@@ -169,7 +180,8 @@ pub fn lines(entries: &[Entry], sites: &BTreeMap<String, Vec<Site>>, now: Timest
         }
         out.push_str(line.trim_end());
         out.push('\n');
-        if let Some(known) = sites.get(&entry.id).filter(|_| acts) {
+        let shown = sites.on.contains(&entry.status);
+        if let Some(known) = sites.of.get(&entry.id).filter(|_| shown) {
             let _ = writeln!(out, "{:STATUS_WIDTH$}  at {}", "", places(known));
         }
     }

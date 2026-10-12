@@ -36,13 +36,22 @@ fn stale(seconds: i64) -> Entry {
     }
 }
 
+/// No sites at all.
+fn no_sites() -> Sites<'static> {
+    static NONE: BTreeMap<String, Vec<Site>> = BTreeMap::new();
+    Sites {
+        of: &NONE,
+        on: &SITES_ON,
+    }
+}
+
 fn plain(entries: &[Entry]) -> String {
-    strip_str(&lines(entries, &BTreeMap::new(), now())).to_string()
+    strip_str(&lines(entries, &no_sites(), now())).to_string()
 }
 
 #[test]
 fn each_status_word_gets_its_own_style() {
-    let paint = |status| lines(&[entry("x", status)], &BTreeMap::new(), now());
+    let paint = |status| lines(&[entry("x", status)], &no_sites(), now());
     assert_eq!(paint(Status::Waiting), "\x1b[2mwaiting\x1b[0m   x  d\n");
     assert_eq!(
         paint(Status::Bumpable),
@@ -183,19 +192,31 @@ fn sites_of_x() -> BTreeMap<String, Vec<Site>> {
 }
 
 #[test]
-fn a_bumpable_or_dead_line_lists_its_sites_under_it() {
-    let sites = sites_of_x();
-    let plain = |status| strip_str(&lines(&[entry("x", status)], &sites, now())).to_string();
+fn a_line_lists_its_sites_under_it_when_its_status_is_on() {
+    let of = sites_of_x();
+    let plain = |status, on: &[Status]| {
+        let sites = Sites { of: &of, on };
+        strip_str(&lines(&[entry("x", status)], &sites, now())).to_string()
+    };
+    let at = "          at flake.nix:29, Justfile:26\n";
     assert_eq!(
-        plain(Status::Bumpable),
-        "bumpable  x  d (drop it)\n          at flake.nix:29, Justfile:26\n"
+        plain(Status::Bumpable, &SITES_ON),
+        format!("bumpable  x  d (drop it)\n{at}")
     );
     assert_eq!(
-        plain(Status::Dead),
-        "dead      x  d (drop it)\n          at flake.nix:29, Justfile:26\n"
+        plain(Status::Dead, &SITES_ON),
+        format!("dead      x  d (drop it)\n{at}")
     );
-    assert_eq!(plain(Status::Waiting), "waiting   x  d\n");
-    assert_eq!(plain(Status::Failed), "failed    x  d\n");
+    assert_eq!(plain(Status::Waiting, &SITES_ON), "waiting   x  d\n");
+    assert_eq!(plain(Status::Failed, &SITES_ON), "failed    x  d\n");
+    assert_eq!(
+        plain(Status::Waiting, &[Status::Waiting]),
+        format!("waiting   x  d\n{at}")
+    );
+    assert_eq!(
+        plain(Status::Bumpable, &[Status::Waiting]),
+        "bumpable  x  d (drop it)\n"
+    );
 }
 
 #[test]
