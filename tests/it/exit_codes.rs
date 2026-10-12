@@ -137,7 +137,7 @@ fn help_states_the_table_and_the_default() {
             "1 is an unusable manifest or cache, 2 a bad argument",
         ))
         .stdout(predicate::str::contains(
-            "else bumpable, dead, failed and unlisted",
+            "else bumpable, dead, failed, unlisted and",
         ))
         .stdout(predicate::str::contains(
             "`status <id>` answers for one blocker",
@@ -146,16 +146,22 @@ fn help_states_the_table_and_the_default() {
 
 const SCAN: &str = "[scan]\npaths = [\"*.nix\"]\n\n";
 
-/// [`repo_of`] with a `[scan]` and a `pin.nix` linking an issue no blocker
-/// lists.
-fn with_unlisted(kinds: &[&str], settings: &str) -> crate::common::Repo {
+/// [`repo_of`] with a `[scan]` and a `pin.nix` of `text`.
+fn scanned(kinds: &[&str], settings: &str, text: &str) -> crate::common::Repo {
     let repo = repo_of(kinds, &(settings.to_owned() + SCAN));
-    std::fs::write(
-        repo.dir.path().join("pin.nix"),
-        "# https://github.com/o/r/issues/99\n",
-    )
-    .expect("write");
+    std::fs::write(repo.dir.path().join("pin.nix"), text).expect("write");
     repo
+}
+
+/// [`scanned`] with a `pin.nix` marking every blocker and linking an issue no
+/// blocker lists.
+fn with_unlisted(kinds: &[&str], settings: &str) -> crate::common::Repo {
+    let marks: String = kinds
+        .iter()
+        .map(|kind| format!(" canibump:{kind}"))
+        .collect();
+    let text = format!("# https://github.com/o/r/issues/99\n# canibump:waits{marks}\n");
+    scanned(kinds, settings, &text)
 }
 
 #[test]
@@ -195,10 +201,50 @@ fn the_json_report_lists_each_unlisted_link() {
 
 #[test]
 fn a_bumpable_line_names_where_its_marker_sits() {
-    let repo = repo_of(&["bumpable"], SCAN);
-    std::fs::write(repo.dir.path().join("pin.nix"), "x\n# canibump:bumpable\n").expect("write");
-    repo.cmd()
+    scanned(&["bumpable"], "", "x\n# canibump:bumpable canibump:waits\n")
+        .cmd()
         .assert()
         .code(9)
         .stdout(predicate::str::contains("\n          at pin.nix:2\n"));
+}
+
+#[test]
+fn an_unmarked_blocker_adds_32_unless_fail_on_leaves_it_out() {
+    let repo = scanned(&["bumpable"], "", "# canibump:bumpable\n");
+    repo.cmd()
+        .assert()
+        .code(41)
+        .stdout(predicate::str::contains(
+            "\nunmarked  waits  no canibump:waits in the scanned files\n",
+        ));
+    repo.cmd().args(["--fail-on", "bumpable"]).assert().code(9);
+    repo.cmd().args(["--fail-on", "unmarked"]).assert().code(40);
+    scanned(&[], "", "").cmd().assert().code(40);
+    repo_of(&[], "").cmd().assert().code(0);
+}
+
+#[test]
+fn the_json_report_lists_each_unmarked_blocker() {
+    let output = scanned(&["dead"], "", "")
+        .cmd()
+        .arg("--json")
+        .output()
+        .expect("runs");
+    let report: Value = serde_json::from_slice(&output.stdout).expect("json");
+    assert_eq!(report.get("exit_code"), Some(&json!(42)));
+    assert_eq!(report.get("unmarked"), Some(&json!(["waits", "dead"])));
+    let (_, report) = crate::common::waiting_json_run();
+    assert_eq!(report.get("unmarked"), Some(&json!([])));
+}
+
+#[test]
+fn status_scans_as_a_check_does() {
+    let repo = scanned(&[], "", "# https://github.com/o/r/issues/99\n");
+    repo.cmd().assert().code(56);
+    repo.cmd()
+        .arg("status")
+        .assert()
+        .code(56)
+        .stdout(predicate::str::contains("unlisted  pin.nix:1"))
+        .stdout(predicate::str::contains("unmarked  waits"));
 }

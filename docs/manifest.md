@@ -132,11 +132,11 @@ run rewrites it.
 ## Exit codes
 
 A run exits 0 when nothing counted showed up, else 8 plus 1 for bumpable, 2
-for dead, 4 for failed and 16 for an [unlisted](scan.md) link, summed, so
-bumpable and dead exit 11. 1 is an
-unusable manifest or cache, 2 a bad argument.
+for dead, 4 for failed, 16 for an [unlisted](scan.md) link or marker and 32
+for an [unmarked](scan.md#unmarked-blockers) blocker, summed, so bumpable and
+dead exit 11. 1 is an unusable manifest or cache, 2 a bad argument.
 
-All four count unless `[settings] fail-on` lists the ones that do, and
+All five count unless `[settings] fail-on` lists the ones that do, and
 `--fail-on` beats it. `waiting` never counts. A status that doesn't count
 still prints its line.
 

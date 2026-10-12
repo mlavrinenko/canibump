@@ -405,7 +405,7 @@ fn prints_an_unlisted_line_for_a_link_no_blocker_lists() {
     ));
     std::fs::write(
         repo.dir.path().join("pin.nix"),
-        "# pin until https://github.com/o/r/issues/1 or https://github.com/o/r/pull/9 lands\n",
+        "# canibump:waits until https://github.com/o/r/issues/1 or https://github.com/o/r/pull/9 lands\n",
     )
     .expect("write");
     repo.issue(1, 200, &open());

@@ -153,9 +153,16 @@
       "type": "string"
     },
     "unlisted": {
-      "description": "One row per upstream link `[scan]` found that no blocker lists.",
+      "description": "One row per upstream link or marker `[scan]` found that no blocker\nnames.",
       "items": {
         "$ref": "#/$defs/Unlisted"
+      },
+      "type": "array"
+    },
+    "unmarked": {
+      "description": "The blockers `[scan]` found no `canibump:<id>` for.",
+      "items": {
+        "type": "string"
       },
       "type": "array"
     }
@@ -165,7 +172,8 @@
     "cache",
     "exit_code",
     "entries",
-    "unlisted"
+    "unlisted",
+    "unmarked"
   ],
   "title": "Report",
   "type": "object"

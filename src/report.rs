@@ -13,7 +13,7 @@ use thiserror::Error;
 
 use crate::cache::Entry;
 use crate::outcome::Status;
-use crate::scan::{Findings, Hit, Site};
+use crate::scan::{Findings, Site};
 
 /// Exit code: nothing counted showed up, every check ran.
 pub const EXIT_OK: u8 = 0;
@@ -24,7 +24,8 @@ pub const EXIT_ACTIONABLE: u8 = 8;
 
 const STATUS_WIDTH: usize = 8;
 
-/// What can fail the run: every status but `waiting`, and an unlisted link.
+/// What can fail the run: every status but `waiting`, an unlisted link or
+/// marker, and an unmarked blocker.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, JsonSchema, ValueEnum)]
 #[serde(rename_all = "lowercase")]
 pub enum Actionable {
@@ -34,23 +35,33 @@ pub enum Actionable {
     Dead,
     /// A check broke: adds 4.
     Failed,
-    /// `[scan]` found a link no blocker lists: adds 16.
+    /// `[scan]` found a link or marker no blocker names: adds 16.
     Unlisted,
+    /// `[scan]` found no `canibump:<id>` for a blocker: adds 32.
+    Unmarked,
 }
 
 impl Actionable {
-    /// All four: what fails a run unless `--fail-on` or `[settings] fail-on`
+    /// All five: what fails a run unless `--fail-on` or `[settings] fail-on`
     /// says otherwise.
-    pub const ALL: [Self; 4] = [Self::Bumpable, Self::Dead, Self::Failed, Self::Unlisted];
+    pub const ALL: [Self; 5] = [
+        Self::Bumpable,
+        Self::Dead,
+        Self::Failed,
+        Self::Unlisted,
+        Self::Unmarked,
+    ];
 
-    /// The blocker status it counts; `None` for an unlisted link.
-    const fn status(self) -> Option<Status> {
-        match self {
-            Self::Bumpable => Some(Status::Bumpable),
-            Self::Dead => Some(Status::Dead),
-            Self::Failed => Some(Status::Failed),
-            Self::Unlisted => None,
-        }
+    /// Whether it showed up among the `entries` or in what `[scan]` found.
+    fn showed_up(self, entries: &[Entry], findings: &Findings) -> bool {
+        let status = match self {
+            Self::Bumpable => Status::Bumpable,
+            Self::Dead => Status::Dead,
+            Self::Failed => Status::Failed,
+            Self::Unlisted => return !findings.hits.is_empty(),
+            Self::Unmarked => return !findings.unmarked.is_empty(),
+        };
+        entries.iter().any(|entry| entry.status == status)
     }
 
     /// Its bit in the exit code.
@@ -60,21 +71,19 @@ impl Actionable {
             Self::Dead => 2,
             Self::Failed => 4,
             Self::Unlisted => 16,
+            Self::Unmarked => 32,
         }
     }
 }
 
-/// The exit code for a set of results and whether `[scan]` found an unlisted
-/// link: [`EXIT_OK`] when nothing `counted` showed up, else
-/// [`EXIT_ACTIONABLE`] plus the bit of each that did.
+/// The exit code for a set of results and what `[scan]` found: [`EXIT_OK`]
+/// when nothing `counted` showed up, else [`EXIT_ACTIONABLE`] plus the bit of
+/// each that did.
 #[must_use]
-pub fn exit_code(entries: &[Entry], unlisted: bool, counted: &[Actionable]) -> u8 {
+pub fn exit_code(entries: &[Entry], findings: &Findings, counted: &[Actionable]) -> u8 {
     let bits = counted
         .iter()
-        .filter(|kind| match kind.status() {
-            Some(status) => entries.iter().any(|entry| entry.status == status),
-            None => unlisted,
-        })
+        .filter(|kind| kind.showed_up(entries, findings))
         .fold(0, |bits, kind| bits | kind.bit());
     if bits == 0 {
         EXIT_OK
@@ -140,11 +149,7 @@ const AGE_UNITS: [(i64, &str); 3] = [(86_400, "d"), (3_600, "h"), (60, "m")];
 /// everywhere else.
 #[must_use]
 pub fn lines(entries: &[Entry], sites: &BTreeMap<String, Vec<Site>>, now: Timestamp) -> String {
-    let id_width = entries
-        .iter()
-        .map(|entry| entry.id.chars().count())
-        .max()
-        .unwrap_or(0);
+    let id_width = widest(entries.iter().map(|entry| &entry.id));
     let mut out = String::new();
     for entry in entries {
         let style = style(entry.status);
@@ -170,30 +175,40 @@ pub fn lines(entries: &[Entry], sites: &BTreeMap<String, Vec<Site>>, now: Timest
     out
 }
 
-/// One `unlisted` line per hit: where, and the ref no blocker names.
+/// What `[scan]` found: one `unlisted` line per hit, where and the ref no
+/// blocker names, then one `unmarked` line per blocker no marker names.
 ///
 /// The status word carries ANSI styles, like [`lines`].
 #[must_use]
-pub fn unlisted_lines(hits: &[Hit]) -> String {
-    let places: Vec<String> = hits
+pub fn scan_lines(findings: &Findings) -> String {
+    let places: Vec<String> = findings
+        .hits
         .iter()
         .map(|hit| format!("{}:{}", hit.file.display(), hit.line))
         .collect();
-    let width = places
-        .iter()
-        .map(|place| place.chars().count())
-        .max()
-        .unwrap_or(0);
+    let width = widest(places.iter());
     let style = AnsiColor::Yellow.on_default();
     let mut out = String::new();
-    for (hit, place) in hits.iter().zip(&places) {
+    for (hit, place) in findings.hits.iter().zip(&places) {
         let _ = writeln!(
             out,
             "{style}unlisted{style:#}  {place:width$}  {} has no blocker",
             hit.reference
         );
     }
+    let width = widest(findings.unmarked.iter());
+    for id in &findings.unmarked {
+        let _ = writeln!(
+            out,
+            "{style}unmarked{style:#}  {id:width$}  no canibump:{id} in the scanned files"
+        );
+    }
     out
+}
+
+/// The width of the widest of `texts`, in chars.
+fn widest<'a>(texts: impl Iterator<Item = &'a String>) -> usize {
+    texts.map(|text| text.chars().count()).max().unwrap_or(0)
 }
 
 /// `flake.nix:29, Justfile:26`.
@@ -242,8 +257,11 @@ pub struct Report<'a> {
     pub exit_code: u8,
     /// One row per blocker.
     pub entries: Vec<Row<'a>>,
-    /// One row per upstream link `[scan]` found that no blocker lists.
+    /// One row per upstream link or marker `[scan]` found that no blocker
+    /// names.
     pub unlisted: Vec<Unlisted<'a>>,
+    /// The blockers `[scan]` found no `canibump:<id>` for.
+    pub unmarked: Vec<&'a str>,
 }
 
 /// An upstream link no blocker lists, in the `--json` document.
@@ -311,6 +329,7 @@ impl<'a> Report<'a> {
                 })
                 .collect(),
             unlisted: Vec::new(),
+            unmarked: Vec::new(),
         }
     }
 
@@ -333,6 +352,7 @@ impl<'a> Report<'a> {
                     catcher: &hit.catcher,
                 })
                 .collect(),
+            unmarked: findings.unmarked.iter().map(String::as_str).collect(),
             entries,
             ..self
         }

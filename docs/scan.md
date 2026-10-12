@@ -47,13 +47,28 @@ each blocker's `sites` as `{file, line}`.
 a symlinked directory, so a Nix `result` link can't drag in the store. An
 `exclude` ending in `/**` skips its directory unread. The manifest itself is
 never read, and neither is a line holding `canibump-ignore`, for a link
-that's just background reading. A file that isn't UTF-8 is skipped. Only a
-check scans, so `canibump status` prints no `unlisted` line.
+that's just background reading. A file that isn't UTF-8 is skipped. The scan
+is local and cheap, so `canibump status` runs it too.
 
 An unlisted link or marker adds 16 to the exit code, so one alone exits 24.
-`fail-on = ["bumpable", "dead", "failed"]` leaves it out. `--json` lists each
-under `unlisted` with its `file`, `line`, `ref` and `catcher`, which is
-`marker` for a marker.
+`fail-on = ["bumpable", "dead", "failed", "unmarked"]` leaves it out.
+`--json` lists each under `unlisted` with its `file`, `line`, `ref` and
+`catcher`, which is `marker` for a marker.
+
+## Unmarked blockers
+
+A blocker no marker names is one whose workaround may already be gone, or
+one that lives in a file `paths` misses. Either way it shows up.
+
+```console
+$ canibump
+unmarked  serde-pin  no canibump:serde-pin in the scanned files
+```
+
+It adds 32 to the exit code, so one alone exits 40. Mark the workaround,
+widen `paths`, or drop the blocker. Leave `unmarked` out of `fail-on` to let
+it pass. `--json` lists the ids under `unmarked`. Without `[scan]` nothing is
+read, so nothing is unmarked.
 
 ## Catchers
 

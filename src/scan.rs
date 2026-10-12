@@ -272,14 +272,16 @@ pub struct Site {
     pub line: usize,
 }
 
-/// What `[scan]` found: links and markers no blocker lists, and each
-/// blocker's sites.
+/// What `[scan]` found: links and markers no blocker lists, each blocker's
+/// sites, and the blockers with none.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Findings {
     /// Links and markers no blocker lists, by file and line.
     pub hits: Vec<Hit>,
     /// Each marked blocker's sites, by file and line.
     pub sites: BTreeMap<String, Vec<Site>>,
+    /// The blockers no marker names, in manifest order.
+    pub unmarked: Vec<String>,
 }
 
 /// What `manifest`'s `[scan]` finds. A file that is not UTF-8 is skipped;
@@ -308,6 +310,12 @@ pub fn find(manifest: &Manifest, manifest_path: &Path) -> Findings {
         let text = read(&root.join(&file));
         lookout.read(&file, &text, &mut findings);
     }
+    findings.unmarked = manifest
+        .blockers
+        .iter()
+        .filter(|one| !findings.sites.contains_key(&one.id))
+        .map(|one| one.id.clone())
+        .collect();
     findings
 }
 

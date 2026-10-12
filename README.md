@@ -46,7 +46,8 @@ bumpable  serde-pin            github:serde-rs/serde#2590 (110af31) is in v1.0.1
 | `bumpable` | landed, go drop the workaround |
 | `dead` | closed unmerged, wontfix, duplicate or with no reason, so rethink the workaround |
 | `failed` | the check broke (network, auth, rate limit), never counts as landed |
-| `unlisted` | a link in your files no blocker names, see [forgotten workarounds](#forgotten-workarounds) |
+| `unlisted` | a link or marker in your files no blocker names, see [forgotten workarounds](#forgotten-workarounds) |
+| `unmarked` | a blocker no `canibump:<id>` in your files names, so its workaround may be gone |
 
 ## Possible conditions
 
@@ -105,11 +106,11 @@ canibump -m path/to/canibump.toml
 | Code | Means |
 | --- | --- |
 | 0 | nothing counted showed up |
-| 8 + 1, 2, 4, 16 | bumpable, dead, failed, unlisted, summed, so test a bit with `(( code & 2 ))` |
+| 8 + 1, 2, 4, 16, 32 | bumpable, dead, failed, unlisted, unmarked, summed, so test a bit with `(( code & 2 ))` |
 | 1 | bad manifest or cache |
 | 2 | bad arguments |
 
-All four count by default. `--fail-on failed` or `[settings] fail-on` picks
+All five count by default. `--fail-on failed` or `[settings] fail-on` picks
 which do. `canibump status <id>` has its own codes, 0 bumpable, 1 waiting,
 2 anything else.
 

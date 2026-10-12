@@ -18,8 +18,8 @@ use crate::scan::{self, Findings};
 /// Can I bump yet? Checks the upstream blockers in canibump.toml.
 ///
 /// Exit codes: 0 when nothing counted showed up, else 8 plus 1 for bumpable, 2
-/// for dead, 4 for failed and 16 for an unlisted link, summed (bumpable and dead
-/// is 11). 1 is an unusable
+/// for dead, 4 for failed, 16 for an unlisted link or marker and 32 for an
+/// unmarked blocker, summed (bumpable and dead is 11). 1 is an unusable
 /// manifest or cache, 2 a bad argument. `--fail-on` picks what counts. `status <id>`
 /// answers for one blocker instead: 0 bumpable, 1 waiting, 2 anything else.
 #[derive(Debug, Parser)]
@@ -35,7 +35,8 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub json: bool,
     /// What fails the run, comma-separated or repeated. Defaults to
-    /// `[settings] fail-on`, else bumpable, dead, failed and unlisted.
+    /// `[settings] fail-on`, else bumpable, dead, failed, unlisted and
+    /// unmarked.
     #[arg(
         long,
         global = true,
@@ -223,11 +224,7 @@ fn check(cli: &Cli, args: CheckArgs) -> Result<u8> {
     };
     cache::write(&cache_path, &state)?;
     let findings = scan::find(&manifest, &cli.manifest);
-    let code = report::exit_code(
-        &state.entries,
-        !findings.hits.is_empty(),
-        counted(cli, &manifest),
-    );
+    let code = report::exit_code(&state.entries, &findings, counted(cli, &manifest));
     output(
         cli,
         &cache_path,
@@ -255,13 +252,14 @@ fn status(cli: &Cli, manifest: &Manifest, cache_path: &Path) -> Result<u8> {
         entries: current_entries(manifest, state.entries),
         ..state
     };
-    let code = report::exit_code(&state.entries, false, counted(cli, manifest));
+    let findings = scan::find(manifest, &cli.manifest);
+    let code = report::exit_code(&state.entries, &findings, counted(cli, manifest));
     output(
         cli,
         cache_path,
         &Found {
             state: &state,
-            findings: &Findings::default(),
+            findings: &findings,
         },
         Timestamp::now(),
         code,
@@ -331,7 +329,7 @@ fn blocker_status(cli: &Cli, id: &str) -> Result<u8> {
     )
 }
 
-/// What fails the run: the flag, else the manifest, else all four.
+/// What fails the run: the flag, else the manifest, else all five.
 fn counted<'a>(cli: &'a Cli, manifest: &'a Manifest) -> &'a [Actionable] {
     cli.fail_on
         .as_deref()
@@ -354,8 +352,7 @@ fn output(cli: &Cli, cache_path: &Path, found: &Found<'_>, now: Timestamp, code:
             Report::new(&state.manifest, cache_path, &state.entries, now, code).with_scan(findings);
         serde_json::to_string_pretty(&report)? + "\n"
     } else {
-        report::lines(&state.entries, &findings.sites, now)
-            + &report::unlisted_lines(&findings.hits)
+        report::lines(&state.entries, &findings.sites, now) + &report::scan_lines(findings)
     };
     print(cli, &text)?;
     Ok(code)

@@ -16,10 +16,11 @@ canibump reads a manifest, asks each upstream once, and saves what it found.
    `~/.cache/canibump/git/`.
 5. **Scan** (`scan.rs`). With a `[scan]`, read the listed files offline for
    upstream links and `canibump:<id>` markers. A marker some blocker has is
-   one of its sites; a link or marker no blocker names is unlisted.
+   one of its sites; a link or marker no blocker names is unlisted, and a
+   blocker with no site is unmarked.
 6. **Report** (`report.rs`). One line per blocker or `--json`, a bumpable or
-   dead one with its sites under it, an `unlisted` line per unlisted find,
-   and the exit code. The state file gets rewritten.
+   dead one with its sites under it, an `unlisted` or `unmarked` line per
+   scan find, and the exit code. The state file gets rewritten.
 
 `schema.rs` generates the manifest's JSON Schema from the same types the
 parser uses.

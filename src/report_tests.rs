@@ -5,7 +5,7 @@ use std::collections::BTreeMap;
 
 use jiff::SignedDuration;
 
-use crate::scan::{Findings, Site};
+use crate::scan::{Findings, Hit, Site};
 
 fn now() -> Timestamp {
     Timestamp::from_second(1_800_000_000).expect("in range")
@@ -112,7 +112,7 @@ fn a_stale_line_says_how_long_ago_in_the_largest_whole_unit() {
 fn the_exit_code_is_8_plus_a_bit_per_counted_status_that_showed_up() {
     let code = |statuses: &[Status], counted: &[Actionable]| {
         let entries: Vec<Entry> = statuses.iter().map(|status| entry("x", *status)).collect();
-        exit_code(&entries, false, counted)
+        exit_code(&entries, &Findings::default(), counted)
     };
     let all = &Actionable::ALL;
     assert_eq!(code(&[], all), EXIT_OK);
@@ -133,11 +133,17 @@ fn the_exit_code_is_8_plus_a_bit_per_counted_status_that_showed_up() {
 #[test]
 fn only_a_counted_status_adds_its_bit() {
     let entries = [entry("a", Status::Bumpable), entry("b", Status::Dead)];
-    assert_eq!(exit_code(&entries, false, &[Actionable::Dead]), 10);
-    assert_eq!(exit_code(&entries, false, &[Actionable::Failed]), EXIT_OK);
-    assert_eq!(exit_code(&entries, false, &[]), EXIT_OK);
+    assert_eq!(
+        exit_code(&entries, &Findings::default(), &[Actionable::Dead]),
+        10
+    );
+    assert_eq!(
+        exit_code(&entries, &Findings::default(), &[Actionable::Failed]),
+        EXIT_OK
+    );
+    assert_eq!(exit_code(&entries, &Findings::default(), &[]), EXIT_OK);
     let twice = [Actionable::Dead, Actionable::Dead];
-    assert_eq!(exit_code(&entries, false, &twice), 10);
+    assert_eq!(exit_code(&entries, &Findings::default(), &twice), 10);
 }
 
 #[test]
@@ -161,15 +167,6 @@ fn an_exit_prints_as_the_error_it_wraps_with_its_chain() {
     let inner = anyhow::anyhow!("root cause").context("while reading");
     let coded: anyhow::Error = Exit::new(EXIT_UNKNOWN, inner).into();
     assert_eq!(format!("{coded:#}"), "while reading: root cause");
-}
-
-#[test]
-fn an_unlisted_link_adds_16_when_counted() {
-    let entries = [entry("a", Status::Bumpable)];
-    assert_eq!(exit_code(&[], true, &Actionable::ALL), 24);
-    assert_eq!(exit_code(&entries, true, &Actionable::ALL), 25);
-    assert_eq!(exit_code(&entries, true, &[Actionable::Bumpable]), 9);
-    assert_eq!(exit_code(&entries, false, &[Actionable::Unlisted]), EXIT_OK);
 }
 
 /// Blocker `x`'s sites: `flake.nix:29`, then `Justfile:26`.
@@ -206,6 +203,7 @@ fn the_json_report_gives_every_row_its_sites() {
     let findings = Findings {
         hits: Vec::new(),
         sites: sites_of_x(),
+        unmarked: Vec::new(),
     };
     let report =
         Report::new(Path::new("m"), Path::new("c"), &entries, now(), 0).with_scan(&findings);
@@ -223,17 +221,56 @@ fn the_json_report_gives_every_row_its_sites() {
     );
 }
 
-#[test]
-fn prints_one_unlisted_line_per_hit() {
-    let hits = [Hit {
+/// What a scan found: one unlisted link when `unlisted`, and these
+/// `unmarked` blockers.
+fn findings(unlisted: bool, unmarked: &[&str]) -> Findings {
+    let hit = Hit {
         file: "hosts/gpu.nix".into(),
         line: 41,
         reference: "github:NixOS/nixpkgs#412345".to_owned(),
         catcher: "github".to_owned(),
-    }];
-    let plain = strip_str(&unlisted_lines(&hits)).to_string();
+    };
+    Findings {
+        hits: if unlisted { vec![hit] } else { Vec::new() },
+        sites: BTreeMap::new(),
+        unmarked: unmarked.iter().map(|id| (*id).to_owned()).collect(),
+    }
+}
+
+#[test]
+fn an_unlisted_link_adds_16_when_counted() {
+    let entries = [entry("a", Status::Bumpable)];
+    let unlisted = findings(true, &[]);
+    assert_eq!(exit_code(&[], &unlisted, &Actionable::ALL), 24);
+    assert_eq!(exit_code(&entries, &unlisted, &Actionable::ALL), 25);
+    assert_eq!(exit_code(&entries, &unlisted, &[Actionable::Bumpable]), 9);
+    let none = findings(false, &[]);
+    assert_eq!(exit_code(&entries, &none, &[Actionable::Unlisted]), EXIT_OK);
+}
+
+#[test]
+fn an_unmarked_blocker_adds_32_when_counted() {
+    let unmarked = findings(false, &["a"]);
+    assert_eq!(exit_code(&[], &unmarked, &Actionable::ALL), 40);
     assert_eq!(
-        plain,
+        exit_code(&[], &findings(true, &["a"]), &Actionable::ALL),
+        56
+    );
+    assert_eq!(exit_code(&[], &unmarked, &[Actionable::Unlisted]), EXIT_OK);
+}
+
+#[test]
+fn prints_an_unlisted_line_per_hit_then_an_unmarked_line_per_blocker() {
+    let plain = |found: &Findings| strip_str(&scan_lines(found)).to_string();
+    assert_eq!(
+        plain(&findings(true, &[])),
         "unlisted  hosts/gpu.nix:41  github:NixOS/nixpkgs#412345 has no blocker\n"
     );
+    assert_eq!(
+        plain(&findings(true, &["a", "long-id"])),
+        "unlisted  hosts/gpu.nix:41  github:NixOS/nixpkgs#412345 has no blocker\n\
+         unmarked  a        no canibump:a in the scanned files\n\
+         unmarked  long-id  no canibump:long-id in the scanned files\n"
+    );
+    assert_eq!(plain(&findings(false, &[])), "");
 }

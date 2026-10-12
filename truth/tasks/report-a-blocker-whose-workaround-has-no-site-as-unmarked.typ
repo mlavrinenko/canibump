@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: proposed(2026, 10, 13),
+  status: done(2026, 10, 13),
   links: depends-on(
     "mark-each-workaround-with-canibump-id-and-print-where-it-sits.typ",
   ),
