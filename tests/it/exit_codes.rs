@@ -192,3 +192,13 @@ fn the_json_report_lists_each_unlisted_link() {
     let report: Value = serde_json::from_slice(&output.stdout).expect("json");
     assert_eq!(report.get("unlisted"), Some(&json!([])));
 }
+
+#[test]
+fn a_bumpable_line_names_where_its_marker_sits() {
+    let repo = repo_of(&["bumpable"], SCAN);
+    std::fs::write(repo.dir.path().join("pin.nix"), "x\n# canibump:bumpable\n").expect("write");
+    repo.cmd()
+        .assert()
+        .code(9)
+        .stdout(predicate::str::contains("\n          at pin.nix:2\n"));
+}

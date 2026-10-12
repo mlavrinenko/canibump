@@ -1,5 +1,6 @@
 //! Printing results and choosing the exit code.
 
+use std::collections::BTreeMap;
 use std::fmt::Write as _;
 use std::path::Path;
 
@@ -12,7 +13,7 @@ use thiserror::Error;
 
 use crate::cache::Entry;
 use crate::outcome::Status;
-use crate::scan::Hit;
+use crate::scan::{Findings, Hit, Site};
 
 /// Exit code: nothing counted showed up, every check ran.
 pub const EXIT_OK: u8 = 0;
@@ -138,7 +139,7 @@ const AGE_UNITS: [(i64, &str); 3] = [(86_400, "d"), (3_600, "h"), (60, "m")];
 /// [`anstream::AutoStream`], which keeps them on a terminal and strips them
 /// everywhere else.
 #[must_use]
-pub fn lines(entries: &[Entry], now: Timestamp) -> String {
+pub fn lines(entries: &[Entry], sites: &BTreeMap<String, Vec<Site>>, now: Timestamp) -> String {
     let id_width = entries
         .iter()
         .map(|entry| entry.id.chars().count())
@@ -153,7 +154,8 @@ pub fn lines(entries: &[Entry], now: Timestamp) -> String {
             "{style}{label}{style:#}{:pad$}  {:id_width$}  {}",
             "", entry.id, entry.detail
         );
-        if matches!(entry.status, Status::Bumpable | Status::Dead) {
+        let acts = matches!(entry.status, Status::Bumpable | Status::Dead);
+        if acts {
             let _ = write!(line, " ({})", entry.note);
         }
         if is_stale(entry, now) {
@@ -161,8 +163,46 @@ pub fn lines(entries: &[Entry], now: Timestamp) -> String {
         }
         out.push_str(line.trim_end());
         out.push('\n');
+        if let Some(known) = sites.get(&entry.id).filter(|_| acts) {
+            let _ = writeln!(out, "{:STATUS_WIDTH$}  at {}", "", places(known));
+        }
     }
     out
+}
+
+/// One `unlisted` line per hit: where, and the ref no blocker names.
+///
+/// The status word carries ANSI styles, like [`lines`].
+#[must_use]
+pub fn unlisted_lines(hits: &[Hit]) -> String {
+    let places: Vec<String> = hits
+        .iter()
+        .map(|hit| format!("{}:{}", hit.file.display(), hit.line))
+        .collect();
+    let width = places
+        .iter()
+        .map(|place| place.chars().count())
+        .max()
+        .unwrap_or(0);
+    let style = AnsiColor::Yellow.on_default();
+    let mut out = String::new();
+    for (hit, place) in hits.iter().zip(&places) {
+        let _ = writeln!(
+            out,
+            "{style}unlisted{style:#}  {place:width$}  {} has no blocker",
+            hit.reference
+        );
+    }
+    out
+}
+
+/// `flake.nix:29, Justfile:26`.
+fn places(sites: &[Site]) -> String {
+    let places: Vec<String> = sites
+        .iter()
+        .map(|site| format!("{}:{}", site.file.display(), site.line))
+        .collect();
+    places.join(", ")
 }
 
 /// The style of a status word: what needs you stands out, waiting recedes.
@@ -237,6 +277,8 @@ pub struct Row<'a> {
     /// Until when the result is reused, RFC 3339.
     #[schemars(with = "String")]
     pub fresh_until: Timestamp,
+    /// Where its workaround sits: each `canibump:<id>` `[scan]` found.
+    pub sites: &'a [Site],
     /// Past `fresh_until`.
     pub stale: bool,
 }
@@ -264,6 +306,7 @@ impl<'a> Report<'a> {
                     detail: &entry.detail,
                     checked_at: entry.checked_at,
                     fresh_until: entry.fresh_until,
+                    sites: &[],
                     stale: is_stale(entry, now),
                 })
                 .collect(),
@@ -271,10 +314,15 @@ impl<'a> Report<'a> {
         }
     }
 
-    /// The same document, listing the links `[scan]` found that no blocker
-    /// lists.
+    /// The same document with what `[scan]` found: each row's sites, and the
+    /// links and markers no blocker names.
     #[must_use]
-    pub fn with_unlisted(self, unlisted: &'a [Hit]) -> Self {
+    pub fn with_scan(self, findings: &'a Findings) -> Self {
+        let mut entries = self.entries;
+        for row in &mut entries {
+            row.sites = findings.sites.get(row.id).map_or(&[], Vec::as_slice);
+        }
+        let unlisted = &findings.hits;
         Self {
             unlisted: unlisted
                 .iter()
@@ -285,6 +333,7 @@ impl<'a> Report<'a> {
                     catcher: &hit.catcher,
                 })
                 .collect(),
+            entries,
             ..self
         }
     }

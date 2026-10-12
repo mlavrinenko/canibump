@@ -56,7 +56,7 @@ pub struct Settings {
 pub struct Blocker {
     /// Unique name.
     pub id: String,
-    /// What workaround it guards, and where.
+    /// What workaround it guards.
     pub note: String,
     /// When the workaround can go.
     pub condition: Condition,
@@ -275,6 +275,13 @@ fn parse_blocker(index: usize, line: usize, mut table: Table) -> Result<Blocker,
         message,
         line,
     };
+    let markable = |char: char| char.is_ascii_alphanumeric() || char == '_' || char == '-';
+    if id.is_empty() || !id.chars().all(markable) {
+        return Err(fail(
+            "an id takes only ASCII letters, digits, `_` and `-`, so `canibump:<id>` can mark it"
+                .to_owned(),
+        ));
+    }
     let note = take_string(&mut table, "note")
         .ok_or_else(|| fail("missing `note`: say what workaround it guards".to_owned()))?
         .map_err(fail)?;

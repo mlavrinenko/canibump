@@ -13,7 +13,7 @@ use crate::manifest::Manifest;
 use crate::provider::defaults;
 use crate::report::{self, Actionable, Exit, Report};
 use crate::run;
-use crate::scan::{self, Hit};
+use crate::scan::{self, Findings};
 
 /// Can I bump yet? Checks the upstream blockers in canibump.toml.
 ///
@@ -222,14 +222,18 @@ fn check(cli: &Cli, args: CheckArgs) -> Result<u8> {
         entries,
     };
     cache::write(&cache_path, &state)?;
-    let hits = scan::unlisted(&manifest, &cli.manifest);
-    let code = report::exit_code(&state.entries, !hits.is_empty(), counted(cli, &manifest));
+    let findings = scan::find(&manifest, &cli.manifest);
+    let code = report::exit_code(
+        &state.entries,
+        !findings.hits.is_empty(),
+        counted(cli, &manifest),
+    );
     output(
         cli,
         &cache_path,
         &Found {
             state: &state,
-            hits: &hits,
+            findings: &findings,
         },
         now,
         code,
@@ -257,7 +261,7 @@ fn status(cli: &Cli, manifest: &Manifest, cache_path: &Path) -> Result<u8> {
         cache_path,
         &Found {
             state: &state,
-            hits: &[],
+            findings: &Findings::default(),
         },
         Timestamp::now(),
         code,
@@ -320,7 +324,7 @@ fn blocker_status(cli: &Cli, id: &str) -> Result<u8> {
         &cache_path,
         &Found {
             state: &state,
-            hits: &[],
+            findings: &Findings::default(),
         },
         Timestamp::now(),
         code,
@@ -335,23 +339,23 @@ fn counted<'a>(cli: &'a Cli, manifest: &'a Manifest) -> &'a [Actionable] {
         .unwrap_or(&Actionable::ALL)
 }
 
-/// What a run found: the blockers' results, and the links `[scan]` found that
-/// no blocker lists.
+/// What a run found: the blockers' results, and what `[scan]` found.
 struct Found<'a> {
     state: &'a StateFile,
-    hits: &'a [Hit],
+    findings: &'a Findings,
 }
 
 /// Prints what was `found` as lines or JSON and returns `code`, the run's exit
 /// code.
 fn output(cli: &Cli, cache_path: &Path, found: &Found<'_>, now: Timestamp, code: u8) -> Result<u8> {
-    let Found { state, hits } = *found;
+    let Found { state, findings } = *found;
     let text = if cli.json {
         let report =
-            Report::new(&state.manifest, cache_path, &state.entries, now, code).with_unlisted(hits);
+            Report::new(&state.manifest, cache_path, &state.entries, now, code).with_scan(findings);
         serde_json::to_string_pretty(&report)? + "\n"
     } else {
-        report::lines(&state.entries, now) + &scan::lines(hits)
+        report::lines(&state.entries, &findings.sites, now)
+            + &report::unlisted_lines(&findings.hits)
     };
     print(cli, &text)?;
     Ok(code)

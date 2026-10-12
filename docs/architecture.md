@@ -14,10 +14,12 @@ canibump reads a manifest, asks each upstream once, and saves what it found.
    Repology gets at most one request a second, as its rules ask. A `git:`
    remote is a bare clone of just the refs asked about, under
    `~/.cache/canibump/git/`.
-5. **Report** (`report.rs`). One line per blocker or `--json`, and the exit
-   code. The state file gets rewritten.
-6. **Scan** (`scan.rs`). With a `[scan]`, read the listed files offline and
-   print an `unlisted` line for each upstream link no blocker names.
+5. **Scan** (`scan.rs`). With a `[scan]`, read the listed files offline for
+   upstream links and `canibump:<id>` markers. A marker some blocker has is
+   one of its sites; a link or marker no blocker names is unlisted.
+6. **Report** (`report.rs`). One line per blocker or `--json`, a bumpable or
+   dead one with its sites under it, an `unlisted` line per unlisted find,
+   and the exit code. The state file gets rewritten.
 
 `schema.rs` generates the manifest's JSON Schema from the same types the
 parser uses.

@@ -23,7 +23,7 @@ fix-check: eject clippy-fix fmt check
 [parallel]
 check: (mmz "fmt-check") (mmz "clippy") (mmz "test") (mmz "machete") (mmz "check-file-size") (mmz "check-dry") (mmz "check-tasks") (mmz "outdatty-check")
 
-# nextest skips doctests, hence the second pass. Green prints the summary.
+# The `--doc` pass is canibump:nextest-doctests. Green prints the summary.
 # The status level is in .config/nextest.toml, shared with `cover`.
 [doc("Run the tests; ARGS filter them")]
 [group("daily")]

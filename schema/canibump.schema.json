@@ -62,11 +62,12 @@
           "type": "array"
         },
         "id": {
-          "description": "Unique name.",
+          "description": "Unique name, of ASCII letters, digits, `_` and `-`: a `canibump:<id>`\ncomment in a scanned file marks where its workaround sits.",
+          "pattern": "^[A-Za-z0-9_-]+$",
           "type": "string"
         },
         "note": {
-          "description": "What workaround it guards, and where.",
+          "description": "What workaround it guards.",
           "type": "string"
         }
       },
@@ -89,11 +90,12 @@
           "type": "array"
         },
         "id": {
-          "description": "Unique name.",
+          "description": "Unique name, of ASCII letters, digits, `_` and `-`: a `canibump:<id>`\ncomment in a scanned file marks where its workaround sits.",
+          "pattern": "^[A-Za-z0-9_-]+$",
           "type": "string"
         },
         "note": {
-          "description": "What workaround it guards, and where.",
+          "description": "What workaround it guards.",
           "type": "string"
         }
       },
@@ -109,7 +111,8 @@
       "description": "A blocker with its condition `C`.",
       "properties": {
         "id": {
-          "description": "Unique name.",
+          "description": "Unique name, of ASCII letters, digits, `_` and `-`: a `canibump:<id>`\ncomment in a scanned file marks where its workaround sits.",
+          "pattern": "^[A-Za-z0-9_-]+$",
           "type": "string"
         },
         "in": {
@@ -117,7 +120,7 @@
           "description": "Where it has to arrive."
         },
         "note": {
-          "description": "What workaround it guards, and where.",
+          "description": "What workaround it guards.",
           "type": "string"
         },
         "reached": {
@@ -138,11 +141,12 @@
       "description": "A blocker with its condition `C`.",
       "properties": {
         "id": {
-          "description": "Unique name.",
+          "description": "Unique name, of ASCII letters, digits, `_` and `-`: a `canibump:<id>`\ncomment in a scanned file marks where its workaround sits.",
+          "pattern": "^[A-Za-z0-9_-]+$",
           "type": "string"
         },
         "note": {
-          "description": "What workaround it guards, and where.",
+          "description": "What workaround it guards.",
           "type": "string"
         },
         "state": {
@@ -166,11 +170,12 @@
           "description": "The lowest version that resolves the blocker."
         },
         "id": {
-          "description": "Unique name.",
+          "description": "Unique name, of ASCII letters, digits, `_` and `-`: a `canibump:<id>`\ncomment in a scanned file marks where its workaround sits.",
+          "pattern": "^[A-Za-z0-9_-]+$",
           "type": "string"
         },
         "note": {
-          "description": "What workaround it guards, and where.",
+          "description": "What workaround it guards.",
           "type": "string"
         },
         "repo": {
@@ -258,7 +263,7 @@
     },
     "Scan": {
       "additionalProperties": false,
-      "description": "Reads the repo's files for upstream links no blocker lists. Each prints as\nan `unlisted` line; a line holding `canibump:ignore` is skipped, and so is\nthe manifest.",
+      "description": "Reads the repo's files for `canibump:<id>` markers, each a site of blocker\n`<id>`, and for upstream links. A link or marker no blocker names prints as\nan `unlisted` line; a line holding `canibump-ignore` is skipped, and so is\nthe manifest.",
       "properties": {
         "catcher": {
           "description": "Catchers to add, replace or turn off. The built-ins, `github`,\n`gitlab-issue`, `gitlab-mr` and `codeberg`, are on by default.",

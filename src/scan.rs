@@ -1,26 +1,31 @@
-//! `[scan]`: upstream links in the repo's files that no blocker lists.
+//! `[scan]`: upstream links in the repo's files that no blocker lists, and
+//! the `canibump:<id>` markers that place each blocker's workaround.
 //!
 //! A catcher is a regex whose named groups fill a `ref` template, so a link
 //! turns into the manifest ref a blocker would name. The built-ins catch
 //! GitHub, GitLab and Codeberg links; a `[[scan.catcher]]` adds one, replaces
 //! a built-in by its id, or turns one off.
 
-use std::collections::{BTreeSet, HashSet};
-use std::fmt::Write as _;
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::path::{Path, PathBuf};
 
-use anstyle::AnsiColor;
 use glob::{MatchOptions, Pattern};
 use regex::Regex;
 use schemars::JsonSchema;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 
 use crate::condition::{Condition, ReachedCondition, StateCondition};
 use crate::manifest::Manifest;
 use crate::refs::Reachable;
 
-/// A line holding this is never reported.
-const IGNORE: &str = "canibump:ignore";
+/// A line holding this is never reported, and marks nothing.
+const IGNORE: &str = "canibump-ignore";
+
+/// The catcher an unlisted marker is reported under.
+const MARKER: &str = "marker";
+
+/// `canibump:<id>` as a word of its own marks a site of blocker `<id>`.
+const MARKER_PATTERN: &str = r"\bcanibump:(?<id>[A-Za-z0-9_-]+)";
 
 /// `*` stops at `/`, so `*.nix` is the top directory and `**/*.nix` all of them.
 const MATCH: MatchOptions = MatchOptions {
@@ -63,6 +68,8 @@ pub struct Scan {
     exclude: Vec<Pattern>,
     /// Directories to skip whole: each `exclude` ending in `/**`, minus it.
     pruned: Vec<Pattern>,
+    /// `canibump:<id>`.
+    marker: Regex,
     /// The catchers that are on, built-ins first.
     catchers: Vec<Catcher>,
 }
@@ -108,8 +115,9 @@ impl PartialEq for Catcher {
     }
 }
 
-/// Reads the repo's files for upstream links no blocker lists. Each prints as
-/// an `unlisted` line; a line holding `canibump:ignore` is skipped, and so is
+/// Reads the repo's files for `canibump:<id>` markers, each a site of blocker
+/// `<id>`, and for upstream links. A link or marker no blocker names prints as
+/// an `unlisted` line; a line holding `canibump-ignore` is skipped, and so is
 /// the manifest.
 #[derive(Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -166,6 +174,7 @@ impl RawScan {
             paths: globs("paths", &self.paths)?,
             exclude: globs("exclude", &self.exclude)?,
             pruned: globs("exclude", &pruned)?,
+            marker: Regex::new(MARKER_PATTERN).map_err(|error| format!("scan: {error}"))?,
             catchers: catchers(self.catchers)?,
         })
     }
@@ -254,27 +263,61 @@ pub struct Hit {
     pub catcher: String,
 }
 
-/// The links `manifest`'s `[scan]` finds that no blocker lists, by file and
-/// line. A file that is not UTF-8 is skipped; one that cannot be read, or a
-/// directory that cannot be listed, earns a warning on stderr.
+/// A line of a scanned file holding a blocker's marker.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
+pub struct Site {
+    /// The file, relative to the manifest's directory.
+    pub file: PathBuf,
+    /// The 1-based line.
+    pub line: usize,
+}
+
+/// What `[scan]` found: links and markers no blocker lists, and each
+/// blocker's sites.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Findings {
+    /// Links and markers no blocker lists, by file and line.
+    pub hits: Vec<Hit>,
+    /// Each marked blocker's sites, by file and line.
+    pub sites: BTreeMap<String, Vec<Site>>,
+}
+
+/// What `manifest`'s `[scan]` finds. A file that is not UTF-8 is skipped;
+/// one that cannot be read, or a directory that cannot be listed, earns a
+/// warning on stderr.
 #[must_use]
-pub fn unlisted(manifest: &Manifest, manifest_path: &Path) -> Vec<Hit> {
+pub fn find(manifest: &Manifest, manifest_path: &Path) -> Findings {
+    let mut findings = Findings::default();
     let Some(scan) = &manifest.scan else {
-        return Vec::new();
+        return findings;
     };
-    let listed = listed(manifest);
+    let lookout = Lookout {
+        scan,
+        listed: listed(manifest),
+        ids: manifest
+            .blockers
+            .iter()
+            .map(|one| one.id.as_str())
+            .collect(),
+    };
     let root = manifest_path
         .parent()
         .filter(|dir| !dir.as_os_str().is_empty())
         .unwrap_or_else(|| Path::new("."));
-    let catchers: Vec<&Catcher> = scan.catchers.iter().collect();
-    files(scan, root, manifest_path)
-        .into_iter()
-        .flat_map(|file| {
-            let text = read(&root.join(&file));
-            hits_in(&file, &text, &catchers, &listed)
-        })
-        .collect()
+    for file in files(scan, root, manifest_path) {
+        let text = read(&root.join(&file));
+        lookout.read(&file, &text, &mut findings);
+    }
+    findings
+}
+
+/// What a scan looks for, and what the manifest already names.
+struct Lookout<'a> {
+    scan: &'a Scan,
+    /// Every ref the blockers name, in the form a hit is compared in.
+    listed: HashSet<String>,
+    /// Every blocker id.
+    ids: HashSet<&'a str>,
 }
 
 /// Every ref the blockers name, in the form a hit is compared in.
@@ -355,15 +398,43 @@ fn read(path: &Path) -> String {
     }
 }
 
-/// The unlisted links in `text`, in line order, then column order, each ref
-/// once per line.
-fn hits_in(file: &Path, text: &str, catchers: &[&Catcher], listed: &HashSet<String>) -> Vec<Hit> {
-    let mut hits = Vec::new();
-    for (index, line) in text.lines().enumerate() {
-        if line.contains(IGNORE) {
-            continue;
+/// An unlisted link or marker on a line: its column, ref and catcher.
+type Spot<'a> = (usize, String, &'a str);
+
+impl Lookout<'_> {
+    /// Adds the unlisted links and markers in `text` to `findings`, in line
+    /// order, then column order, each ref once per line; and the sites of
+    /// the markers some blocker has.
+    fn read(&self, file: &Path, text: &str, findings: &mut Findings) {
+        for (index, line) in text.lines().enumerate() {
+            if line.contains(IGNORE) {
+                continue;
+            }
+            let site = Site {
+                file: file.to_owned(),
+                line: index + 1,
+            };
+            let mut on_line = self.links(line);
+            on_line.extend(self.markers(line, &site, &mut findings.sites));
+            on_line.sort_by_key(|(start, ..)| *start);
+            let mut seen = HashSet::new();
+            for (_, reference, catcher) in on_line {
+                if seen.insert(reference.clone()) {
+                    findings.hits.push(Hit {
+                        file: site.file.clone(),
+                        line: site.line,
+                        reference,
+                        catcher: catcher.to_owned(),
+                    });
+                }
+            }
         }
-        let mut on_line: Vec<(usize, String, &str)> = catchers
+    }
+
+    /// The links on `line` no blocker lists.
+    fn links(&self, line: &str) -> Vec<Spot<'_>> {
+        self.scan
+            .catchers
             .iter()
             .flat_map(|catcher| {
                 catcher.pattern.captures_iter(line).map(|captures| {
@@ -373,22 +444,34 @@ fn hits_in(file: &Path, text: &str, catchers: &[&Catcher], listed: &HashSet<Stri
                     (start, canonical(raw), catcher.id.as_str())
                 })
             })
-            .filter(|(_, reference, _)| !listed.contains(&reference.to_lowercase()))
-            .collect();
-        on_line.sort_by_key(|(start, ..)| *start);
-        let mut seen = HashSet::new();
-        for (_, reference, catcher) in on_line {
-            if seen.insert(reference.clone()) {
-                hits.push(Hit {
-                    file: file.to_owned(),
-                    line: index + 1,
-                    reference,
-                    catcher: catcher.to_owned(),
-                });
+            .filter(|(_, reference, _)| !self.listed.contains(&reference.to_lowercase()))
+            .collect()
+    }
+
+    /// The markers on `line` no blocker has. Each one some blocker has adds
+    /// `site` to that blocker's `sites`, once.
+    fn markers(
+        &self,
+        line: &str,
+        site: &Site,
+        sites: &mut BTreeMap<String, Vec<Site>>,
+    ) -> Vec<Spot<'static>> {
+        let mut unknown = Vec::new();
+        for marker in self.scan.marker.captures_iter(line) {
+            let (Some(whole), Some(id)) = (marker.get(0), marker.name("id")) else {
+                continue;
+            };
+            if !self.ids.contains(id.as_str()) {
+                unknown.push((whole.start(), whole.as_str().to_owned(), MARKER));
+                continue;
+            }
+            let known = sites.entry(id.as_str().to_owned()).or_default();
+            if known.last() != Some(site) {
+                known.push(site.clone());
             }
         }
+        unknown
     }
-    hits
 }
 
 /// The ref as the manifest prints it, so `gitlab:gitlab.com/g/p#1` and
@@ -396,32 +479,6 @@ fn hits_in(file: &Path, text: &str, catchers: &[&Catcher], listed: &HashSet<Stri
 fn canonical(raw: String) -> String {
     raw.parse::<Reachable>()
         .map_or(raw, |reference| reference.to_string())
-}
-
-/// One `unlisted` line per hit: where, and the ref no blocker names.
-///
-/// The status word carries ANSI styles, like [`crate::report::lines`].
-#[must_use]
-pub fn lines(hits: &[Hit]) -> String {
-    let places: Vec<String> = hits
-        .iter()
-        .map(|hit| format!("{}:{}", hit.file.display(), hit.line))
-        .collect();
-    let width = places
-        .iter()
-        .map(|place| place.chars().count())
-        .max()
-        .unwrap_or(0);
-    let style = AnsiColor::Yellow.on_default();
-    let mut out = String::new();
-    for (hit, place) in hits.iter().zip(&places) {
-        let _ = writeln!(
-            out,
-            "{style}unlisted{style:#}  {place:width$}  {} has no blocker",
-            hit.reference
-        );
-    }
-    out
 }
 
 #[cfg(test)]

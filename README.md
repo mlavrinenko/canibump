@@ -76,8 +76,18 @@ unlisted  hosts/gpu.nix:41  github:NixOS/nixpkgs#412345 has no blocker
 ```
 
 GitHub, GitLab and Codeberg links are caught out of the box. Bring your own
-regex for anything else, or switch a built-in off. See
-[docs/scan.md](docs/scan.md).
+regex for anything else, or switch a built-in off.
+
+Mark the workaround itself with `# canibump:<id>` and the note stops needing
+a line number that rots. A bumpable line points you at the spot.
+
+```console
+$ canibump
+bumpable  serde-pin  github:serde-rs/serde#2590 (110af31) is in v1.0.185 (unpin serde)
+          at Cargo.toml:12
+```
+
+See [docs/scan.md](docs/scan.md).
 
 ## Commands
 

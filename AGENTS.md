@@ -42,9 +42,10 @@
 - `just test` gates the suite on cargo-nextest, whose output level lives in
   `.config/nextest.toml` — a green run prints only the summary line, a red one
   prints each failure's full output — plus a `cargo test --doc` pass, because
-  nextest does not run doctests. `just cover` instruments that same runner via
-  `cargo llvm-cov nextest`, so a test cannot pass under the gate and fail under
-  coverage (or the reverse) with nothing saying so.
+  nextest does not run doctests <!-- canibump:nextest-doctests -->. `just cover`
+  instruments that same runner via `cargo llvm-cov nextest`, so a test cannot
+  pass under the gate and fail under coverage (or the reverse) with nothing
+  saying so.
 - Release only with `just release X.Y.Z`, after `just release X.Y.Z --dry-run`
   passes; never `cargo publish` by hand, never bump `Cargo.toml` or date the
   CHANGELOG yourself, and don't push main first. The one exception is a repo's
@@ -65,8 +66,9 @@
 - Eating your own dog food: the tool should use itself if applicable.
   [canibump.toml](canibump.toml) lists the upstream items this repo's own
   workarounds wait on; `just canibump` checks it (network-bound, outside
-  `just check`). When you comment a workaround, add its blocker with a real
-  upstream item you opened; keep the file:line in each note true.
+  `just check`). For each workaround, add a blocker with a real upstream item
+  you opened, and mark every spot it touches with a `canibump:<id>` comment.
+  The why and the exit plan go in the blocker, not beside the marker.
 - Delegated work forks with `just fork <slug>` (a sibling worktree on a new
   branch, `../canibump.<slug>` by default, dev shell allowed) and lands with
   `just land` run in that worktree: it gates, checks no named task is left

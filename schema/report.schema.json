@@ -23,6 +23,13 @@
           "description": "The blocker note.",
           "type": "string"
         },
+        "sites": {
+          "description": "Where its workaround sits: each `canibump:<id>` `[scan]` found.",
+          "items": {
+            "$ref": "#/$defs/Site"
+          },
+          "type": "array"
+        },
         "stale": {
           "description": "Past `fresh_until`.",
           "type": "boolean"
@@ -39,7 +46,28 @@
         "detail",
         "checked_at",
         "fresh_until",
+        "sites",
         "stale"
+      ],
+      "type": "object"
+    },
+    "Site": {
+      "description": "A line of a scanned file holding a blocker's marker.",
+      "properties": {
+        "file": {
+          "description": "The file, relative to the manifest's directory.",
+          "type": "string"
+        },
+        "line": {
+          "description": "The 1-based line.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "file",
+        "line"
       ],
       "type": "object"
     },

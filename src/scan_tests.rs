@@ -4,9 +4,9 @@ use tempfile::TempDir;
 
 use super::*;
 
-/// A temp repo holding `files` and a `canibump.toml` of `manifest`: the
-/// unlisted links its scan finds, as `file:line ref (catcher)`.
-fn found(manifest: &str, files: &[(&str, &str)]) -> Vec<String> {
+/// What the scan of a temp repo holding `files` and a `canibump.toml` of
+/// `manifest` finds.
+fn scanned(manifest: &str, files: &[(&str, &str)]) -> Findings {
     let dir = TempDir::new().expect("tempdir");
     for (name, text) in files {
         let path = dir.path().join(name);
@@ -16,7 +16,13 @@ fn found(manifest: &str, files: &[(&str, &str)]) -> Vec<String> {
     let manifest_path = dir.path().join("canibump.toml");
     std::fs::write(&manifest_path, manifest).expect("write manifest");
     let manifest = Manifest::parse(manifest).expect("valid manifest");
-    unlisted(&manifest, &manifest_path)
+    find(&manifest, &manifest_path)
+}
+
+/// The unlisted links and markers `scanned` finds, as `file:line ref (catcher)`.
+fn found(manifest: &str, files: &[(&str, &str)]) -> Vec<String> {
+    scanned(manifest, files)
+        .hits
         .into_iter()
         .map(|hit| {
             format!(
@@ -94,7 +100,7 @@ fn skips_a_line_marked_ignore_excluded_files_and_the_manifest() {
     let files = [
         (
             "a.nix",
-            "# https://github.com/o/r/issues/2 canibump:ignore\n",
+            "# https://github.com/o/r/issues/2 canibump-ignore\n",
         ),
         ("tasks/t.typ", "https://github.com/o/r/issues/3\n"),
         ("b.nix", "https://github.com/o/r/issues/4\n"),
@@ -122,7 +128,7 @@ fn a_file_that_is_not_utf8_is_skipped() {
     std::fs::write(dir.path().join("a.nix"), PIN).expect("write");
     let manifest_path = dir.path().join("canibump.toml");
     let manifest = Manifest::parse(NIX).expect("valid");
-    let hits = unlisted(&manifest, &manifest_path);
+    let hits = find(&manifest, &manifest_path).hits;
     assert_eq!(hits.len(), 1);
     assert_eq!(
         hits.first().map(|hit| hit.file.clone()),
@@ -172,21 +178,6 @@ fn a_built_in_turns_off_or_gives_way_to_a_catcher_of_its_id() {
             &[("a.nix", "gh#3\nhttps://github.com/o/r/issues/4\n")]
         ),
         ["a.nix:1 github:o/r#3 (github)"]
-    );
-}
-
-#[test]
-fn prints_one_unlisted_line_per_hit() {
-    let hits = [Hit {
-        file: "hosts/gpu.nix".into(),
-        line: 41,
-        reference: "github:NixOS/nixpkgs#412345".to_owned(),
-        catcher: "github".to_owned(),
-    }];
-    let plain = anstream::adapter::strip_str(&lines(&hits)).to_string();
-    assert_eq!(
-        plain,
-        "unlisted  hosts/gpu.nix:41  github:NixOS/nixpkgs#412345 has no blocker\n"
     );
 }
 
@@ -265,7 +256,8 @@ fn reads_a_linked_file_but_never_enters_a_linked_directory_or_git() {
     std::fs::write(dir.path().join(".git/hook.nix"), PIN).expect("write");
     let manifest_path = dir.path().join("canibump.toml");
     let manifest = Manifest::parse(NIX).expect("valid");
-    let files: Vec<PathBuf> = unlisted(&manifest, &manifest_path)
+    let files: Vec<PathBuf> = find(&manifest, &manifest_path)
+        .hits
         .into_iter()
         .map(|hit| hit.file)
         .collect();
@@ -285,4 +277,68 @@ fn an_exclude_ending_in_globstar_prunes_its_directory() {
         !scan.prunes(Path::new("tasks")),
         "tasks/sub/x.typ is not excluded"
     );
+}
+
+/// Each blocker's sites `scanned` finds, as `id file:line`.
+fn sites(manifest: &str, files: &[(&str, &str)]) -> Vec<String> {
+    scanned(manifest, files)
+        .sites
+        .into_iter()
+        .flat_map(|(id, sites)| {
+            sites
+                .into_iter()
+                .map(move |site| format!("{id} {}:{}", site.file.display(), site.line))
+        })
+        .collect()
+}
+
+const MARKED: &str = "[scan]\npaths = [\"*\"]\n\
+                      [[blocker]]\nid = \"a\"\nnote = \"n\"\nstate = \"github:o/r#1\"\n\
+                      [[blocker]]\nid = \"b_2\"\nnote = \"n\"\nstate = \"github:o/r#2\"\n";
+
+#[test]
+fn a_marker_is_a_site_of_its_blocker_wherever_it_sits() {
+    let files = [
+        ("flake.nix", "x\n# canibump:a\ny # canibump:b_2\n"),
+        ("Justfile", "# canibump:a, see the manifest\n"),
+    ];
+    assert_eq!(
+        sites(MARKED, &files),
+        ["a Justfile:1", "a flake.nix:2", "b_2 flake.nix:3"]
+    );
+    assert_eq!(found(MARKED, &files), Vec::<String>::new());
+}
+
+#[test]
+fn a_marker_no_blocker_has_is_unlisted() {
+    assert_eq!(
+        found(MARKED, &[("a.nix", "# canibump:gone\n")]),
+        ["a.nix:1 canibump:gone (marker)"]
+    );
+}
+
+#[test]
+fn only_a_word_starting_canibump_colon_and_an_id_is_a_marker() {
+    let text = "canibump: a\nuse canibump::scan;\nxcanibump:a\ncanibump:<id>\n";
+    assert_eq!(found(MARKED, &[("a.nix", text)]), Vec::<String>::new());
+    assert_eq!(sites(MARKED, &[("a.nix", text)]), Vec::<String>::new());
+}
+
+#[test]
+fn an_ignored_line_marks_nothing() {
+    assert_eq!(
+        sites(MARKED, &[("a.nix", "canibump:a canibump-ignore\n")]),
+        Vec::<String>::new()
+    );
+}
+
+#[test]
+fn an_id_takes_only_what_a_marker_can_name() {
+    let text = |id| format!("[[blocker]]\nid = \"{id}\"\nnote = \"n\"\nstate = \"github:o/r#1\"\n");
+    assert!(Manifest::parse(&text("a-b_C9")).is_ok());
+    for id in ["a b", "a.b", "", "ä"] {
+        let message =
+            "an id takes only ASCII letters, digits, `_` and `-`, so `canibump:<id>` can mark it";
+        assert_eq!(first_error(&text(id)), format!("blocker `{id}`: {message}"));
+    }
 }

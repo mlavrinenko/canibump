@@ -13,10 +13,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `unlisted` line for each one no blocker names, so a workaround nobody filed
   still shows up. GitHub, GitLab and Codeberg links are caught out of the
   box. `[[scan.catcher]]` adds a regex of your own, replaces a built-in or
-  turns one off, and `canibump:ignore` skips a line. The walk stays out of
+  turns one off, and `canibump-ignore` skips a line. The walk stays out of
   `.git` and symlinked directories.
+- A `canibump:<id>` comment marks where blocker `<id>`'s workaround sits. A
+  bumpable or dead line prints each marked spot under it, `--json` gives every
+  blocker its `sites`, and a marker naming no blocker prints as `unlisted`.
+
 - An unlisted link adds 16 to the exit code and counts by default, and
   `fail-on` takes `unlisted`. `--json` lists each under `unlisted`.
+
+### Changed
+
+- A blocker id takes only ASCII letters, digits, `_` and `-`, so a marker can
+  name it.
 
 ## [0.1.0] - 2026-10-11
 

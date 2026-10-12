@@ -43,9 +43,11 @@ pub(crate) enum BlockerSchema {
 #[serde(deny_unknown_fields)]
 #[schemars(rename = "Blocker_{C}")]
 pub(crate) struct BlockerOf<C> {
-    /// Unique name.
+    /// Unique name, of ASCII letters, digits, `_` and `-`: a `canibump:<id>`
+    /// comment in a scanned file marks where its workaround sits.
+    #[schemars(regex(pattern = r"^[A-Za-z0-9_-]+$"))]
     id: String,
-    /// What workaround it guards, and where.
+    /// What workaround it guards.
     note: String,
     #[serde(flatten)]
     condition: C,

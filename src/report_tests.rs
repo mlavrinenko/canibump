@@ -1,7 +1,11 @@
 use super::*;
 
 use anstream::adapter::strip_str;
+use std::collections::BTreeMap;
+
 use jiff::SignedDuration;
+
+use crate::scan::{Findings, Site};
 
 fn now() -> Timestamp {
     Timestamp::from_second(1_800_000_000).expect("in range")
@@ -32,12 +36,12 @@ fn stale(seconds: i64) -> Entry {
 }
 
 fn plain(entries: &[Entry]) -> String {
-    strip_str(&lines(entries, now())).to_string()
+    strip_str(&lines(entries, &BTreeMap::new(), now())).to_string()
 }
 
 #[test]
 fn each_status_word_gets_its_own_style() {
-    let paint = |status| lines(&[entry("x", status)], now());
+    let paint = |status| lines(&[entry("x", status)], &BTreeMap::new(), now());
     assert_eq!(paint(Status::Waiting), "\x1b[2mwaiting\x1b[0m   x  d\n");
     assert_eq!(
         paint(Status::Bumpable),
@@ -166,4 +170,70 @@ fn an_unlisted_link_adds_16_when_counted() {
     assert_eq!(exit_code(&entries, true, &Actionable::ALL), 25);
     assert_eq!(exit_code(&entries, true, &[Actionable::Bumpable]), 9);
     assert_eq!(exit_code(&entries, false, &[Actionable::Unlisted]), EXIT_OK);
+}
+
+/// Blocker `x`'s sites: `flake.nix:29`, then `Justfile:26`.
+fn sites_of_x() -> BTreeMap<String, Vec<Site>> {
+    let site = |file: &str, line| Site {
+        file: file.into(),
+        line,
+    };
+    BTreeMap::from([(
+        "x".to_owned(),
+        vec![site("flake.nix", 29), site("Justfile", 26)],
+    )])
+}
+
+#[test]
+fn a_bumpable_or_dead_line_lists_its_sites_under_it() {
+    let sites = sites_of_x();
+    let plain = |status| strip_str(&lines(&[entry("x", status)], &sites, now())).to_string();
+    assert_eq!(
+        plain(Status::Bumpable),
+        "bumpable  x  d (drop it)\n          at flake.nix:29, Justfile:26\n"
+    );
+    assert_eq!(
+        plain(Status::Dead),
+        "dead      x  d (drop it)\n          at flake.nix:29, Justfile:26\n"
+    );
+    assert_eq!(plain(Status::Waiting), "waiting   x  d\n");
+    assert_eq!(plain(Status::Failed), "failed    x  d\n");
+}
+
+#[test]
+fn the_json_report_gives_every_row_its_sites() {
+    let entries = [entry("x", Status::Waiting), entry("y", Status::Waiting)];
+    let findings = Findings {
+        hits: Vec::new(),
+        sites: sites_of_x(),
+    };
+    let report =
+        Report::new(Path::new("m"), Path::new("c"), &entries, now(), 0).with_scan(&findings);
+    let json = serde_json::to_value(&report).expect("serializes");
+    assert_eq!(
+        json.pointer("/entries/0/sites"),
+        Some(&serde_json::json!([
+            { "file": "flake.nix", "line": 29 },
+            { "file": "Justfile", "line": 26 },
+        ]))
+    );
+    assert_eq!(
+        json.pointer("/entries/1/sites"),
+        Some(&serde_json::json!([]))
+    );
+}
+
+#[test]
+fn prints_one_unlisted_line_per_hit() {
+    let hits = [Hit {
+        file: "hosts/gpu.nix".into(),
+        line: 41,
+        reference: "github:NixOS/nixpkgs#412345".to_owned(),
+        catcher: "github".to_owned(),
+    }];
+    let plain = strip_str(&unlisted_lines(&hits)).to_string();
+    assert_eq!(
+        plain,
+        "unlisted  hosts/gpu.nix:41  github:NixOS/nixpkgs#412345 has no blocker\n"
+    );
 }

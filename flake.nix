@@ -26,10 +26,8 @@
 
         naersk' = pkgs.callPackage naersk { };
 
-        # nixpkgs' rustc ships no `llvm-tools-preview` component, so
-        # cargo-llvm-cov cannot find llvm-cov/llvm-profdata in the sysroot.
-        # Point it at a standalone LLVM of the SAME major as rustc's — a
-        # mismatched llvm-profdata rejects the profraw format.
+        # The same major as rustc's: a mismatched llvm-profdata rejects the
+        # profraw format.
         llvm = pkgs.llvmPackages_21.llvm;
       in
       {
@@ -75,11 +73,12 @@
             cargo-deny
             # The bump, CHANGELOG dating and commit behind `just release`.
             cargo-release
-            # cargo-nextest is the test runner `just test` gates on — doctests
-            # run in a separate `cargo test --doc` pass, which is why `just
-            # test` spells out both. cargo-outdated is a dev aid, deliberately
-            # not wired into `just check`: a new upstream release is not a
-            # reason for a gate to go red.
+            # cargo-nextest is the test runner `just test` gates on; doctests
+            # run in a separate `cargo test --doc` pass
+            # (canibump:nextest-doctests), so `just test` spells out both.
+            # cargo-outdated is a dev aid, deliberately not wired into `just
+            # check`: a new upstream release is not a reason for a gate to go
+            # red.
             cargo-nextest
             cargo-outdated
             # `wt` forks and lands worktrees: `just fork` and `just land` run
@@ -94,6 +93,7 @@
             rust-analyzer
           ]);
           shellHook = ''
+            # canibump:llvm-cov-path-fallback
             export LLVM_COV=${llvm}/bin/llvm-cov
             export LLVM_PROFDATA=${llvm}/bin/llvm-profdata
             # Wire the tracked pre-commit hook (.githooks/) on every shell

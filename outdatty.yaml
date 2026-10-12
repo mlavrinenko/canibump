@@ -61,9 +61,8 @@ groups:
   # `.config/nextest.toml` is a recipe body in practice — `status-level` lives
   # there once, for `just test` and `just cover` — so an edit to it changes what
   # CONTRIBUTING.md and AGENTS.md describe.
-  # canibump.toml is a dependent too: each note cites a line of flake.nix or
-  # the Justfile, so moving that line flags the note. The scripts/ bodies are
-  # sources because AGENTS.md states what the recipes refuse.
+  # The scripts/ bodies are sources because AGENTS.md states what the recipes
+  # refuse.
   - name: dev-docs
     source:
       - flake.nix
@@ -76,4 +75,3 @@ groups:
     dependents:
       - CONTRIBUTING.md
       - AGENTS.md
-      - canibump.toml

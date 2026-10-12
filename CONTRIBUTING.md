@@ -63,8 +63,8 @@ coverage, so anything there goes untested.
   in `tests/it/` link into one binary: a new one needs a `mod` line in
   `tests/it/main.rs`.
 - `just test` runs `cargo nextest run`, one process per test, plus
-  `cargo test --doc`, which [nextest](https://nexte.st) skips. A green run
-  prints the summary line. `just cover` instruments the same runner, so the
+  `cargo test --doc`, which [nextest](https://nexte.st) skips
+  <!-- canibump:nextest-doctests -->. A green run prints the summary line. `just cover` instruments the same runner, so the
   gate and the coverage cannot disagree. The output level lives in
   [.config/nextest.toml](.config/nextest.toml).
 - Near the linecop limit, `just fix-check` ejects an inline `#[cfg(test)]`
@@ -148,11 +148,11 @@ gate, and unrelated to `just outdatty-check`.
 
 [canibump.toml](canibump.toml) is this repo using itself: one blocker per
 workaround in `flake.nix`, the `Justfile` or `.config/nextest.toml` that waits
-on an upstream issue or PR, each note naming the file and line to change.
-`just canibump` checks them, off `just check` since it needs network. Add a
-blocker when you comment a workaround, for an upstream item you opened and
-read. Keep the line numbers true; outdatty flags the manifest when a file it
-cites changes.
+on an upstream issue or PR. A `canibump:<id>` comment marks each spot a
+workaround touches, so a bumpable line prints where to edit. `just canibump`
+checks them, off `just check` since it needs network. Add a blocker for each
+workaround, for an upstream item you opened and read, and mark its spots. The
+why and the exit plan live in the blocker alone.
 
 ## Releasing
 
