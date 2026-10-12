@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `[scan]` reads the files you list for issue, PR and MR links and prints an
+  `unlisted` line for each one no blocker names, so a workaround nobody filed
+  still shows up. GitHub, GitLab and Codeberg links are caught out of the
+  box. `[[scan.catcher]]` adds a regex of your own, replaces a built-in or
+  turns one off, and `canibump:ignore` skips a line.
+
 ## [0.1.0] - 2026-10-11
 
 

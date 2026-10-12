@@ -16,6 +16,8 @@ canibump reads a manifest, asks each upstream once, and saves what it found.
    `~/.cache/canibump/git/`.
 5. **Report** (`report.rs`). One line per blocker or `--json`, and the exit
    code. The state file gets rewritten.
+6. **Scan** (`scan.rs`). With a `[scan]`, read the listed files offline and
+   print an `unlisted` line for each upstream link no blocker names.
 
 `schema.rs` generates the manifest's JSON Schema from the same types the
 parser uses.

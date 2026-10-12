@@ -218,6 +218,71 @@
       ],
       "description": "The lowest version that resolves a `version` condition."
     },
+    "Catcher": {
+      "additionalProperties": false,
+      "description": "A catcher: a regex over each line, and the ref its match stands for.",
+      "properties": {
+        "enabled": {
+          "default": true,
+          "description": "`false` turns it off. Defaults to `true`.",
+          "type": "boolean"
+        },
+        "id": {
+          "description": "Its name. A built-in's id replaces or turns off that built-in.",
+          "type": "string"
+        },
+        "pattern": {
+          "description": "A regex with named groups, like\n`'https://jira\\.example\\.com/browse/(?<key>[A-Z]+-\\d+)'`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "ref": {
+          "description": "The ref a match stands for, with `${group}` for each named group, like\n`\"jira:jira.example.com#${key}\"`.",
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "object"
+    },
+    "Scan": {
+      "additionalProperties": false,
+      "description": "Reads the repo's files for upstream links no blocker lists. Each prints as\nan `unlisted` line; a line holding `canibump:ignore` is skipped, and so is\nthe manifest.",
+      "properties": {
+        "catcher": {
+          "description": "Catchers to add, replace or turn off. The built-ins, `github`,\n`gitlab-issue`, `gitlab-mr` and `codeberg`, are on by default.",
+          "items": {
+            "$ref": "#/$defs/Catcher"
+          },
+          "type": "array"
+        },
+        "exclude": {
+          "default": [],
+          "description": "Globs of files to skip among those.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "paths": {
+          "description": "Globs of the files to read, relative to the manifest, like\n`\"**/*.nix\"`. `*` stops at `/`, `**` crosses directories.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "paths"
+      ],
+      "type": "object"
+    },
     "Settings": {
       "additionalProperties": false,
       "description": "`[settings]`.",
@@ -456,6 +521,17 @@
         "$ref": "#/$defs/Blocker"
       },
       "type": "array"
+    },
+    "scan": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Scan"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "description": "Reads the repo's files for upstream links no blocker lists."
     },
     "settings": {
       "$ref": "#/$defs/Settings",

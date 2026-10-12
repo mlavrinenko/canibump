@@ -16,6 +16,7 @@ use toml::{Spanned, Table, Value};
 
 use crate::condition::{Condition, check_steps, parse_condition};
 use crate::report::Actionable;
+use crate::scan::{RawScan, Scan};
 use crate::schema::BlockerSchema;
 
 const DEFAULT_TTL: SignedDuration = SignedDuration::from_hours(6);
@@ -34,6 +35,8 @@ pub struct Manifest {
     pub settings: Settings,
     /// Every `[[blocker]]`, in file order.
     pub blockers: Vec<Blocker>,
+    /// `[scan]`, when the manifest has one.
+    pub scan: Option<Scan>,
 }
 
 /// `[settings]`.
@@ -75,6 +78,9 @@ pub enum ManifestError {
     /// The file is not valid TOML, or a top-level key is wrong.
     #[error(transparent)]
     Toml(#[from] toml::de::Error),
+    /// `[scan]` is wrong.
+    #[error("{0}")]
+    Scan(String),
     /// `[settings] ttl` does not parse.
     #[error(
         "settings.ttl: `{0}` is not a duration like \"6h\", \"30m\" or \"1d\" (weeks, days, hours, minutes and seconds)"
@@ -126,7 +132,7 @@ impl ManifestError {
             | Self::Blocker { line, .. }
             | Self::DuplicateId { line, .. } => Some(*line),
             Self::File { error, .. } => error.line(),
-            Self::Read { .. } | Self::Toml(_) | Self::Ttl(_) => None,
+            Self::Read { .. } | Self::Toml(_) | Self::Ttl(_) | Self::Scan(_) => None,
         }
     }
 }
@@ -160,6 +166,8 @@ pub(crate) struct RawManifest {
     #[serde(default, rename = "blocker")]
     #[schemars(with = "Vec<BlockerSchema>")]
     blockers: Vec<Spanned<Table>>,
+    /// Reads the repo's files for upstream links no blocker lists.
+    scan: Option<RawScan>,
 }
 
 /// `[settings]`.
@@ -210,6 +218,11 @@ impl Manifest {
             None => DEFAULT_TTL,
             Some(text) => parse_ttl(&text).ok_or(ManifestError::Ttl(text))?,
         };
+        let scan = raw
+            .scan
+            .map(RawScan::parse)
+            .transpose()
+            .map_err(ManifestError::Scan)?;
         let mut seen = HashSet::new();
         let mut blockers = Vec::with_capacity(raw.blockers.len());
         for (index, spanned) in raw.blockers.into_iter().enumerate() {
@@ -230,6 +243,7 @@ impl Manifest {
                 fail_on: raw.settings.fail_on,
             },
             blockers,
+            scan,
         })
     }
 }

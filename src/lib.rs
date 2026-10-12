@@ -22,6 +22,7 @@ pub mod refs;
 #[doc(hidden)]
 pub mod report;
 mod run;
+mod scan;
 #[doc(hidden)]
 pub mod schema;
 mod version;

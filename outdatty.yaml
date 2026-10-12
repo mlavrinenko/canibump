@@ -31,6 +31,7 @@ groups:
     dependents:
       - README.md
       - docs/manifest.md
+      - docs/scan.md
       - docs/architecture.md
 
   # The JSON schemas are generated from the types, so a source change
@@ -44,6 +45,7 @@ groups:
       - schema/state.schema.json
       - README.md
       - docs/manifest.md
+      - docs/scan.md
 
   # A package change (version, dependencies, metadata) should land in the
   # changelog.

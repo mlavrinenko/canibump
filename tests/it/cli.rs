@@ -396,3 +396,21 @@ fn an_enterprise_api_asks_gh_for_its_own_host() {
         format!("auth token --hostname {}\n", repo.server.address())
     );
 }
+
+#[test]
+fn prints_an_unlisted_line_for_a_link_no_blocker_lists() {
+    let repo = Repo::new(&format!(
+        "[scan]\npaths = [\"*.nix\"]\n\n{}",
+        blocker("waits", 1)
+    ));
+    std::fs::write(
+        repo.dir.path().join("pin.nix"),
+        "# pin until https://github.com/o/r/issues/1 or https://github.com/o/r/pull/9 lands\n",
+    )
+    .expect("write");
+    repo.issue(1, 200, &open());
+    repo.cmd().assert().code(0).stdout(
+        "waiting   waits  github:o/r#1 is open\n\
+         unlisted  pin.nix:1  github:o/r#9 has no blocker\n",
+    );
+}

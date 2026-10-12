@@ -2,6 +2,11 @@
 # Upstream fixes this repo's own workarounds wait on. `just canibump` says
 # which can go. Add a blocker whenever a comment explains a workaround.
 
+# Where workaround comments live; a link there with no blocker below prints
+# as `unlisted`.
+[scan]
+paths = ["flake.nix", "Justfile", "scripts/*", ".github/workflows/*", ".config/*"]
+
 # cargo-llvm-cov finds no llvm-cov in nixpkgs' rustc, so the dev shell points
 # it at a standalone LLVM. The PR makes it fall back to matching LLVM tools on
 # PATH.

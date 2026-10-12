@@ -317,6 +317,7 @@ dependencies = [
  "jsonschema",
  "octocrab",
  "predicates",
+ "regex",
  "reqwest",
  "schemars",
  "serde",

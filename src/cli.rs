@@ -12,7 +12,7 @@ use crate::cache::{self, Entry, StateFile};
 use crate::manifest::Manifest;
 use crate::provider::defaults;
 use crate::report::{self, Actionable, Exit, Report};
-use crate::run;
+use crate::{run, scan};
 
 /// Can I bump yet? Checks the upstream blockers in canibump.toml.
 ///
@@ -221,7 +221,11 @@ fn check(cli: &Cli, args: CheckArgs) -> Result<u8> {
     };
     cache::write(&cache_path, &state)?;
     let code = report::exit_code(&state.entries, counted(cli, &manifest));
-    output(cli, &cache_path, &state, now, code)
+    output(cli, &cache_path, &state, now, code)?;
+    if !cli.json {
+        print(cli, &scan::lines(&scan::unlisted(&manifest, &cli.manifest)))?;
+    }
+    Ok(code)
 }
 
 fn results(cache_path: &Path) -> Result<StateFile> {

@@ -58,6 +58,26 @@ bumpable  serde-pin            github:serde-rs/serde#2590 (110af31) is in v1.0.1
 
 The full grammar, the cache and auth live in [docs/manifest.md](docs/manifest.md).
 
+## Forgotten workarounds
+
+A pin nobody wrote a blocker for never shows up, so it lives forever. Give
+canibump a `[scan]` and it reads your files for issue, PR and MR links, then
+flags every one no blocker names.
+
+```toml
+[scan]
+paths = ["**/*.nix", "Justfile"]
+```
+
+```console
+$ canibump
+unlisted  hosts/gpu.nix:41  github:NixOS/nixpkgs#412345 has no blocker
+```
+
+GitHub, GitLab and Codeberg links are caught out of the box. Bring your own
+regex for anything else, or switch a built-in off. See
+[docs/scan.md](docs/scan.md).
+
 ## Commands
 
 ```bash

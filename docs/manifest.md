@@ -1,6 +1,7 @@
 # canibump.toml
 
-Everything a manifest can say. The [README](../README.md) has the quick tour.
+Everything a manifest can say. The [README](../README.md) has the quick tour,
+and [scan.md](scan.md) the `[scan]` table that flags unlisted links.
 
 ## Conditions
 
@@ -24,12 +25,11 @@ whole words: `Rejected`, `Won't Fix`, `Invalid` or `Abandoned` read dead,
 `Fixed` or `Done` read bumpable, `Not done` does not.
 
 `reached` waits for a commit, or a PR's merge commit, to land in a branch, a
-tag, or the first tag matching a pattern, in version order. It reads history
-on GitHub and any git remote, and a target elsewhere fails the manifest. An
-issue has no merge commit and reads `failed`, open or closed, so wait on it
-with `state`. A
-short sha matching two commits fails and asks for more digits. One version
-order covers semver, `v`-tags, dates and builds like `b7012`.
+tag, or the first tag matching a pattern. It reads history on GitHub and any
+git remote, and a target elsewhere fails the manifest. An issue has no merge
+commit and reads `failed`, so wait on it with `state`. A short sha matching
+two commits fails and asks for more digits. One version order covers semver,
+`v`-tags, dates and builds like `b7012`.
 
 ```
 v1.0.0 = 1.0.0 = 1.0.0+build     # a letter prefix and +build drop
@@ -48,12 +48,11 @@ in = { branch = "master" }
 
 Tags fall into release lines by their first two numbers (`v1.4.2` and
 `v1.4.0-rc1` share `1.4`, all `b`-builds share one), so a fix shipped only on
-an old line, in `v1.5.0` but no `v2`, still counts. canibump asks each line's
-newest tag, then binary-searches the first line whose newest has it, a call
-per line plus a few. A tag in that line cut from another branch can't make it
-name the wrong tag. It costs extra calls instead, never more than one per tag. A line whose newest tag
+an old line still counts. canibump asks each line's newest tag, then
+binary-searches the first line whose newest has it. A line whose newest tag
 lacks the commit counts as not having it, since an old line forked before the
-fix looks just the same. `since` trims the lines to ask.
+fix looks the same. A tag cut from another branch costs extra calls, at most
+one per tag, never a wrong answer. `since` trims the lines to ask.
 
 `version` waits for a package to reach some version. Repology covers distro
 repos, nixpkgs channels included (`nix_unstable`, `nix_stable_25_11`).
@@ -157,10 +156,9 @@ bumpable  serde-pin  github:serde-rs/serde#2590 merged (Cargo.toml: unpin serde)
 0
 ```
 
-A bare `canibump status` prints the state file as it stands, minus what the
-manifest has moved past. A result checked against an older condition is not
-counted and earns a warning on stderr, and a blocker the manifest dropped is
-skipped.
+A bare `canibump status` prints the state file minus what the manifest moved
+past. A result checked against an older condition is left out with a warning,
+and a dropped blocker is skipped.
 
 ## Auth
 
