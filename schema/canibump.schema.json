@@ -1,7 +1,7 @@
 {
   "$defs": {
     "Actionable": {
-      "description": "A status that can fail the run: every one but `waiting`.",
+      "description": "What can fail the run: every status but `waiting`, and an unlisted link.",
       "oneOf": [
         {
           "const": "bumpable",
@@ -16,6 +16,11 @@
         {
           "const": "failed",
           "description": "A check broke: adds 4.",
+          "type": "string"
+        },
+        {
+          "const": "unlisted",
+          "description": "`[scan]` found a link no blocker lists: adds 16.",
           "type": "string"
         }
       ]
@@ -295,7 +300,7 @@
           ]
         },
         "fail-on": {
-          "description": "Which statuses fail the run, with an exit code from 9 to 15: any of\n`\"bumpable\"`, `\"dead\"` and `\"failed\"`. Defaults to all three; `[]`\nnever fails. `--fail-on` overrides it.",
+          "description": "What fails the run, with an exit code from 9 to 31: any of\n`\"bumpable\"`, `\"dead\"`, `\"failed\"` and `\"unlisted\"`. Defaults to all\nfour; `[]` never fails. `--fail-on` overrides it.",
           "items": {
             "$ref": "#/$defs/Actionable"
           },

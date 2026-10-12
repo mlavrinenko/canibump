@@ -21,6 +21,10 @@ never read, and neither is a line holding `canibump:ignore`, for a link
 that's just background reading. A file that isn't UTF-8 is skipped. Only a
 check scans, so `canibump status` prints no `unlisted` line.
 
+An unlisted link adds 16 to the exit code, so one alone exits 24.
+`fail-on = ["bumpable", "dead", "failed"]` leaves it out. `--json` lists each
+under `unlisted` with its `file`, `line`, `ref` and `catcher`.
+
 A catcher is a regex run over each line, and a `ref` template its named
 groups fill. The ref is compared with the blockers' in the form canibump
 prints it, ignoring case. These are on by default.

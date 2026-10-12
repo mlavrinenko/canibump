@@ -12,12 +12,14 @@ use crate::cache::{self, Entry, StateFile};
 use crate::manifest::Manifest;
 use crate::provider::defaults;
 use crate::report::{self, Actionable, Exit, Report};
-use crate::{run, scan};
+use crate::run;
+use crate::scan::{self, Hit};
 
 /// Can I bump yet? Checks the upstream blockers in canibump.toml.
 ///
 /// Exit codes: 0 when nothing counted showed up, else 8 plus 1 for bumpable, 2
-/// for dead and 4 for failed, summed (bumpable and dead is 11). 1 is an unusable
+/// for dead, 4 for failed and 16 for an unlisted link, summed (bumpable and dead
+/// is 11). 1 is an unusable
 /// manifest or cache, 2 a bad argument. `--fail-on` picks what counts. `status <id>`
 /// answers for one blocker instead: 0 bumpable, 1 waiting, 2 anything else.
 #[derive(Debug, Parser)]
@@ -33,7 +35,7 @@ pub struct Cli {
     #[arg(long, global = true)]
     pub json: bool,
     /// What fails the run, comma-separated or repeated. Defaults to
-    /// `[settings] fail-on`, else bumpable, dead and failed.
+    /// `[settings] fail-on`, else bumpable, dead, failed and unlisted.
     #[arg(
         long,
         global = true,
@@ -220,12 +222,18 @@ fn check(cli: &Cli, args: CheckArgs) -> Result<u8> {
         entries,
     };
     cache::write(&cache_path, &state)?;
-    let code = report::exit_code(&state.entries, counted(cli, &manifest));
-    output(cli, &cache_path, &state, now, code)?;
-    if !cli.json {
-        print(cli, &scan::lines(&scan::unlisted(&manifest, &cli.manifest)))?;
-    }
-    Ok(code)
+    let hits = scan::unlisted(&manifest, &cli.manifest);
+    let code = report::exit_code(&state.entries, !hits.is_empty(), counted(cli, &manifest));
+    output(
+        cli,
+        &cache_path,
+        &Found {
+            state: &state,
+            hits: &hits,
+        },
+        now,
+        code,
+    )
 }
 
 fn results(cache_path: &Path) -> Result<StateFile> {
@@ -243,8 +251,17 @@ fn status(cli: &Cli, manifest: &Manifest, cache_path: &Path) -> Result<u8> {
         entries: current_entries(manifest, state.entries),
         ..state
     };
-    let code = report::exit_code(&state.entries, counted(cli, manifest));
-    output(cli, cache_path, &state, Timestamp::now(), code)
+    let code = report::exit_code(&state.entries, false, counted(cli, manifest));
+    output(
+        cli,
+        cache_path,
+        &Found {
+            state: &state,
+            hits: &[],
+        },
+        Timestamp::now(),
+        code,
+    )
 }
 
 /// The entries the manifest still holds under the condition they were checked
@@ -298,10 +315,19 @@ fn blocker_status(cli: &Cli, id: &str) -> Result<u8> {
         entries: vec![entry],
         ..state
     };
-    output(cli, &cache_path, &state, Timestamp::now(), code)
+    output(
+        cli,
+        &cache_path,
+        &Found {
+            state: &state,
+            hits: &[],
+        },
+        Timestamp::now(),
+        code,
+    )
 }
 
-/// The statuses that fail the run: the flag, else the manifest, else all three.
+/// What fails the run: the flag, else the manifest, else all four.
 fn counted<'a>(cli: &'a Cli, manifest: &'a Manifest) -> &'a [Actionable] {
     cli.fail_on
         .as_deref()
@@ -309,13 +335,23 @@ fn counted<'a>(cli: &'a Cli, manifest: &'a Manifest) -> &'a [Actionable] {
         .unwrap_or(&Actionable::ALL)
 }
 
-/// Prints `state` as lines or JSON and returns `code`, the run's exit code.
-fn output(cli: &Cli, cache_path: &Path, state: &StateFile, now: Timestamp, code: u8) -> Result<u8> {
+/// What a run found: the blockers' results, and the links `[scan]` found that
+/// no blocker lists.
+struct Found<'a> {
+    state: &'a StateFile,
+    hits: &'a [Hit],
+}
+
+/// Prints what was `found` as lines or JSON and returns `code`, the run's exit
+/// code.
+fn output(cli: &Cli, cache_path: &Path, found: &Found<'_>, now: Timestamp, code: u8) -> Result<u8> {
+    let Found { state, hits } = *found;
     let text = if cli.json {
-        let report = Report::new(&state.manifest, cache_path, &state.entries, now, code);
+        let report =
+            Report::new(&state.manifest, cache_path, &state.entries, now, code).with_unlisted(hits);
         serde_json::to_string_pretty(&report)? + "\n"
     } else {
-        report::lines(&state.entries, now)
+        report::lines(&state.entries, now) + &scan::lines(hits)
     };
     print(cli, &text)?;
     Ok(code)

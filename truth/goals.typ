@@ -8,7 +8,7 @@
     title: "One command says what is bumpable",
     acid-test: [Running `canibump` in a repo lists every blocker's state in one
       line each. It exits 0 when nothing counted showed up, else 8 plus 1
-      for bumpable, 2 for dead and 4 for failed, and `--fail-on` or
+      for bumpable, 2 for dead, 4 for failed and 16 for an unlisted link, and `--fail-on` or
       `[settings] fail-on` picks what counts.],
   ),
   many-targets: (

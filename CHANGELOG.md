@@ -14,6 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   still shows up. GitHub, GitLab and Codeberg links are caught out of the
   box. `[[scan.catcher]]` adds a regex of your own, replaces a built-in or
   turns one off, and `canibump:ignore` skips a line.
+- An unlisted link adds 16 to the exit code and counts by default, and
+  `fail-on` takes `unlisted`. `--json` lists each under `unlisted`.
 
 ## [0.1.0] - 2026-10-11
 

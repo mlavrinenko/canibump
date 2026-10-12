@@ -67,6 +67,36 @@
           "type": "string"
         }
       ]
+    },
+    "Unlisted": {
+      "description": "An upstream link no blocker lists, in the `--json` document.",
+      "properties": {
+        "catcher": {
+          "description": "The catcher that found it.",
+          "type": "string"
+        },
+        "file": {
+          "description": "The file, relative to the manifest's directory.",
+          "type": "string"
+        },
+        "line": {
+          "description": "The 1-based line.",
+          "format": "uint",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "ref": {
+          "description": "The link as a manifest ref.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file",
+        "line",
+        "ref",
+        "catcher"
+      ],
+      "type": "object"
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
@@ -93,13 +123,21 @@
     "manifest": {
       "description": "The manifest checked.",
       "type": "string"
+    },
+    "unlisted": {
+      "description": "One row per upstream link `[scan]` found that no blocker lists.",
+      "items": {
+        "$ref": "#/$defs/Unlisted"
+      },
+      "type": "array"
     }
   },
   "required": [
     "manifest",
     "cache",
     "exit_code",
-    "entries"
+    "entries",
+    "unlisted"
   ],
   "title": "Report",
   "type": "object"

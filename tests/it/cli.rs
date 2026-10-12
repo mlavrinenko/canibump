@@ -409,7 +409,7 @@ fn prints_an_unlisted_line_for_a_link_no_blocker_lists() {
     )
     .expect("write");
     repo.issue(1, 200, &open());
-    repo.cmd().assert().code(0).stdout(
+    repo.cmd().assert().code(24).stdout(
         "waiting   waits  github:o/r#1 is open\n\
          unlisted  pin.nix:1  github:o/r#9 has no blocker\n",
     );

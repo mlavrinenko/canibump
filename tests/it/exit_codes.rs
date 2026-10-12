@@ -132,12 +132,63 @@ fn help_states_the_table_and_the_default() {
         .arg("--help")
         .assert()
         .success()
-        .stdout(predicate::str::contains("8 plus 1 for bumpable"))
+        .stdout(predicate::str::contains("16 for an unlisted link"))
         .stdout(predicate::str::contains(
             "1 is an unusable manifest or cache, 2 a bad argument",
         ))
-        .stdout(predicate::str::contains("else bumpable, dead and failed"))
+        .stdout(predicate::str::contains(
+            "else bumpable, dead, failed and unlisted",
+        ))
         .stdout(predicate::str::contains(
             "`status <id>` answers for one blocker",
         ));
+}
+
+const SCAN: &str = "[scan]\npaths = [\"*.nix\"]\n\n";
+
+/// [`repo_of`] with a `[scan]` and a `pin.nix` linking an issue no blocker
+/// lists.
+fn with_unlisted(kinds: &[&str], settings: &str) -> crate::common::Repo {
+    let repo = repo_of(kinds, &(settings.to_owned() + SCAN));
+    std::fs::write(
+        repo.dir.path().join("pin.nix"),
+        "# https://github.com/o/r/issues/99\n",
+    )
+    .expect("write");
+    repo
+}
+
+#[test]
+fn an_unlisted_link_adds_16_unless_fail_on_leaves_it_out() {
+    with_unlisted(&[], "").cmd().assert().code(24);
+    let repo = with_unlisted(&["bumpable"], "");
+    repo.cmd().assert().code(25);
+    repo.cmd()
+        .args(["--fail-on", "bumpable"])
+        .assert()
+        .code(9)
+        .stdout(predicate::str::contains("unlisted  pin.nix:1"));
+    repo.cmd().args(["--fail-on", "unlisted"]).assert().code(24);
+    with_unlisted(&["bumpable"], "[settings]\nfail-on = [\"unlisted\"]\n")
+        .cmd()
+        .assert()
+        .code(24);
+}
+
+#[test]
+fn the_json_report_lists_each_unlisted_link() {
+    let output = with_unlisted(&[], "")
+        .cmd()
+        .arg("--json")
+        .output()
+        .expect("runs");
+    let report: Value = serde_json::from_slice(&output.stdout).expect("json");
+    assert_eq!(report.get("exit_code"), Some(&json!(24)));
+    assert_eq!(
+        report.get("unlisted"),
+        Some(&json!([{"file": "pin.nix", "line": 1, "ref": "github:o/r#99", "catcher": "github"}]))
+    );
+    let output = repo_of(&[], "").cmd().arg("--json").output().expect("runs");
+    let report: Value = serde_json::from_slice(&output.stdout).expect("json");
+    assert_eq!(report.get("unlisted"), Some(&json!([])));
 }

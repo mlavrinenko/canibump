@@ -47,7 +47,7 @@ pub struct Settings {
     /// Where the cache file lives, relative to the manifest; `None` picks the
     /// default under the user cache dir.
     pub cache: Option<PathBuf>,
-    /// Which statuses fail the run; `None` counts all three, `Some([])` none.
+    /// What fails the run; `None` counts all four, `Some([])` nothing.
     pub fail_on: Option<Vec<Actionable>>,
 }
 
@@ -182,9 +182,9 @@ pub(crate) struct RawSettings {
     /// Where the cache file lives, relative to the manifest. Defaults to a file
     /// under the user cache dir.
     cache: Option<PathBuf>,
-    /// Which statuses fail the run, with an exit code from 9 to 15: any of
-    /// `"bumpable"`, `"dead"` and `"failed"`. Defaults to all three; `[]`
-    /// never fails. `--fail-on` overrides it.
+    /// What fails the run, with an exit code from 9 to 31: any of
+    /// `"bumpable"`, `"dead"`, `"failed"` and `"unlisted"`. Defaults to all
+    /// four; `[]` never fails. `--fail-on` overrides it.
     #[serde(rename = "fail-on")]
     fail_on: Option<Vec<Actionable>>,
 }

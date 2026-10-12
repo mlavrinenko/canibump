@@ -108,7 +108,7 @@ fn a_stale_line_says_how_long_ago_in_the_largest_whole_unit() {
 fn the_exit_code_is_8_plus_a_bit_per_counted_status_that_showed_up() {
     let code = |statuses: &[Status], counted: &[Actionable]| {
         let entries: Vec<Entry> = statuses.iter().map(|status| entry("x", *status)).collect();
-        exit_code(&entries, counted)
+        exit_code(&entries, false, counted)
     };
     let all = &Actionable::ALL;
     assert_eq!(code(&[], all), EXIT_OK);
@@ -129,11 +129,11 @@ fn the_exit_code_is_8_plus_a_bit_per_counted_status_that_showed_up() {
 #[test]
 fn only_a_counted_status_adds_its_bit() {
     let entries = [entry("a", Status::Bumpable), entry("b", Status::Dead)];
-    assert_eq!(exit_code(&entries, &[Actionable::Dead]), 10);
-    assert_eq!(exit_code(&entries, &[Actionable::Failed]), EXIT_OK);
-    assert_eq!(exit_code(&entries, &[]), EXIT_OK);
+    assert_eq!(exit_code(&entries, false, &[Actionable::Dead]), 10);
+    assert_eq!(exit_code(&entries, false, &[Actionable::Failed]), EXIT_OK);
+    assert_eq!(exit_code(&entries, false, &[]), EXIT_OK);
     let twice = [Actionable::Dead, Actionable::Dead];
-    assert_eq!(exit_code(&entries, &twice), 10);
+    assert_eq!(exit_code(&entries, false, &twice), 10);
 }
 
 #[test]
@@ -157,4 +157,13 @@ fn an_exit_prints_as_the_error_it_wraps_with_its_chain() {
     let inner = anyhow::anyhow!("root cause").context("while reading");
     let coded: anyhow::Error = Exit::new(EXIT_UNKNOWN, inner).into();
     assert_eq!(format!("{coded:#}"), "while reading: root cause");
+}
+
+#[test]
+fn an_unlisted_link_adds_16_when_counted() {
+    let entries = [entry("a", Status::Bumpable)];
+    assert_eq!(exit_code(&[], true, &Actionable::ALL), 24);
+    assert_eq!(exit_code(&entries, true, &Actionable::ALL), 25);
+    assert_eq!(exit_code(&entries, true, &[Actionable::Bumpable]), 9);
+    assert_eq!(exit_code(&entries, false, &[Actionable::Unlisted]), EXIT_OK);
 }

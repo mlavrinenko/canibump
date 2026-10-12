@@ -12,6 +12,7 @@ use thiserror::Error;
 
 use crate::cache::Entry;
 use crate::outcome::Status;
+use crate::scan::Hit;
 
 /// Exit code: nothing counted showed up, every check ran.
 pub const EXIT_OK: u8 = 0;
@@ -22,7 +23,7 @@ pub const EXIT_ACTIONABLE: u8 = 8;
 
 const STATUS_WIDTH: usize = 8;
 
-/// A status that can fail the run: every one but `waiting`.
+/// What can fail the run: every status but `waiting`, and an unlisted link.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, JsonSchema, ValueEnum)]
 #[serde(rename_all = "lowercase")]
 pub enum Actionable {
@@ -32,19 +33,22 @@ pub enum Actionable {
     Dead,
     /// A check broke: adds 4.
     Failed,
+    /// `[scan]` found a link no blocker lists: adds 16.
+    Unlisted,
 }
 
 impl Actionable {
-    /// All three: what fails a run unless `--fail-on` or `[settings] fail-on`
+    /// All four: what fails a run unless `--fail-on` or `[settings] fail-on`
     /// says otherwise.
-    pub const ALL: [Self; 3] = [Self::Bumpable, Self::Dead, Self::Failed];
+    pub const ALL: [Self; 4] = [Self::Bumpable, Self::Dead, Self::Failed, Self::Unlisted];
 
-    /// The status it counts.
-    const fn status(self) -> Status {
+    /// The blocker status it counts; `None` for an unlisted link.
+    const fn status(self) -> Option<Status> {
         match self {
-            Self::Bumpable => Status::Bumpable,
-            Self::Dead => Status::Dead,
-            Self::Failed => Status::Failed,
+            Self::Bumpable => Some(Status::Bumpable),
+            Self::Dead => Some(Status::Dead),
+            Self::Failed => Some(Status::Failed),
+            Self::Unlisted => None,
         }
     }
 
@@ -54,17 +58,22 @@ impl Actionable {
             Self::Bumpable => 1,
             Self::Dead => 2,
             Self::Failed => 4,
+            Self::Unlisted => 16,
         }
     }
 }
 
-/// The exit code for a set of results: [`EXIT_OK`] when no `counted` status
-/// showed up, else [`EXIT_ACTIONABLE`] plus the bit of each that did.
+/// The exit code for a set of results and whether `[scan]` found an unlisted
+/// link: [`EXIT_OK`] when nothing `counted` showed up, else
+/// [`EXIT_ACTIONABLE`] plus the bit of each that did.
 #[must_use]
-pub fn exit_code(entries: &[Entry], counted: &[Actionable]) -> u8 {
+pub fn exit_code(entries: &[Entry], unlisted: bool, counted: &[Actionable]) -> u8 {
     let bits = counted
         .iter()
-        .filter(|kind| entries.iter().any(|entry| entry.status == kind.status()))
+        .filter(|kind| match kind.status() {
+            Some(status) => entries.iter().any(|entry| entry.status == status),
+            None => unlisted,
+        })
         .fold(0, |bits, kind| bits | kind.bit());
     if bits == 0 {
         EXIT_OK
@@ -193,6 +202,22 @@ pub struct Report<'a> {
     pub exit_code: u8,
     /// One row per blocker.
     pub entries: Vec<Row<'a>>,
+    /// One row per upstream link `[scan]` found that no blocker lists.
+    pub unlisted: Vec<Unlisted<'a>>,
+}
+
+/// An upstream link no blocker lists, in the `--json` document.
+#[derive(Debug, Serialize, JsonSchema)]
+pub struct Unlisted<'a> {
+    /// The file, relative to the manifest's directory.
+    pub file: &'a Path,
+    /// The 1-based line.
+    pub line: usize,
+    /// The link as a manifest ref.
+    #[serde(rename = "ref")]
+    pub reference: &'a str,
+    /// The catcher that found it.
+    pub catcher: &'a str,
 }
 
 /// One blocker in the `--json` document.
@@ -242,6 +267,25 @@ impl<'a> Report<'a> {
                     stale: is_stale(entry, now),
                 })
                 .collect(),
+            unlisted: Vec::new(),
+        }
+    }
+
+    /// The same document, listing the links `[scan]` found that no blocker
+    /// lists.
+    #[must_use]
+    pub fn with_unlisted(self, unlisted: &'a [Hit]) -> Self {
+        Self {
+            unlisted: unlisted
+                .iter()
+                .map(|hit| Unlisted {
+                    file: &hit.file,
+                    line: hit.line,
+                    reference: &hit.reference,
+                    catcher: &hit.catcher,
+                })
+                .collect(),
+            ..self
         }
     }
 }
