@@ -80,9 +80,9 @@ groups:
       CONTRIBUTING.md: 69c1a08a01d68bf137d0a14d027c43a81ba158701b80112eb9021513640df8c8
   release-notes:
     source:
-      Cargo.toml: 868be75b5ac97ebb7c0671030c48077babb804e01a58bd0dce155cf770d7fb1e
+      Cargo.toml: acc8fe2cebd1a31e893599695b74352f7fd647c8c8331ef6b21bbf93b498a52a
     dependents:
-      CHANGELOG.md: e0ac2243f193db48cd402d96d4a18b9425487b6724528516c0b8f687979975a2
+      CHANGELOG.md: 752bbd62ed51199a9bd44b1391a362fdc8d139eda8d41a16e933db222e655d87
   schema:
     source:
       src/auth.rs: 6a5bb1cfecfc78e2c5bd7c38d1a7fed3df7d3701a06d4be46bfaef161eba9df4
