@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="24" height="24" role="img" aria-label="canibump">
+  <!-- An arrow lifting off a bar: the pin, and the bump it waits for. One
+       path, one colour, because the header draws it as a CSS mask tinted with
+       the accent (.brand-mark in www/assets/styles/main.css). -->
+  <path fill="#b45309" fill-rule="evenodd" d="M12 2.5 L19.5 10 H14.75 V15.5 H9.25 V10 H4.5 Z M4.25 18 H19.75 a1.25 1.25 0 0 1 0 2.5 H4.25 a1.25 1.25 0 0 1 0 -2.5 Z"/>
+</svg>

@@ -63,6 +63,9 @@
   the first run did. A release whose workflow failed is finished on the same
   tag with `gh workflow run <release workflow> -f tag=vX.Y.Z`; a pushed tag
   never moves.
+- The docs site lives in `www/`, built by `just docs-build` (silent on success)
+  and served by `just docs-serve`. [www/README.md](www/README.md) says how it
+  works and how to add a page.
 - Eating your own dog food: the tool should use itself if applicable.
   [canibump.toml](canibump.toml) lists the upstream items this repo's own
   workarounds wait on; `just canibump` checks it (network-bound, outside

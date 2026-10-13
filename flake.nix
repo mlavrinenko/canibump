@@ -7,6 +7,12 @@
       inputs.nixpkgs.follows = "nixpkgs";
     };
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
+    # The docs toolchain: Typst 0.14 and the tinymist (typlite) built on it,
+    # the Typst that tola 0.7.1 embeds. A page that compiles under one must
+    # compile under the others, so they move together. Same pin as mindtape.
+    nixpkgs-typst.url = "github:NixOS/nixpkgs/9f11f828c213641c2369a9f1fa31fe31557e3156";
+    # The Typst-native static site generator that builds www/.
+    tola.url = "github:tola-rs/tola-ssg/v0.7.1";
   };
 
   outputs =
@@ -15,6 +21,8 @@
       flake-utils,
       naersk,
       nixpkgs,
+      nixpkgs-typst,
+      tola,
       ...
     }:
     flake-utils.lib.eachDefaultSystem (
@@ -23,6 +31,7 @@
         pkgs = (import nixpkgs) {
           inherit system;
         };
+        pkgs-typst = import nixpkgs-typst { inherit system; };
 
         naersk' = pkgs.callPackage naersk { };
 
@@ -64,6 +73,13 @@
             # asserts a prior pass without running anything.
             qahq.packages.${system}.mmz
             qahq.packages.${system}.outdatty
+            tola.packages.${system}.default
+            # The docs site: typst queries each page for its metadata, typlite
+            # (in tinymist) writes the Markdown copies and the README, and
+            # typstyle parses the pages for the doc gates.
+            pkgs-typst.typst
+            pkgs-typst.tinymist
+            pkgs-typst.typstyle
           ] ++ (with pkgs; [
             rustc
             cargo
@@ -86,6 +102,12 @@
             worktrunk
             # `just count-tests` parses nextest's JSON listing with jq.
             jq
+            # pagefind indexes the built site for search. python3 runs the
+            # mock upstream the docs captures ask (www/mock-upstream.py), and
+            # util-linux's `script` gives each capture a terminal.
+            pagefind
+            python3
+            util-linux
             clippy
             rustfmt
             just

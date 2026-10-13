@@ -42,6 +42,17 @@ build *args:
 fmt:
     cargo fmt --all
 
+[doc("Build the docs site into www/public, silent on success")]
+[group("daily")]
+docs-build:
+    www/build.sh
+
+[doc("Serve the docs with live reload on http://127.0.0.1:5278/canibump/")]
+[group("daily")]
+docs-serve:
+    www/generate.sh
+    cd www && tola serve
+
 [doc("Show which gates check would re-run")]
 [group("daily")]
 status:

@@ -22,6 +22,7 @@ require_tracked:
   - "scripts/**"
   - "schema/**"
   - "flake.nix"
+  - "www/README.md"
 groups:
   # The CLI, the manifest format, the output and the targets are documented
   # by hand, so any source change flags the user-facing docs for a look.
@@ -75,3 +76,15 @@ groups:
     dependents:
       - CONTRIBUTING.md
       - AGENTS.md
+
+  # How the docs site builds, and what a page declares, follow the scripts,
+  # helpers and templates that do it.
+  - name: site-tooling
+    source:
+      - "www/*.sh"
+      - "www/tola.toml"
+      - "www/utils/**"
+      - "www/templates/**"
+      - .github/workflows/pages.yml
+    dependents:
+      - www/README.md

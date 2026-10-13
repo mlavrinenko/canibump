@@ -1,0 +1,135 @@
+/* canibump docs, components: hero, showcase, terminal, callouts, tables, search. */
+
+/* Hero -------------------------------------------------------------------- */
+.hero { padding: 1.2rem 0 0.5rem; }
+.hero-lede { max-width: 40rem; }
+.hero h1 { font-size: clamp(2rem, 5vw, 2.9rem); line-height: 1.1; letter-spacing: -0.02em; margin: 0 0 0.8rem; }
+.hero-sub { font-size: 1.15rem; color: var(--muted); margin: 0; }
+.hero-cta { display: flex; flex-wrap: wrap; gap: 0.7rem; margin: 1.4rem 0 2.2rem; }
+
+.btn {
+  display: inline-block; font-family: var(--font-mono); font-size: 0.9rem; font-weight: 600;
+  padding: 0.5rem 1.05rem; border-radius: 9px; text-decoration: none;
+  background: var(--accent); color: #ffffff; border: 1px solid var(--accent);
+}
+[data-theme="dark"] .btn { color: #2a1600; }
+.btn:hover { background: var(--accent-strong); border-color: var(--accent-strong); color: #fff; }
+[data-theme="dark"] .btn:hover { color: #2a1600; }
+.btn.ghost { background: transparent; color: var(--accent); }
+.btn.ghost:hover { background: var(--accent-wash); color: var(--accent-strong); }
+
+/* Showcase: a manifest beside the run it produced (showcase() in ui.typ). */
+.showcase { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 1rem; margin: 0 0 2rem; }
+.face { margin: 0; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--bg-soft); }
+.face figcaption { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); padding: 0.45rem 0.9rem; border-bottom: 1px solid var(--border); }
+.face-body { flex: 1; display: flex; min-width: 0; }
+.face-body > pre, .face-body > .terminal { flex: 1; margin: 0; border: none; border-radius: 0; box-shadow: none; }
+@media (max-width: 52rem) { .showcase { grid-template-columns: 1fr; } }
+
+/* Terminal panel (dark in both themes). A transcript renders as selectable
+   `pre` text; terminal-ansi (ui.typ) puts the coloured runs in inline spans. */
+.terminal { background: var(--term-bg); width: 100%; }
+.terminal pre {
+  background: transparent; color: var(--term-fg); border: none; border-radius: 0;
+  margin: 0; box-shadow: none; font-size: 0.78rem; padding: 0.9rem 1rem;
+}
+.terminal code { background: none; border: none; color: inherit; }
+
+/* Callouts ---------------------------------------------------------------- */
+.callout {
+  border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  background: var(--bg-soft); border-radius: 0 10px 10px 0;
+  padding: 0.7rem 1rem; margin: 1.3rem 0; font-size: 0.95rem;
+}
+.callout p { margin: 0.3rem 0; }
+.callout p:first-child { margin-top: 0; }
+.callout p:last-child { margin-bottom: 0; }
+.callout-warn { border-left-color: #d98b00; }
+.callout-note { border-left-color: var(--muted); }
+
+/* Native Typst tables ----------------------------------------------------- */
+main table { border-collapse: collapse; width: 100%; margin: 0 0 1.3rem; font-size: 0.9rem; }
+main th, main td { border: 1px solid var(--border); padding: 0.42rem 0.62rem; text-align: left; vertical-align: top; }
+main thead th { background: var(--bg-soft); font-family: var(--font-mono); font-size: 0.78rem; letter-spacing: 0.02em; }
+main td code { font-size: 0.82em; }
+
+/* Search (Pagefind UI) ----------------------------------------------------
+   A header-mounted search input whose results render as a floating popup.
+   Pagefind ships pagefind-ui.css; the --pagefind-ui-* custom properties re-skin
+   it to the site tokens (dark mode inherited, since they reference theme vars).
+   Overrides are keyed off the #search id so they outrank pagefind's own scoped
+   `.pagefind-ui__*` class rules regardless of stylesheet load order — the UI CSS
+   is injected at runtime, after this file. --pagefind-ui-scale governs the popup
+   result sizing; the input is sized independently to fit the header bar. */
+#search {
+  --pagefind-ui-scale: 0.75;
+  --pagefind-ui-primary: var(--accent);
+  --pagefind-ui-text: var(--fg);
+  --pagefind-ui-background: var(--bg);
+  --pagefind-ui-border: var(--border);
+  --pagefind-ui-tag: var(--bg-soft);
+  --pagefind-ui-border-width: 1px;
+  --pagefind-ui-border-radius: 8px;
+  --pagefind-ui-font: var(--font-mono);
+  position: relative;
+  width: clamp(8rem, 24vw, 15rem);
+}
+/* Compact input to the header height (independent of --pagefind-ui-scale). */
+#search .pagefind-ui__search-input {
+  height: 34px; font-size: 0.85rem; font-weight: 500;
+  padding: 0 1.9rem 0 2rem;
+}
+#search .pagefind-ui__form:before { width: 14px; height: 14px; top: 10px; left: 10px; }
+#search .pagefind-ui__search-clear { height: 28px; top: 3px; right: 3px; font-size: 0.68rem; padding: 0 0.5rem; }
+
+/* Results drawer -> popup anchored under the input, hidden until it has a query
+   (pagefind toggles pagefind-ui__hidden) and dismissable (search--closed). */
+#search .pagefind-ui__drawer {
+  position: absolute; top: calc(100% + 0.55rem); right: 0;
+  width: min(30rem, 92vw); max-height: min(70vh, 30rem); overflow-y: auto;
+  padding: 0.2rem 1.1rem 0.9rem;
+  background: var(--bg); border: 1px solid var(--border); border-radius: 12px;
+  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.22);
+  font-family: var(--font-serif); z-index: 40;
+}
+#search.search--closed .pagefind-ui__drawer { display: none; }
+#search .pagefind-ui__results-area { margin-top: 0; }
+#search .pagefind-ui__message { padding: 0.6rem 0; height: auto; }
+#search .pagefind-ui__result { padding: 0.7rem 0; }
+/* pagefind resets <mark> to the browser-default yellow; tint it to the accent. */
+#search mark { background: var(--accent-wash); color: inherit; border-radius: 3px; padding: 0 1px; font-weight: 600; }
+#search .pagefind-ui__search-input::placeholder { opacity: 0.55; }
+/* On phones the header wraps; search drops to its own full-width row. */
+@media (max-width: 40rem) {
+  .header-inner { flex-wrap: wrap; row-gap: 0.55rem; }
+  #search { order: 3; width: 100%; }
+}
+
+/* Lede paragraph under an h1 --------------------------------------------- */
+.lede { font-size: 1.12rem; color: var(--muted); margin-bottom: 1.6rem; }
+
+/* Copy as Markdown: an icon button beside the page title, its tooltip drawn
+   from data-tip, which the script in layout.typ sets to "Copied" for a moment
+   after a copy. */
+.page-title { display: flex; align-items: center; gap: 0.75rem; margin: 0 0 1.6rem; }
+.page-title h1 { margin: 0; }
+.hero .page-title { margin: 0 0 0.8rem; }
+.md-copy {
+  position: relative; flex: none; width: 34px; height: 28px; padding: 0;
+  border: 1px solid var(--border); border-radius: 7px; background: var(--bg-soft);
+  color: var(--muted); cursor: pointer; display: inline-grid; place-items: center;
+}
+.md-copy::before {
+  content: ""; width: 20px; height: 13px; background: currentColor;
+  -webkit-mask: url("../images/markdown.svg") center / contain no-repeat;
+  mask: url("../images/markdown.svg") center / contain no-repeat;
+}
+.md-copy:hover, .md-copy:focus-visible { color: var(--accent); border-color: var(--accent); }
+.md-copy::after {
+  content: attr(data-tip); position: absolute; top: calc(100% + 6px); left: 50%;
+  transform: translateX(-50%); white-space: nowrap; pointer-events: none;
+  font: 500 0.72rem/1 var(--font-mono); padding: 0.35rem 0.5rem; border-radius: 6px;
+  background: var(--fg); color: var(--bg); opacity: 0; transition: opacity 0.12s;
+  z-index: 5;
+}
+.md-copy:hover::after, .md-copy:focus-visible::after, .md-copy.md-copy-said::after { opacity: 1; }

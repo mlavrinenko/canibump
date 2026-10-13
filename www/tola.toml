@@ -1,0 +1,49 @@
+# tola configuration (v0.7.1) for the docs site. `title` is the product's
+# name, which www/utils/site.typ reads.
+
+[site.info]
+title = "canibump"
+author = "Maxim Lavrinenko"
+description = "Tells you which of your patches, pins and workarounds can go, because upstream finally landed what they wait on."
+# A GitHub Pages project page, so the URL path ("/canibump") is the build prefix.
+url = "https://mlavrinenko.github.io/canibump"
+language = "en"
+copyright = "MIT"
+
+[site.seo]
+auto_og = false
+
+[site.seo.feed]
+enable = false
+
+[site.seo.sitemap]
+enable = true
+path = "sitemap.xml"
+
+[site.header]
+no_fouc = true
+styles = []
+scripts = []
+elements = []
+
+[build.assets]
+nested = ["assets"]
+flatten = []
+
+[build.hooks.css]
+enable = false
+
+[serve]
+interface = "127.0.0.1"
+port = 5278
+watch = true
+# Serve under the build's /canibump prefix, so local links resolve.
+respect_prefix = true
+
+[validate.pages]
+enable = true
+level = "error"
+
+[validate.assets]
+enable = true
+level = "error"

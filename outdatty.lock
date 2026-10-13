@@ -65,8 +65,8 @@ groups:
       .config/nextest.toml: ec97d2444d9bf38aae8499d53eac3ffbbab47593637e3a324452ee72bec0ef0b
       .config/wt.toml: 7c06507d109ff5168d8bed19c9d700989abd6239cd9f800ef9cc43be17e79be7
       .mmz/config.yaml: 5fe884e850d612ceafdf6dbd1fb631a85bd6b1519e925267ee8e5914a6fa872f
-      Justfile: 337047ddfeb69aae5dcb95b06e7aca06a7a1aeb99563a8da9a16826647f74c35
-      flake.nix: 2a9c4a29a55f386db87caf3deda96a6d8047302a8bde5952ccfd7e60e6f410bd
+      Justfile: 27aa11d188fb232af27f484bf4d76b4a1feb2d80c11239a30a087c5693d37707
+      flake.nix: c95179c37ba0c1e5e078f918b2d56fe1b18c4d8e3bdbe439df3eb1c3dd26a273
       release.toml: 0874f00ae73873868e5ace0bb2df30bb7f8b1be0a3a6186c4ec528c997f676a1
       scripts/cover.sh: cb57da07f22031060d9f653d924d85887e788b90bec391fbac29435cd287633d
       scripts/crap.sh: 3e015b2b77eb7a36b8d80b961aa9aef47b3be9c57ca6c2948450c8b764f13cc9
@@ -76,8 +76,8 @@ groups:
       scripts/release-hook.sh: 23cd583eaf49d395d73abe7e4313e19719c4301c6e188f708befbdaa8fd9ec10
       scripts/wt-carry-lcov.sh: 39b537a8a380b6fd1c88064bcfb2149a2207ba0ff390bf29c4bfa6e4b26fc650
     dependents:
-      AGENTS.md: e1add794a53db55c5633ab0bb68c9c0316f6aa4c3e776653637c79013f6db287
-      CONTRIBUTING.md: 69c1a08a01d68bf137d0a14d027c43a81ba158701b80112eb9021513640df8c8
+      AGENTS.md: 6328850511b5b4b992e1634125da0e7609c72fdef318296ed9e01e83627e1691
+      CONTRIBUTING.md: 2dcf6e3a0202022ffd526e0c11edab02e466f9be3823ca611df7fcd34134b71d
   release-notes:
     source:
       Cargo.toml: acc8fe2cebd1a31e893599695b74352f7fd647c8c8331ef6b21bbf93b498a52a
@@ -144,3 +144,21 @@ groups:
       schema/canibump.schema.json: 45cf0d8d176ca4696ebf8fa0878b3338154d7ed41c602355eeab0577bf48e145
       schema/report.schema.json: 2543ae2b10af11011cc2ef364deadfb8c275ed7b3d28f009b6ab304dcc1ccfca
       schema/state.schema.json: 4e9bac260e4803a0889470dc91510da8decd23a7d8c1bb9379848323d054ae44
+  site-tooling:
+    source:
+      .github/workflows/pages.yml: ba8a88c6bc16ffa2427939ebb32726c7d25f68d2cbeacb8bedc8cbe08fd2d0b1
+      www/build.sh: 7ebcbabee754f83ada94a2085c9f890803a6749d0c5efa418ad07c2becf7e44a
+      www/generate-md.sh: 7877371eca27a507d60f830367083decb1bb4f13504c7c5acc01b1905d05a00e
+      www/generate-site-pages.sh: 87e42f23d912dbf72c683be5da092e57e80098b31e1a49e89cca2cf450e38060
+      www/generate.sh: 3d4c73441f97390431ac1609462e48339f4a77d5c2857b0212d65b1f5c0178cb
+      www/templates/base.typ: c614904307249af37465869ec8659befa9757a52af3edaeedecb5f1c9a81f528
+      www/templates/layout.typ: e5e4db3b997e219c4f0805bbbc55269a98f8eeb8dc58f4c21f5fb2935b9ade61
+      www/templates/tola.typ: 6f52ba5a2d740b02120825e628fffa6e7ae355095ea9682947697d7478b09c92
+      www/tola.toml: e89c5d9e31ff9cc21a3e86dd5808f4fdc9decc3170260441487b7c73b6cdd1a8
+      www/utils/mode.typ: a729a2bde7ff90c0f0c9535095cf6b1ea707ba6f8b9e8f2f47512f565f4b8a51
+      www/utils/page.typ: df34cd8dcb9c8b2677422d43a5d56ab983603a76591706451ecdceb63c5ac598
+      www/utils/site.typ: 6046800f43cdd56e1f69e188cf239889ed3ec7b9a3b43d75f3f069e3e08d3947
+      www/utils/tola.typ: e537590773bc83e6a93b39f555505fa70874067742323c694916ddb6fad30dd0
+      www/utils/ui.typ: b512fb1746dc64c5db194beb8331d4e85713dce6aa55176122359ffbcd20ca58
+    dependents:
+      www/README.md: cfa3e0f4a74f5667aefe495ee5ed9e327dc2391a676f564b965f6f831f7b3def

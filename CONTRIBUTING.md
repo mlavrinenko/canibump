@@ -47,6 +47,7 @@ restrictions:
 - No `unsafe`, no wildcard imports (`use foo::*`)
 - Names of at least two characters
 - Functions: at most 70 lines, 5 arguments, cognitive complexity 20
+- `rust-version` in `Cargo.toml` is the minimum supported Rust; CI builds on it
 
 ## Project Structure
 
@@ -125,6 +126,12 @@ live in [.mmz/config.yaml](.mmz/config.yaml).
 and `tests/`, failing on a Rust block of 70+ duplicated tokens. Extract a
 shared helper, never shuffle tokens until the detector loses the scent.
 
+## Docs Site
+
+The site under `www/` builds with `just docs-build` and serves with live
+reload from `just docs-serve`. [www/README.md](www/README.md) says how it
+works and how to add a page.
+
 ## JSON Schema
 
 `schema/*.schema.json` come from the manifest, report and state types
@@ -141,8 +148,7 @@ to silence a finding, and keep the file in cargo-deny's current schema, since a
 retired key fails the whole check. A green run is silent. Drop
 `--hide-inclusion-graph` from the recipe when chasing one finding.
 
-`just outdated` lists newer dependency versions. It is network-bound, never a
-gate, and unrelated to `just outdatty-check`.
+`just outdated` lists newer dependency versions, network-bound and never a gate.
 
 ## Upstream Workarounds
 
@@ -165,10 +171,6 @@ which holds every refusal, and commits. The recipe pushes `main`, waits for
 re-run: the bump stays done. The tag push is the only publish path
 (`release.yml`), so never `cargo publish` by hand. A repo's first release needs
 `main` pushed once by hand beforehand; the hook asks for it.
-
-## MSRV
-
-`rust-version` in `Cargo.toml` is the minimum supported Rust; CI builds on it.
 
 ## Mutation Testing
 
