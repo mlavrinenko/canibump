@@ -13,7 +13,6 @@
 require_tracked:
   - "src/**"
   - "docs/**"
-  - "README.md"
   - "CHANGELOG.md"
   - "CONTRIBUTING.md"
   - "AGENTS.md"
@@ -33,7 +32,7 @@ groups:
     source:
       - "src/**"
     dependents:
-      - README.md
+      - docs/src/readme.typ
       - "www/content/*.typ"
 
   # A page narrates the runs its fixtures produce, so a fixture change flags
@@ -53,7 +52,6 @@ groups:
       - schema/canibump.schema.json
       - schema/report.schema.json
       - schema/state.schema.json
-      - README.md
 
   # A package change (version, dependencies, metadata) should land in the
   # changelog.
@@ -89,6 +87,7 @@ groups:
   - name: site-tooling
     source:
       - "www/*.sh"
+      - docs/generate-md.sh
       - www/mock-upstream.py
       - "www/tola.toml"
       - "www/utils/**"

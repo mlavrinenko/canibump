@@ -50,6 +50,12 @@ fmt:
 docs-build:
     www/build.sh
 
+[doc("Render README.md from docs/src/readme.typ")]
+[group("daily")]
+docs-md:
+    www/generate.sh
+    docs/generate-md.sh
+
 [doc("Serve the docs with live reload on http://127.0.0.1:5278/canibump/")]
 [group("daily")]
 docs-serve:

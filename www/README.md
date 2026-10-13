@@ -61,6 +61,13 @@ key reads its doc comment.
   ``[`VERSION`]`` fails the build, because it means nothing in an editor's
   hover or on the site.
 
+## The README
+
+README.md is rendered from [docs/src/readme.typ](../docs/src/readme.typ) by
+`just docs-md`. Its example is the site root's capture, and its docs index is
+`NAV`, so edit the source, never the render. `docs-build` fails when the
+committed README.md differs from a fresh render.
+
 ## Gates
 
 `just check` runs three docs arms, and mmz skips each while its inputs stay

@@ -171,7 +171,7 @@ commands:
   # The build runs the binary from `rust` against the fixtures in `www`.
   - name: just docs-build
     tags: [gate]
-    inputs: [rust, www, gates-meta]
+    inputs: [rust, www, docs, gates-meta]
 
   - name: just check-doc-blocks
     tags: [gate]
