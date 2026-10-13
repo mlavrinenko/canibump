@@ -14,8 +14,8 @@ set -eo pipefail
 # shellcheck source=scripts/doc-blocks-lib.sh
 source scripts/doc-blocks-lib.sh
 
-ALLOWED="API CI CLI CSS GPU HTML HTTP HTTPS ID JSON MIT MR OS PR README RFC SHA
-SSH TOML TTL UI URL UTC UTF XDG YAML"
+ALLOWED="API ASCII CI CLI CSS GPU HTML HTTP HTTPS ID JSON MIT MR OS PR README RFC
+SHA SSH TOML TTL UI URL UTC UTF XDG YAML"
 
 scan() {
     awk -F'\t' -v allowed="$ALLOWED" '
@@ -29,12 +29,11 @@ scan() {
                 hit("tells history", substr(t, RSTART, RLENGTH))
             if (index(t, "—")) hit("has an em dash", "—")
             if (match(t, /[^ :]:( |$)/)) hit("has a colon in a sentence", substr(t, RSTART, RLENGTH))
-            s = t
-            while (match(s, /[A-Z][A-Z0-9]+/)) {
-                w = substr(s, RSTART, RLENGTH)
-                after = substr(s, RSTART + RLENGTH, 1)
-                if (!ok[w] && after !~ /[a-z]/ || after == "s" && !ok[w]) hit("shouts", w)
-                s = substr(s, RSTART + RLENGTH)
+            n = split(t, words, /[^A-Za-z0-9]+/)
+            for (i = 1; i <= n; i++) {
+                w = words[i]
+                sub(/s$/, "", w)
+                if (w ~ /^[A-Z][A-Z0-9]+$/ && !ok[w]) hit("shouts", w)
             }
         }
         function hit(why, what) { printf "check-doc-prose: %s:%s: %s: %s\n", $1, $2, why, what; bad = 1 }
@@ -46,7 +45,7 @@ scan() {
 tmp=$(mktemp -d)
 trap 'rm -rf "$tmp"' EXIT
 printf '%s\n' '= Bad' 'It now prints this.' 'One — two.' 'Two modes: fast and slow.' 'This is VERY bad.' \
-    'Fine `now` and "now" and a PR or two PRs.' >"$tmp/bad.typ"
+    'Fine `now` and "now" and a PR or two PRs on PyPI.' >"$tmp/bad.typ"
 if [ "$(doc_extract "$tmp/bad.typ" | scan | cut -d: -f3 | tr '\n' ' ')" != "2 3 4 5 " ]; then
     echo "check-doc-prose: the control did not flag exactly lines 2 to 5" >&2
     exit 1
