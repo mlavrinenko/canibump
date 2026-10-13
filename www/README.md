@@ -15,7 +15,9 @@ builds with `tola build --clean`, indexes the result with
 [Pagefind](https://pagefind.app), writes a Markdown copy of every page plus
 `llms.txt` ([generate-md.sh](generate-md.sh)), and runs `tola validate`, which
 fails on a dead link or a missing asset. `.github/workflows/pages.yml` runs the
-same recipe on every push to main and deploys `public/canibump`.
+same recipe on the highest `v*` tag after each release and deploys
+`public/canibump`, so the site shows what crates.io serves. Run it by hand with
+`gh workflow run pages.yml`.
 
 ## Captures
 
