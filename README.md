@@ -1,6 +1,7 @@
 <!-- Rendered from docs/src/readme.typ by `just docs-md`. Edit the source. -->
 
-# canibump
+<h1 align="center"><img src="https://raw.githubusercontent.com/mlavrinenko/canibump/main/www/assets/images/logo.svg" alt="canibump" width="96" /><br />
+canibump</h1>
 
 <a href="https://github.com/mlavrinenko/canibump/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/mlavrinenko/canibump/actions/workflows/ci.yml/badge.svg" /></a> <a href="https://crates.io/crates/canibump"><img alt="crates.io" src="https://img.shields.io/crates/v/canibump.svg" /></a> <a href="LICENSE-MIT"><img alt="License: MIT" src="https://img.shields.io/crates/l/canibump.svg" /></a>
 

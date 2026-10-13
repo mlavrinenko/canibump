@@ -15,7 +15,18 @@
   attrs: (alt: alt, src: img),
 ))
 
-#html.elem("h1")[#NAME]
+// The centered header is how a README carries a logo: `<p align="center">` is
+// the usual way, but typlite strips every `<p>`, while the `align` attribute
+// on a heading survives both it and GitHub's sanitizer.
+#html.elem("h1", attrs: (align: "center"))[
+  #html.elem("img", attrs: (
+    src: "https://raw.githubusercontent.com/mlavrinenko/canibump/main/www/assets/images/logo.svg",
+    alt: NAME,
+    width: "96",
+  ))
+  #html.elem("br")
+  #NAME
+]
 
 #badge("CI", REPO + "/actions/workflows/ci.yml/badge.svg", REPO + "/actions/workflows/ci.yml")
 #badge("crates.io", "https://img.shields.io/crates/v/canibump.svg", "https://crates.io/crates/canibump")
