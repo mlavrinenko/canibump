@@ -73,7 +73,7 @@ jobs:
           cp "target/${{ matrix.target }}/release/$name$ext" "$name-${{ matrix.target }}$ext"
           echo "BINARY=$name" >> "$GITHUB_ENV"
 
-      - uses: actions/upload-artifact@v7.0.1
+      - uses: actions/upload-artifact@v7.0.2
         if: inputs.upload
         with:
           name: ${{ env.BINARY }}-${{ matrix.target }}
