@@ -82,6 +82,7 @@ groups:
   - name: site-tooling
     source:
       - "www/*.sh"
+      - www/mock-upstream.py
       - "www/tola.toml"
       - "www/utils/**"
       - "www/templates/**"

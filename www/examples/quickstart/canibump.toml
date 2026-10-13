@@ -1,0 +1,7 @@
+[[blocker]]
+id = "libfoo-crash"
+note = "drop the libfoo crash patch"
+state = "github:libfoo/libfoo#412"
+
+[scan]
+paths = ["**/*.nix"]

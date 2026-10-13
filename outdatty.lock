@@ -76,7 +76,7 @@ groups:
       scripts/release-hook.sh: 23cd583eaf49d395d73abe7e4313e19719c4301c6e188f708befbdaa8fd9ec10
       scripts/wt-carry-lcov.sh: 39b537a8a380b6fd1c88064bcfb2149a2207ba0ff390bf29c4bfa6e4b26fc650
     dependents:
-      AGENTS.md: 6328850511b5b4b992e1634125da0e7609c72fdef318296ed9e01e83627e1691
+      AGENTS.md: 0bc948e4b14c45376fb95542d9bfbe360143a5d69df4ebfabff0a8dfe1d6e4eb
       CONTRIBUTING.md: 2dcf6e3a0202022ffd526e0c11edab02e466f9be3823ca611df7fcd34134b71d
   release-notes:
     source:
@@ -148,9 +148,11 @@ groups:
     source:
       .github/workflows/pages.yml: ba8a88c6bc16ffa2427939ebb32726c7d25f68d2cbeacb8bedc8cbe08fd2d0b1
       www/build.sh: 7ebcbabee754f83ada94a2085c9f890803a6749d0c5efa418ad07c2becf7e44a
+      www/capture.sh: d1cbd97b2373d00351158f39ab0efb2831f74766187829de45ec1d78bf87937b
       www/generate-md.sh: 7877371eca27a507d60f830367083decb1bb4f13504c7c5acc01b1905d05a00e
       www/generate-site-pages.sh: 87e42f23d912dbf72c683be5da092e57e80098b31e1a49e89cca2cf450e38060
-      www/generate.sh: 3d4c73441f97390431ac1609462e48339f4a77d5c2857b0212d65b1f5c0178cb
+      www/generate.sh: 402d13225be4817bfe8f77c076c2629a5e561f93e66da286cd89f430f4b3bb25
+      www/mock-upstream.py: 84aa8b89433ff885017f3c420cb90186e28fc9064df01fd13edac92949bf9392
       www/templates/base.typ: c614904307249af37465869ec8659befa9757a52af3edaeedecb5f1c9a81f528
       www/templates/layout.typ: e5e4db3b997e219c4f0805bbbc55269a98f8eeb8dc58f4c21f5fb2935b9ade61
       www/templates/tola.typ: 6f52ba5a2d740b02120825e628fffa6e7ae355095ea9682947697d7478b09c92
@@ -159,6 +161,6 @@ groups:
       www/utils/page.typ: df34cd8dcb9c8b2677422d43a5d56ab983603a76591706451ecdceb63c5ac598
       www/utils/site.typ: 6046800f43cdd56e1f69e188cf239889ed3ec7b9a3b43d75f3f069e3e08d3947
       www/utils/tola.typ: e537590773bc83e6a93b39f555505fa70874067742323c694916ddb6fad30dd0
-      www/utils/ui.typ: b512fb1746dc64c5db194beb8331d4e85713dce6aa55176122359ffbcd20ca58
+      www/utils/ui.typ: f7a44a720c68d21e76eeb941d6f90208edd26f8f4316a4b8dbddab559fb95f19
     dependents:
-      www/README.md: cfa3e0f4a74f5667aefe495ee5ed9e327dc2391a676f564b965f6f831f7b3def
+      www/README.md: 52cfe4af274e7960d3595a56afdfc8803c3c699398ad5db9cb22a659aebc2e1d

@@ -65,7 +65,8 @@
   never moves.
 - The docs site lives in `www/`, built by `just docs-build` (silent on success)
   and served by `just docs-serve`. [www/README.md](www/README.md) says how it
-  works and how to add a page.
+  works and how to add a page. Every terminal block on it is a capture of the
+  binary against a fixture in `www/examples/`, never typed by hand.
 - Eating your own dog food: the tool should use itself if applicable.
   [canibump.toml](canibump.toml) lists the upstream items this repo's own
   workarounds wait on; `just canibump` checks it (network-bound, outside

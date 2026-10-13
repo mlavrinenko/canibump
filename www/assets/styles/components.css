@@ -19,7 +19,8 @@
 .btn.ghost:hover { background: var(--accent-wash); color: var(--accent-strong); }
 
 /* Showcase: a manifest beside the run it produced (showcase() in ui.typ). */
-.showcase { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.4fr); gap: 1rem; margin: 0 0 2rem; }
+.showcase { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 1rem; margin: 1.6rem 0 2rem; }
+.face figcaption code { background: none; border: none; padding: 0; color: inherit; }
 .face { margin: 0; display: flex; flex-direction: column; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: var(--bg-soft); }
 .face figcaption { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); padding: 0.45rem 0.9rem; border-bottom: 1px solid var(--border); }
 .face-body { flex: 1; display: flex; min-width: 0; }
@@ -133,3 +134,11 @@ main td code { font-size: 0.82em; }
   z-index: 5;
 }
 .md-copy:hover::after, .md-copy:focus-visible::after, .md-copy.md-copy-said::after { opacity: 1; }
+
+/* A fixture file with its path as the caption (file() in ui.typ). */
+.file { margin: 0 0 1.2rem; }
+.file figcaption { font-family: var(--font-mono); font-size: 0.72rem; color: var(--muted); margin: 0 0 0.3rem; }
+.file figcaption code { background: none; border: none; padding: 0; color: inherit; }
+.file pre { margin: 0; }
+.terminal { border-radius: 10px; margin: 0 0 1.2rem; }
+.face-body > .terminal { border-radius: 0; margin: 0; }

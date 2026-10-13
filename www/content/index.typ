@@ -1,5 +1,5 @@
 #import "../utils/page.typ": page
-#import "../utils/ui.typ": hero
+#import "../utils/ui.typ": hero, showcase
 #import "../utils/site.typ": NAME, SITE
 
 #let meta = (
@@ -14,6 +14,8 @@
 #show: page.with(..meta)
 
 #hero()
+
+#showcase("quickstart", "canibump.toml")
 
 = Docs in progress
 
