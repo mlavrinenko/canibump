@@ -1,12 +1,13 @@
 name: Deploy Pages
 
 on:
-  # After every release, and by hand. Either way it deploys the highest `v*`
-  # tag, so the site documents what crates.io serves, never unreleased main,
-  # and re-running an old release never rolls it back.
-  workflow_run:
-    workflows: [Release]
-    types: [completed]
+  # Every push to main and every `v*` tag deploys the site built from that
+  # commit, so a docs change goes live with its push and waits on no release.
+  # A page can therefore describe a flag crates.io does not serve yet, until
+  # the next release catches up. By hand: `gh workflow run pages.yml`.
+  push:
+    branches: [main]
+    tags: ["v*"]
   workflow_dispatch: ~
 
 permissions:
@@ -25,24 +26,11 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
     steps:
       - uses: actions/checkout@v6.0.3
-        with:
-          fetch-depth: 0
-      # Before the tag checkout, which may predate the action.
       - uses: ./.github/actions/nix
         with:
           shell: docs
-      - name: Check out the latest release
-        run: |
-          tag=$(git tag -l 'v*' --sort=-v:refname | head -1)
-          if [ -z "$tag" ]; then
-            echo "::error::no v* tag to deploy"
-            exit 1
-          fi
-          git checkout --quiet "refs/tags/$tag"
-          echo "::notice::deploying the site of $tag"
 
       # The same recipe and dev shell as a local build.
       - name: Build and validate the docs
