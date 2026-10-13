@@ -70,9 +70,15 @@
           just
         ]);
 
-        # The tools of `just check-docs` on top of the Rust ones, since the
-        # captures run the binary.
+        # The tools of `just check-docs`: the site's toolchain, the Rust bits
+        # the captures need to build the binary, and mmz, which every arm runs
+        # through. The code gates' tools stay in rustTools, since the docs job
+        # never calls them and their closures cost it minutes to compile.
+        # cargo, rustc, jq and just appear in both lists; the default shell
+        # dedupes them.
         docsTools = [
+          # The one code-gate tool the docs half runs: `just mmz <subgate>`.
+          qahq.packages.${system}.mmz
           tola.packages.${system}.default
           # The docs site: typst queries each page for its metadata, typlite
           # (in tinymist) writes the Markdown copies and the README, and
@@ -81,6 +87,10 @@
           pkgs-typst.tinymist
           pkgs-typst.typstyle
         ] ++ (with pkgs; [
+          cargo
+          rustc
+          jq
+          just
           # pagefind indexes the built site for search. python3 runs the
           # mock upstream the docs captures ask (www/mock-upstream.py), and
           # util-linux's `script` gives each capture a terminal.
@@ -135,7 +145,7 @@
           shellHook = llvmEnv;
         };
         devShells.docs = pkgs.mkShell {
-          nativeBuildInputs = rustTools ++ docsTools;
+          nativeBuildInputs = docsTools;
         };
 
         # For `nix develop`:
@@ -143,7 +153,7 @@
           # RUSTC_WRAPPER comes from the host session (e.g. a system-wide build
           # cache like kache); the dev shell inherits it and it never reaches the
           # `nix build` sandbox. No wrapper pinned here.
-          nativeBuildInputs = rustTools ++ docsTools ++ devTools;
+          nativeBuildInputs = pkgs.lib.unique (rustTools ++ docsTools ++ devTools);
           shellHook = llvmEnv + ''
             # Wire the tracked pre-commit hook (.githooks/) on every shell
             # entry, so a fresh clone's first `nix develop` installs it and

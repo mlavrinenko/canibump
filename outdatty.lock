@@ -56,7 +56,7 @@ groups:
       src/version.rs: 20e4bc87b7b725ebe9cc3950323837a241184b66c8e7f551bd10dc1d74cb3a95
       src/version_tests.rs: f914fa5918e6747ab85d18a542e073f8ab11252de65143c49d105ccde8a4c9c3
     dependents:
-      docs/src/readme.typ: 62248aee17a01bf68f099c953305eba83f143b391c0ab0d6ad5985d6d7178f21
+      docs/src/readme.typ: 1aa35d9a9f48559b89018ce866369be8f275a5d825f662a876554653457d48eb
       www/content/catch-forgotten-workarounds.typ: 724a2f95d1ae92ce952f58bd25a1876069bf0122d9d840f596435f6483fb28fa
       www/content/chain-steps.typ: a5619dcbff8999634a8f48d7be7d4326407b547c223a96a541299720fd83ca6a
       www/content/cli.typ: 985f07f992ecdacda6df9df128b57d588161c6b9a11e5799cf6fe502e663c884
@@ -79,7 +79,7 @@ groups:
       .config/wt.toml: 7c06507d109ff5168d8bed19c9d700989abd6239cd9f800ef9cc43be17e79be7
       .mmz/config.yaml: 3546886ec6124bbbdf7d3d182c9a15c1883c76202eb342190fd1303930993710
       Justfile: 68525a60b4361e9f042ef894bdacaf749d07cb57b49cd1fcfee7b61389d5a113
-      flake.nix: 83369926cf164df838464a8334f5df1ad2c8dc9156bd2626436eee8d984f6929
+      flake.nix: f64a031d9b9dde04a35ad1715c750835b7fb7d0faa99d79883a7d0e30933fc1c
       release.toml: 0874f00ae73873868e5ace0bb2df30bb7f8b1be0a3a6186c4ec528c997f676a1
       scripts/check-doc-blocks.sh: 782092e2dc5c3e03dbcfdc630d2f40c74c24847c457515c990e80d43d5270840
       scripts/check-doc-prose.sh: 0553de3e5cbfdc861426b25669284c3508ec7ae2d520327576164559d0d627e5

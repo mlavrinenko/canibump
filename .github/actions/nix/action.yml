@@ -16,6 +16,16 @@ runs:
   using: composite
   steps:
     - uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
+    # The qahq packages (mmz, outdatty, jscpd, cargo-crap, ejectest, linecop)
+    # have no nixpkgs binary cache, so a runner would compile them from source;
+    # mmz alone took 476s in the Pages log. Read-only here, since a maintainer's
+    # machine fills the caches. The keys are public.
+    - name: Substitute from the project's binary caches
+      run: |
+        {
+          echo "extra-substituters = https://qahq.cachix.org https://mlavrinenko.cachix.org"
+          echo "extra-trusted-public-keys = qahq.cachix.org-1:m43yxxOk1vih9jTZmKXZXgHSSKsW/rNVZUqgXqrELM8= mlavrinenko.cachix.org-1:vNcY3Nf5Y1J0D30uNAwrw44CBHbHDd1tGiA18ANz4XY="
+        } | sudo tee -a /etc/nix/nix.conf >/dev/null
     # Caches /nix through the GitHub Actions cache (no external account or
     # token). Replaces the deprecated DeterminateSystems/magic-nix-cache-action.
     - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
