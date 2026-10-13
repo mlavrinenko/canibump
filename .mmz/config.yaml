@@ -63,6 +63,14 @@ scopes:
     - "outdatty.yaml"
     - "outdatty.lock"
 
+  # The outdatty sources the scopes above miss. A change here flags a group's
+  # dependent for review, so `outdatty-check` has to re-run; memoized past it,
+  # the drift surfaces in CI alone.
+  outdatty-sources:
+    - "release.toml"
+    - ".config/wt.toml"
+    - ".github/workflows/pages.yml"
+
   # Markdown linecop size-checks, plus what outdatty tracks as dependents.
   # If CLAUDE.md is a symlink to AGENTS.md, that is one inode — list it once.
   docs:
@@ -166,7 +174,7 @@ commands:
   # lock; `outdatty-config` covers the lock and the group definitions directly.
   - name: just outdatty-check
     tags: [gate]
-    inputs: [outdatty-config, rust, docs, gates-meta]
+    inputs: [outdatty-config, rust, docs, www, outdatty-sources, gates-meta]
 
   # The build runs the binary from `rust` against the fixtures in `www`.
   - name: just docs-build
