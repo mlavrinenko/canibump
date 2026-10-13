@@ -21,6 +21,7 @@ runs:
     # mmz alone took 476s in the Pages log. Read-only here, since a maintainer's
     # machine fills the caches. The keys are public.
     - name: Substitute from the project's binary caches
+      shell: bash
       run: |
         {
           echo "extra-substituters = https://qahq.cachix.org https://mlavrinenko.cachix.org"
