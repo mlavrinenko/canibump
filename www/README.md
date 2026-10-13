@@ -58,6 +58,25 @@ key reads its doc comment.
   ``[`VERSION`]`` fails the build, because it means nothing in an editor's
   hover or on the site.
 
+## Gates
+
+`just check` runs three docs arms, and mmz skips each while its inputs stay
+unchanged.
+
+- `docs-build` is the full build. It fails on a capture that exits wrong or
+  asks the mock for an unknown route, a dead link, a missing asset, a summary
+  over one sentence, a schema type no reference renders, and a rustdoc link in
+  a doc comment.
+- `check-doc-blocks` fails on a code block typed into a page or a helper. A
+  block no capture can hold gets `// docs:hand-typed <reason>` above it.
+- `check-doc-prose` fails on history words, an em dash, a colon inside a
+  sentence and all-caps shouting in a page's text.
+
+Both scanners read Typst's parse tree through
+[scripts/doc-blocks-lib.sh](../scripts/doc-blocks-lib.sh), ported from
+mindtape, and first run a control on known-bad input, so a scanner that reads
+nothing can't pass.
+
 ## Layout
 
 - `content/*.typ` holds the pages, one per route.

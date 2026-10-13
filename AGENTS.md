@@ -67,6 +67,8 @@
   and served by `just docs-serve`. [www/README.md](www/README.md) says how it
   works and how to add a page. Every terminal block on it is a capture of the
   binary against a fixture in `www/examples/`, never typed by hand.
+  `just check` builds the site and runs `check-doc-blocks` and
+  `check-doc-prose` over it.
 - Eating your own dog food: the tool should use itself if applicable.
   [canibump.toml](canibump.toml) lists the upstream items this repo's own
   workarounds wait on; `just canibump` checks it (network-bound, outside

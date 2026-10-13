@@ -21,7 +21,7 @@ fix-check: eject clippy-fix fmt check
 [doc("Run every gate, skipping those whose inputs did not change")]
 [group("daily")]
 [parallel]
-check: (mmz "fmt-check") (mmz "clippy") (mmz "test") (mmz "machete") (mmz "check-file-size") (mmz "check-dry") (mmz "check-tasks") (mmz "outdatty-check")
+check: (mmz "fmt-check") (mmz "clippy") (mmz "test") (mmz "machete") (mmz "check-file-size") (mmz "check-dry") (mmz "check-tasks") (mmz "outdatty-check") (mmz "docs-build") (mmz "check-doc-blocks") (mmz "check-doc-prose")
 
 # The `--doc` pass is canibump:nextest-doctests. Green prints the summary.
 # The status level is in .config/nextest.toml, shared with `cover`.
@@ -42,8 +42,11 @@ build *args:
 fmt:
     cargo fmt --all
 
+# A gate too: the build fails on a capture that exits wrong, a dead link or a
+# schema type no reference page renders.
 [doc("Build the docs site into www/public, silent on success")]
 [group("daily")]
+[group("gate")]
 docs-build:
     www/build.sh
 
@@ -133,6 +136,16 @@ check-file-size:
 [group("gate")]
 check-dry:
     scripts/quiet.sh jscpd --no-tips -k 70 -f rust --exit-code 1 -r ai src tests
+
+[doc("Fail on a code block typed into a doc source")]
+[group("gate")]
+check-doc-blocks:
+    scripts/check-doc-blocks.sh
+
+[doc("Fail on history words, em dashes, sentence colons and shouting in the docs")]
+[group("gate")]
+check-doc-prose:
+    scripts/check-doc-prose.sh
 
 [doc("Validate the task backlog")]
 [group("gate")]

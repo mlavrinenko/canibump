@@ -64,19 +64,22 @@ groups:
     source:
       .config/nextest.toml: ec97d2444d9bf38aae8499d53eac3ffbbab47593637e3a324452ee72bec0ef0b
       .config/wt.toml: 7c06507d109ff5168d8bed19c9d700989abd6239cd9f800ef9cc43be17e79be7
-      .mmz/config.yaml: 5fe884e850d612ceafdf6dbd1fb631a85bd6b1519e925267ee8e5914a6fa872f
-      Justfile: 27aa11d188fb232af27f484bf4d76b4a1feb2d80c11239a30a087c5693d37707
+      .mmz/config.yaml: f7b30f2980b11ec602021520b2e25fbed3ae2b4e1ee3598ad293c83db5f022c1
+      Justfile: 2e22492a0973e1491602bf7244b2c7dd823a2b94961c9f36147310a7a6363eae
       flake.nix: c95179c37ba0c1e5e078f918b2d56fe1b18c4d8e3bdbe439df3eb1c3dd26a273
       release.toml: 0874f00ae73873868e5ace0bb2df30bb7f8b1be0a3a6186c4ec528c997f676a1
+      scripts/check-doc-blocks.sh: 782092e2dc5c3e03dbcfdc630d2f40c74c24847c457515c990e80d43d5270840
+      scripts/check-doc-prose.sh: 1a2aef5cee9a6fb3557f75f8725cfd9b65fcd428855f7f69b149a13f44600e67
       scripts/cover.sh: cb57da07f22031060d9f653d924d85887e788b90bec391fbac29435cd287633d
       scripts/crap.sh: 3e015b2b77eb7a36b8d80b961aa9aef47b3be9c57ca6c2948450c8b764f13cc9
+      scripts/doc-blocks-lib.sh: 51f2878532795e3b9308cd287e5e499922438e4e2ce4ae0142a47512dbf1adcf
       scripts/eject.sh: 9fed177e7d200c062466f4c317c452280af8072de914f1eeb9ceb2a33cc97621
       scripts/quiet.sh: 7e05bb0d5be2959ede47c7eb33b9203e0446702ea178cdb596951df9e8b3fb73
       scripts/release-ci.sh: ed02a07820a1d3282d3269fd48ca6940d101ecfd98ac496d60cf2326769e7fba
       scripts/release-hook.sh: f9fe29a1ff1ad8df61a3317acf9e32c1e21ed4634e0d3ae15e6a29c0e4374c2e
       scripts/wt-carry-lcov.sh: 39b537a8a380b6fd1c88064bcfb2149a2207ba0ff390bf29c4bfa6e4b26fc650
     dependents:
-      AGENTS.md: 0bc948e4b14c45376fb95542d9bfbe360143a5d69df4ebfabff0a8dfe1d6e4eb
+      AGENTS.md: 4763fdeae911039cef36f1f50c6f7e134ca24cd8714d838e2cdcb224380b8c44
       CONTRIBUTING.md: 2dcf6e3a0202022ffd526e0c11edab02e466f9be3823ca611df7fcd34134b71d
   release-notes:
     source:
@@ -164,4 +167,4 @@ groups:
       www/utils/tola.typ: e537590773bc83e6a93b39f555505fa70874067742323c694916ddb6fad30dd0
       www/utils/ui.typ: d0f746a7cf88804b36b41e3d19fc935d0971abc07bd676a0fc8f5fca6ee3cd06
     dependents:
-      www/README.md: 5bfebc459028750da08d2095ac7bf6fc9ad1d9298bd6baf93c413b0c7a7b6eb0
+      www/README.md: 39157b335238972839fdce5e33e0359fd376e6343af5a6ad74266c99392d8176

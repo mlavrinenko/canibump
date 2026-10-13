@@ -72,6 +72,13 @@ scopes:
     - "AGENTS.md"
     - "CHANGELOG.md"
 
+  # The docs site's sources: pages, helpers, templates, fixtures and the
+  # scripts that build them. www/generated/ and www/public/ are gitignored, so
+  # the glob leaves the build's own output out.
+  www:
+    - "www/**"
+    - "docs/src/**"
+
   # What decides a valid task: the config, templates and goals. The task
   # files under truth/tasks/ are left out on purpose: `mt flip` writes the
   # file its close gate asserts on, so a multi-task close would stale itself
@@ -160,6 +167,19 @@ commands:
   - name: just outdatty-check
     tags: [gate]
     inputs: [outdatty-config, rust, docs, gates-meta]
+
+  # The build runs the binary from `rust` against the fixtures in `www`.
+  - name: just docs-build
+    tags: [gate]
+    inputs: [rust, www, gates-meta]
+
+  - name: just check-doc-blocks
+    tags: [gate]
+    inputs: [www, gates-meta]
+
+  - name: just check-doc-prose
+    tags: [gate]
+    inputs: [www, gates-meta]
 
   # Untagged from here down: these run outside `just check` (CI runs them in
   # their own job), so they stay out of the gate set. Memoized only so a no-op
