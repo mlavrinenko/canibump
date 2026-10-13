@@ -53,6 +53,10 @@
 // named for the reader's job, so a reader scans one short group.
 #let NAV = (
   (title: "Start", items: ("/",)),
+  (
+    title: "Reference",
+    items: ("/cli/", "/manifest/", "/report/", "/state-file/"),
+  ),
 )
 
 // Child pages the sidebar nests under an entry, by the entry's route.

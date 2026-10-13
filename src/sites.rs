@@ -40,7 +40,7 @@ pub(crate) struct RawSite {
     pattern: String,
 }
 
-/// A blocker [`crate::scan::find`] lists as unmarked, and why.
+/// A blocker the scan found no site for, and why.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, JsonSchema)]
 pub struct Unmarked {
     /// The blocker id.

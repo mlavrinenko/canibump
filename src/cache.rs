@@ -21,7 +21,7 @@ pub const VERSION: u32 = 1;
 /// The whole state file.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize, JsonSchema)]
 pub struct StateFile {
-    /// [`VERSION`] when written.
+    /// The version of the file format.
     pub version: u32,
     /// The manifest these entries come from.
     pub manifest: PathBuf,

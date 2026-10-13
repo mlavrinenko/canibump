@@ -68,6 +68,9 @@
   if "summary" in m and not m.at("home", default: false) {
     par(render-summary(m.summary))
   }
+  // typlite runs consecutive paragraphs into one line unless the page holds
+  // a block, and an empty one prints nothing.
+  block[]
   body
 }
 

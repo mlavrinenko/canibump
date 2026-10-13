@@ -142,3 +142,5 @@ main td code { font-size: 0.82em; }
 .file pre { margin: 0; }
 .terminal { border-radius: 10px; margin: 0 0 1.2rem; }
 .face-body > .terminal { border-radius: 0; margin: 0; }
+/* `--help` prose runs past 100 columns, so it wraps. A report keeps its columns. */
+.terminal.help pre { white-space: pre-wrap; }

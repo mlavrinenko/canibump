@@ -176,7 +176,7 @@ pub(crate) struct RawManifest {
     scan: Option<RawScan>,
 }
 
-/// `[settings]`.
+/// Tuning for the whole run.
 #[derive(Default, Deserialize, JsonSchema)]
 #[serde(deny_unknown_fields)]
 #[schemars(rename = "Settings")]

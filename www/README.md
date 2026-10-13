@@ -45,6 +45,19 @@ capture_copy dir my-fixture
 capture --exit 9 my-slug "$dir" 'canibump --refresh'
 ```
 
+## References
+
+The reference pages hold no prose about flags or keys. `content/cli.typ`
+shows the captured `--help` of `canibump` and of every command its help
+lists. `content/manifest.typ`, `report.typ` and `state-file.typ` render
+`canibump schema` with [utils/schema-ref.typ](utils/schema-ref.typ), so each
+key reads its doc comment.
+
+- A new schema type needs a section in its page, or the build fails naming it.
+- A doc comment's first paragraph is what readers see. A rustdoc link like
+  ``[`VERSION`]`` fails the build, because it means nothing in an editor's
+  hover or on the site.
+
 ## Layout
 
 - `content/*.typ` holds the pages, one per route.
@@ -76,6 +89,3 @@ at the top, and both the build and the sidebar read them from there.
 Add the route to `NAV` in `utils/site.typ`, or the page builds but no sidebar
 links it. [generate-site-pages.sh](generate-site-pages.sh) fails on two pages
 with one route, and on a summary longer than one sentence or 120 characters.
-
-Typst's HTML export makes paragraphs only on a page with block elements like
-headings, so a page of bare text renders as one line in its Markdown copy.

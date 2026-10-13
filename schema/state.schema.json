@@ -84,7 +84,7 @@
       "type": "string"
     },
     "version": {
-      "description": "[`VERSION`] when written.",
+      "description": "The version of the file format.",
       "format": "uint32",
       "minimum": 0,
       "type": "integer"

@@ -354,7 +354,7 @@
     },
     "Settings": {
       "additionalProperties": false,
-      "description": "`[settings]`.",
+      "description": "Tuning for the whole run.",
       "properties": {
         "cache": {
           "description": "Where the cache file lives, relative to the manifest. Defaults to a file\nunder the user cache dir.",

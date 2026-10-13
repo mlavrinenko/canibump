@@ -121,16 +121,22 @@
 
 // Each command of a capture after a `$` prompt, then what it printed, in the
 // colours the terminal showed. The Markdown copy has no colour.
-#let terminal(slug) = {
-  let text = _transcript(_record(slug))
+#let _panel(text, class: "terminal") = {
   if MARKDOWN {
     raw(_ansi-strip(text), block: true)
   } else {
-    html.elem("div", attrs: (class: "terminal"), html.elem(
+    html.elem("div", attrs: (class: class), html.elem(
       "pre",
       html.elem("code", _ansi-spans(text)),
     ))
   }
+}
+#let terminal(slug) = _panel(_transcript(_record(slug)))
+
+// A section per command of a `--help` capture, headed by the command.
+#let help-sections(slug) = for step in _record(slug).steps {
+  heading(raw(step.cmd.replace(" --help", "")))
+  _panel(_ansi-strip(step.out).trim("\n", repeat: true), class: "terminal help")
 }
 
 // The exit code of a capture's last command.

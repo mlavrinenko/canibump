@@ -28,6 +28,16 @@ capture quickstart "$dir" canibump
 capture_upstream quickstart upstream-merged.json
 capture --exit 9 quickstart "$dir" 'canibump --refresh'
 
+# The CLI reference: `--help` of canibump and of each command its help lists.
+capture_scratch dir
+capture cli "$dir" 'canibump --help'
+for sub in $("$BIN" --help | awk '/^Commands:/ { on = 1; next } on && NF == 0 { on = 0 } on && $1 != "help" { print $1 }'); do
+  capture cli "$dir" "canibump $sub --help"
+done
+
+# The schemas the reference pages render.
+for name in manifest report state; do "$BIN" schema "$name" >"$OUT/schema-$name.json"; done
+
 # Last, because querying a page compiles it, and a page reads what the steps
 # above wrote.
 bash "$SCRIPT_DIR/generate-site-pages.sh"

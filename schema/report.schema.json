@@ -127,7 +127,7 @@
       "type": "object"
     },
     "Unmarked": {
-      "description": "A blocker [`crate::scan::find`] lists as unmarked, and why.",
+      "description": "A blocker the scan found no site for, and why.",
       "properties": {
         "detail": {
           "description": "Why, like `no canibump:<id> in the scanned files`.",
