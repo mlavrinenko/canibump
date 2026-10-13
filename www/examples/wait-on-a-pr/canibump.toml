@@ -1,0 +1,24 @@
+[[blocker]]
+id = "libfoo-crash"
+note = "drop the libfoo crash patch"
+state = "github:libfoo/libfoo#412"
+
+[[blocker]]
+id = "libbar-arm64"
+note = "unpin libbar on arm64"
+state = "gitlab:libbar/libbar!88"
+
+[[blocker]]
+id = "widget-leak"
+note = "drop the widget leak workaround"
+state = "codeberg:widget/widget#7"
+
+[[blocker]]
+id = "qux-timeout"
+note = "raise the qux client timeout back to 30s"
+state = "jira:issues.example.org#QUX-42"
+
+[[blocker]]
+id = "baz-locale"
+note = "drop LC_ALL=C from the baz wrapper"
+state = "redmine:redmine.example.org#1234"

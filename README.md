@@ -58,7 +58,7 @@ bumpable  serde-pin            github:serde-rs/serde#2590 (110af31) is in v1.0.1
 | `version` | a package at some version or newer | Repology (distros, nixpkgs), deps.dev (crates.io, npm, PyPI, Go, Maven, NuGet, RubyGems) |
 | `all` / `any` | a chain of the above, like merged and released and packaged | |
 
-The full grammar, the cache and auth live in [docs/manifest.md](docs/manifest.md).
+The full grammar, the cache and auth live in [the docs](https://mlavrinenko.github.io/canibump/).
 
 ## Forgotten workarounds
 
@@ -88,7 +88,7 @@ bumpable  serde-pin  github:serde-rs/serde#2590 (110af31) is in v1.0.185 (unpin 
           at Cargo.toml:12
 ```
 
-See [docs/scan.md](docs/scan.md).
+See [Catch forgotten workarounds](https://mlavrinenko.github.io/canibump/catch-forgotten-workarounds/).
 
 ## Commands
 
@@ -134,4 +134,4 @@ give you completion, hover docs and squiggles on typos.
 
 ## Architecture
 
-See [the docs](docs/architecture.md).
+See [How a run works](https://mlavrinenko.github.io/canibump/how-it-works/).

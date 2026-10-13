@@ -1,0 +1,18 @@
+[[blocker]]
+id = "libfoo-crash"
+note = "drop the libfoo crash patch"
+
+[[blocker.all]]
+id = "merged"
+state = "github:libfoo/libfoo#412"
+
+[[blocker.all]]
+id = "released"
+reached = "github:libfoo/libfoo#412"
+in = { tags = "v*" }
+
+[[blocker.all]]
+id = "packaged"
+version = "repology:libfoo"
+repo = "nix_unstable"
+at-least = { step = "released" }

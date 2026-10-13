@@ -49,21 +49,24 @@ capture_init() {
         return 1
     fi
     CAPTURE_API="http://127.0.0.1:$(cat "$CAPTURE_TMP/port")"
-    # The state file's name holds the manifest's absolute path.
-    CAPTURE_PATHS+=("$CAPTURE_HOME/=~/" "${CAPTURE_HOME#/}/=home/you/")
+    # The capture's home reads as /home/you. Without the leading slash, the
+    # pair also rewrites the state file's name, which holds the manifest's
+    # absolute path.
+    CAPTURE_PATHS+=("${CAPTURE_TMP#/}/home/=home/")
 }
 
 # capture_copy <var> <fixture>: copy www/examples/<fixture> into the capture
 # area, store the copy's path in <var>, and make the fixture's upstream.json
-# what the mock answers. The upstream*.json files stay out of the copy, so a `[scan]`
-# never reads it.
+# what the mock answers. The upstream*.json files stay out of the copy, so a
+# `[scan]` never reads them. An earlier session's results on the fixture go,
+# so each session starts with no state file.
 capture_copy() {
-    local dest="$CAPTURE_HOME/$2"
-    rm -rf "$dest"
-    mkdir -p "$dest"
-    tar -C "$REPO/www/examples/$2" --exclude='./upstream*.json' -cf - . | tar -C "$dest" -xf -
+    local dest_="$CAPTURE_HOME/$2"
+    rm -rf "$dest_" "$CAPTURE_HOME/.cache/canibump/state$dest_"*
+    mkdir -p "$dest_"
+    tar -C "$REPO/www/examples/$2" --exclude='./upstream*.json' -cf - . | tar -C "$dest_" -xf -
     capture_upstream "$2" upstream.json
-    printf -v "$1" "%s" "$dest"
+    printf -v "$1" "%s" "$dest_"
 }
 
 # capture_upstream <fixture> <file>: answer from www/examples/<fixture>/<file>,
@@ -75,9 +78,9 @@ capture_upstream() {
 
 # capture_scratch <var>: an empty directory, for commands that need no project.
 capture_scratch() {
-    local dest="$CAPTURE_HOME/scratch"
-    mkdir -p "$dest"
-    printf -v "$1" "%s" "$dest"
+    local dest_="$CAPTURE_HOME/scratch"
+    mkdir -p "$dest_"
+    printf -v "$1" "%s" "$dest_"
 }
 
 # Run <command> in <dir> the way every capture runs one, printing what the
@@ -95,6 +98,13 @@ _capture_run() { # <dir> <command>
         CANIBUMP_DEPSDEV_API="$CAPTURE_API" CAPTURE_CMD="$2" \
         script -qec 'stty cols 100 rows 50 -onlcr; exec bash -c "$CAPTURE_CMD"' /dev/null \
         </dev/null)
+}
+
+# capture_prep <dir> <command>: set a session up, recording nothing. A
+# failure prints the output and fails the build.
+capture_prep() {
+    local out
+    out=$(_capture_run "$1" "$2") || _capture_fail "$2" "$out" "capture_prep: the command above failed in $1"
 }
 
 # _capture_fail <cmd> <out> <message>: print the step and why it failed.
@@ -147,11 +157,11 @@ capture() {
 # <var> to commit and tag in with capture_git.
 capture_remote() {
     local name=${2##*/}
-    local bare="$CAPTURE_TMP/remotes/${name%.git}.git" work="$CAPTURE_TMP/remotes/${name%.git}"
-    git init -q --bare -b main "$bare"
-    git clone -q "$bare" "$work" 2>/dev/null
-    git config -f "$CAPTURE_HOME/.gitconfig" "url.file://$bare.insteadOf" "$2"
-    printf -v "$1" "%s" "$work"
+    local bare_="$CAPTURE_TMP/remotes/${name%.git}.git" clone_="$CAPTURE_TMP/remotes/${name%.git}"
+    git init -q --bare -b main "$bare_"
+    git clone -q "$bare_" "$clone_" 2>/dev/null
+    git config -f "$CAPTURE_HOME/.gitconfig" "url.file://$bare_.insteadOf" "$2"
+    printf -v "$1" "%s" "$clone_"
 }
 
 # capture_git <dir> <git args>: run git with a fixed author and clock, so a

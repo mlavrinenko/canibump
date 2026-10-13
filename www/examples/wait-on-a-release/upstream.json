@@ -1,0 +1,38 @@
+{
+  "/repos/fastjson/fastjson/issues/2590": {
+    "state": "closed",
+    "pull_request": {
+      "merged_at": "2026-08-20T11:02:00Z"
+    }
+  },
+  "/repos/fastjson/fastjson/pulls/2590": {
+    "merged": true,
+    "merge_commit_sha": "110af31f2c4a6b0e9d8e5c7a1b3f4d2e6c8a9b0f"
+  },
+  "/repos/fastjson/fastjson/compare/110af31...lts-1.x": {
+    "status": "diverged"
+  },
+  "/repos/fastjson/fastjson/git/matching-refs/tags/v": [
+    {
+      "ref": "refs/tags/v1.0.183"
+    },
+    {
+      "ref": "refs/tags/v1.0.184"
+    },
+    {
+      "ref": "refs/tags/v1.0.185"
+    },
+    {
+      "ref": "refs/tags/v1.1.0-rc1"
+    }
+  ],
+  "/repos/fastjson/fastjson/compare/110af31f2c4a6b0e9d8e5c7a1b3f4d2e6c8a9b0f...v1.0.185": {
+    "status": "ahead"
+  },
+  "/repos/fastjson/fastjson/compare/110af31f2c4a6b0e9d8e5c7a1b3f4d2e6c8a9b0f...v1.0.184": {
+    "status": "ahead"
+  },
+  "/repos/fastjson/fastjson/compare/110af31f2c4a6b0e9d8e5c7a1b3f4d2e6c8a9b0f...v1.0.183": {
+    "status": "behind"
+  }
+}

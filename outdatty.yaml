@@ -23,17 +23,26 @@ require_tracked:
   - "schema/**"
   - "flake.nix"
   - "www/README.md"
+  - "www/content/**"
+  - "www/examples/**"
 groups:
-  # The CLI, the manifest format, the output and the targets are documented
-  # by hand, so any source change flags the user-facing docs for a look.
+  # The site's references and terminal blocks come from the binary, but its
+  # prose explains behaviour by hand, so any source change flags the pages
+  # and the README for a look.
   - name: cli-docs
     source:
       - "src/**"
     dependents:
       - README.md
-      - docs/manifest.md
-      - docs/scan.md
-      - docs/architecture.md
+      - "www/content/*.typ"
+
+  # A page narrates the runs its fixtures produce, so a fixture change flags
+  # the pages for a look.
+  - name: site-examples
+    source:
+      - "www/examples/**"
+    dependents:
+      - "www/content/*.typ"
 
   # The JSON schemas are generated from the types, so a source change
   # flags the committed file and the docs that show how to wire it in.
@@ -45,8 +54,6 @@ groups:
       - schema/report.schema.json
       - schema/state.schema.json
       - README.md
-      - docs/manifest.md
-      - docs/scan.md
 
   # A package change (version, dependencies, metadata) should land in the
   # changelog.

@@ -1,0 +1,8 @@
+{
+  "/repos/libfoo/libfoo/issues/412": {
+    "state": "closed",
+    "pull_request": {"merged_at": "2026-10-02T09:14:00Z"}
+  },
+  "/repos/left-pad/left-pad/issues/42": {"state": "open", "pull_request": {"merged_at": null}},
+  "/api/v4/projects/libbar%2Flibbar/merge_requests/88": {"state": "opened"}
+}

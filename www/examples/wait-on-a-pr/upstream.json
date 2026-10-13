@@ -1,0 +1,12 @@
+{
+  "/repos/libfoo/libfoo/issues/412": {
+    "state": "closed",
+    "pull_request": {"merged_at": "2026-10-02T09:14:00Z"}
+  },
+  "/api/v4/projects/libbar%2Flibbar/merge_requests/88": {"state": "opened"},
+  "/api/v1/repos/widget/widget/issues/7": {"state": "closed"},
+  "/rest/api/2/issue/QUX-42": {
+    "fields": {"status": {"statusCategory": {"key": "done"}}, "resolution": {"name": "Won't Fix"}}
+  },
+  "/issues/1234.json": {"issue": {"status": {"name": "Resolved", "is_closed": true}}}
+}

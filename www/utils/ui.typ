@@ -1,6 +1,6 @@
 // Rendering helpers the pages share.
 
-#import "site.typ": MARKDOWN, NAME, SITE, md-copy-button, u
+#import "site.typ": MARKDOWN, NAME, REPO, SITE, md-copy-button, u
 
 // `html.elem(tag, attrs: attrs, body)`, or the bare body in the Markdown copy
 // (mode.typ), where typlite drops a div or a span together with its content.
@@ -9,16 +9,21 @@
 }
 
 // A callout box, kind ∈ note | tip | warn. The Markdown copy shows a
-// blockquote that opens with the kind.
+// paragraph that opens with the kind, since typlite pulls the paragraph
+// before a quote into it.
 #let _callout-label = (note: "Note", tip: "Tip", warn: "Warning")
 #let callout(kind, body) = if MARKDOWN {
-  quote(block: true)[#strong(_callout-label.at(kind) + ":") #body]
+  par[#strong(_callout-label.at(kind) + ".") #body]
 } else {
   html.elem("div", attrs: (class: "callout callout-" + kind), body)
 }
 
-// The site root's opening: the name, the tagline and the way in.
-#let hero() = if MARKDOWN { par(SITE.tagline) } else {
+// The site root's opening: the name, the tagline and the ways in.
+#let hero() = if MARKDOWN [
+  #par(SITE.tagline)
+
+  #link(u("/quickstart/"))[Get started] · #link(REPO)[GitHub]
+] else {
   html.elem("section", attrs: (class: "hero"), {
     html.elem("div", attrs: (class: "hero-lede"), {
       html.elem(
@@ -27,6 +32,10 @@
         html.elem("h1", NAME) + md-copy-button("/"),
       )
       html.elem("p", attrs: (class: "hero-sub"), SITE.tagline)
+      html.elem("div", attrs: (class: "hero-cta"), {
+        html.elem("a", attrs: (class: "btn", href: u("/quickstart/")), [Get started])
+        html.elem("a", attrs: (class: "btn ghost", href: REPO), [GitHub])
+      })
     })
   })
 }
@@ -155,6 +164,16 @@
   raw(hit.trim())
 }
 
+// The same line as a quote, for one that reads as prose, like a `--help`
+// paragraph. Its `code` spans stay code.
+#let capture-quote(slug, pattern) = {
+  let parts = capture-line(slug, pattern).text.split("`")
+  let body = parts.enumerate().map(((i, part)) => if calc.odd(i) { raw(part) } else { part }).join()
+  // typlite pulls the paragraph before a quote into it, so the Markdown copy
+  // shows a plain paragraph.
+  if MARKDOWN { par(body) } else { quote(block: true, body) }
+}
+
 // A file of the fixture a capture ran in, with its path as the caption.
 #let _langs = (toml: "toml", nix: "nix", json: "json", yml: "yaml", yaml: "yaml")
 #let _file-body(slug, path) = {
@@ -175,7 +194,7 @@
   })
 }
 
-// A fixture file beside the run it produced, for the site root.
+// A fixture file above the run it produced, for the site root.
 #let showcase(slug, path) = {
   let face(kind, caption, body) = html.elem(
     "figure",
@@ -195,4 +214,12 @@
       face("terminal", "terminal", terminal(slug))
     })
   }
+}
+
+// A file under src/ as inline code. The build fails on one that doesn't
+// exist, so a page can't name a module after a rename.
+#let src(path) = {
+  let files = json("../generated/src-files.json")
+  assert(path in files, message: "src/" + path + " does not exist")
+  raw(path)
 }

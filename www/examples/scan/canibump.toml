@@ -1,0 +1,13 @@
+[[blocker]]
+id = "libfoo-crash"
+note = "drop the libfoo crash patch"
+state = "github:libfoo/libfoo#412"
+
+[scan]
+paths = ["**/*.nix", "Justfile"]
+exclude = ["vendor/**"]
+
+[[scan.catcher]]
+id = "jira"
+pattern = 'https://jira\.example\.com/browse/(?<key>[A-Z]+-\d+)'
+ref = "jira:jira.example.com#${key}"

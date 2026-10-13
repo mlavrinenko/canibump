@@ -52,10 +52,27 @@
 // The sidebar: each group's title and its pages in reading order. A group is
 // named for the reader's job, so a reader scans one short group.
 #let NAV = (
-  (title: "Start", items: ("/",)),
+  (title: "Start", items: ("/", "/quickstart/")),
+  (
+    title: "Wait for",
+    items: (
+      "/wait-on-a-pr/",
+      "/wait-on-a-release/",
+      "/wait-on-a-package/",
+      "/chain-steps/",
+    ),
+  ),
+  (
+    title: "Track workarounds",
+    items: ("/mark-workarounds/", "/catch-forgotten-workarounds/"),
+  ),
+  (
+    title: "Automate",
+    items: ("/run-in-ci/", "/read-results-offline/", "/tokens-and-hosts/"),
+  ),
   (
     title: "Reference",
-    items: ("/cli/", "/manifest/", "/report/", "/state-file/"),
+    items: ("/cli/", "/manifest/", "/report/", "/state-file/", "/how-it-works/"),
   ),
 )
 

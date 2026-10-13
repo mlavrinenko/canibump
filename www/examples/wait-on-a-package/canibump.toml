@@ -1,0 +1,12 @@
+[[blocker]]
+id = "libfoo-overlay"
+note = "drop the libfoo overlay"
+version = "repology:libfoo"
+repo = "nix_unstable"
+at-least = "2.4.0"
+
+[[blocker]]
+id = "fastjson-vendored"
+note = "stop vendoring fastjson"
+version = "deps.dev:cargo/fastjson"
+at-least = "1.1.0"

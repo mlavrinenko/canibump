@@ -1,0 +1,17 @@
+[[blocker]]
+id = "fastjson-pin"
+note = "unpin fastjson"
+reached = "github:fastjson/fastjson#2590"
+in = { tags = "v*" }
+
+[[blocker]]
+id = "fastjson-lts"
+note = "drop the fastjson backport on the LTS branch"
+reached = "github:fastjson/fastjson@110af31"
+in = { branch = "lts-1.x" }
+
+[[blocker]]
+id = "libbaz-locale"
+note = "drop the libbaz locale backport"
+reached = "git:https://git.example.org/libbaz.git@92fce7e"
+in = { tags = "v*" }

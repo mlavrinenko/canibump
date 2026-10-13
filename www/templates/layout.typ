@@ -35,7 +35,7 @@
 
 // "On this page" index, derived at runtime from the rendered h2 elements (see
 // base.typ's slug() show rule for their ids) — never a hand-written list, so
-// it cannot drift from the content it indexes. Only worth showing once a page
+// it cannot drift from the content it indexes. The home page skips it. Only worth showing once a page
 // clears a minimum of 3 headings; a shorter page skims fine without one. The
 // `open` state is decided once, before the element is inserted, from the same
 // 52rem breakpoint main.css uses for its narrow layout: expanded on wide
@@ -61,7 +61,7 @@ setTimeout(function(){b.setAttribute('data-tip',tip);b.classList.remove('md-copy
 
 #let _toc-script = "document.addEventListener('DOMContentLoaded',function(){
 var main=document.querySelector('main[data-pagefind-body]');
-if(!main)return;
+if(!main||main.classList.contains('home'))return;
 var heads=main.querySelectorAll('h2[id]');
 if(heads.length<3)return;
 var nav=document.createElement('nav');

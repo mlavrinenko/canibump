@@ -56,10 +56,23 @@ groups:
       src/version.rs: 20e4bc87b7b725ebe9cc3950323837a241184b66c8e7f551bd10dc1d74cb3a95
       src/version_tests.rs: f914fa5918e6747ab85d18a542e073f8ab11252de65143c49d105ccde8a4c9c3
     dependents:
-      README.md: ffce0539e338d405ea4d7100045678488bf797adcb23e5f9e3e69b1d2a9f9804
-      docs/architecture.md: 504ab878cc7e30aee296b08a1f95af6075c3b9cd7566e210efd334af8692f464
-      docs/manifest.md: f1c066cf7ec175eab4784927b929a3189cdbdc58f4ab4d3579cd55d90760d701
-      docs/scan.md: 19a9cfb1fbe8d41c0acb937e67dfb55a73bb7834571c48eb7fbf5392b73b0995
+      README.md: 5c61b34875a6179f02d51f44c61061723f99df852528bec3d553e2ec2a186f0f
+      www/content/catch-forgotten-workarounds.typ: 724a2f95d1ae92ce952f58bd25a1876069bf0122d9d840f596435f6483fb28fa
+      www/content/chain-steps.typ: a5619dcbff8999634a8f48d7be7d4326407b547c223a96a541299720fd83ca6a
+      www/content/cli.typ: 985f07f992ecdacda6df9df128b57d588161c6b9a11e5799cf6fe502e663c884
+      www/content/how-it-works.typ: d485346fe63599b4b9b1d4bdcdc56ef57fca8baa9861bfbeeda6e554f5dde672
+      www/content/index.typ: 3378b3a67c9ca2dae2a85ef2749c4bb7bda0e97498907131003fbf4300b9a7aa
+      www/content/manifest.typ: 395cdda770cc8a673383eec4249e63d47d56285ce3ff5be99c687e1439acf5f2
+      www/content/mark-workarounds.typ: afca8650c6ee468db212008086d1d4cf9691179ea0d7eb4214fb329de0f1e87d
+      www/content/quickstart.typ: 3de69750f52b5cf445540214af3ec9fee381c3feb3fc956beec68516164125bb
+      www/content/read-results-offline.typ: d6b97bc44c19aac56a0515c4900c3ebf312eb70eb7f877fb9829b8aea35bd869
+      www/content/report.typ: 385c7ed1a704fab2a11ab31c6da03a4b43ba44ff3c79d1921f9db1501c699cdc
+      www/content/run-in-ci.typ: 6e5c0e6da322c9d0c0defcb67d89786e53b5e6e52dea86584621ff3d3ba86385
+      www/content/state-file.typ: 08b85e2e3313e1e83c67982f84383061f27d23b8635823256977dc1fc6429362
+      www/content/tokens-and-hosts.typ: 6811d02331a08a41443283a5a9f32936afb131eebcd22e0f96a0d326fca6ffa4
+      www/content/wait-on-a-package.typ: 0d280b97dcd2439cfc76035c6c49f1ab6d5f30059a5e762fab040c99263992a9
+      www/content/wait-on-a-pr.typ: 3d1f1a7a1b43abf02d6cfc613135a08d6644fc0b189face637df745a66a21266
+      www/content/wait-on-a-release.typ: 74d69f8cf19307df9c2c494ed749fcd7a494779c522c33f3c31dd60ea6f788d3
   dev-docs:
     source:
       .config/nextest.toml: ec97d2444d9bf38aae8499d53eac3ffbbab47593637e3a324452ee72bec0ef0b
@@ -69,7 +82,7 @@ groups:
       flake.nix: c95179c37ba0c1e5e078f918b2d56fe1b18c4d8e3bdbe439df3eb1c3dd26a273
       release.toml: 0874f00ae73873868e5ace0bb2df30bb7f8b1be0a3a6186c4ec528c997f676a1
       scripts/check-doc-blocks.sh: 782092e2dc5c3e03dbcfdc630d2f40c74c24847c457515c990e80d43d5270840
-      scripts/check-doc-prose.sh: 1a2aef5cee9a6fb3557f75f8725cfd9b65fcd428855f7f69b149a13f44600e67
+      scripts/check-doc-prose.sh: 0553de3e5cbfdc861426b25669284c3508ec7ae2d520327576164559d0d627e5
       scripts/cover.sh: cb57da07f22031060d9f653d924d85887e788b90bec391fbac29435cd287633d
       scripts/crap.sh: 3e015b2b77eb7a36b8d80b961aa9aef47b3be9c57ca6c2948450c8b764f13cc9
       scripts/doc-blocks-lib.sh: 51f2878532795e3b9308cd287e5e499922438e4e2ce4ae0142a47512dbf1adcf
@@ -141,30 +154,70 @@ groups:
       src/version.rs: 20e4bc87b7b725ebe9cc3950323837a241184b66c8e7f551bd10dc1d74cb3a95
       src/version_tests.rs: f914fa5918e6747ab85d18a542e073f8ab11252de65143c49d105ccde8a4c9c3
     dependents:
-      README.md: ffce0539e338d405ea4d7100045678488bf797adcb23e5f9e3e69b1d2a9f9804
-      docs/manifest.md: f1c066cf7ec175eab4784927b929a3189cdbdc58f4ab4d3579cd55d90760d701
-      docs/scan.md: 19a9cfb1fbe8d41c0acb937e67dfb55a73bb7834571c48eb7fbf5392b73b0995
+      README.md: 5c61b34875a6179f02d51f44c61061723f99df852528bec3d553e2ec2a186f0f
       schema/canibump.schema.json: 84b3038cb457316f5d4fb8f1bff60e275da4f2379dd0097ee5ceb6785bea23bc
       schema/report.schema.json: b01ee246f94281d3c987e3c5610156a3f23370bee8bd407ba90d163b79204c6e
       schema/state.schema.json: 10446990340f982adefa637913dd029c8028ee565c365d29bcf45b0d4462fc17
+  site-examples:
+    source:
+      www/examples/chain/canibump.toml: 4b013fc9aea0f8150c36485112de0f16043b0f77482faf80ed74e71a6c435b2c
+      www/examples/chain/upstream-packaged.json: c85214bd421fa2470c1e689d5cde68a845ef30e7d37099989780cca7f70c95ee
+      www/examples/chain/upstream.json: 1d660847c302c72e3243f60b0132a4e43446c297d483a6220577b359873c9266
+      www/examples/marks/canibump.toml: 212e930f11d0f7474b88297945f6460c9b4594e1ef9638a142918540b2be6ed0
+      www/examples/marks/hosts/gpu.nix: c6869dfcaf7b9a50977cc2b4f84c7565d97ce3272dcb6ea84fb1c628604eaff2
+      www/examples/marks/package.json: 49e6bfc1a3647728db4a98e47993932369e07ff7051eaeb3baaa1ff538932939
+      www/examples/marks/pkgs/libfoo.nix: d8374882d4d87ad4c7e79dd9946be505e658d80421c0bce027c2aba3bc16ef16
+      www/examples/marks/upstream.json: 32fa669922910820cdb59ecd37757db51b556d5b4c4fbe94f83f238982c64c3d
+      www/examples/quickstart/canibump.toml: f3138b49228ff084394929e772ad2d9a6c9b04f6804b304cdfebb957aeabc1fa
+      www/examples/quickstart/pkgs/libfoo.nix: d8374882d4d87ad4c7e79dd9946be505e658d80421c0bce027c2aba3bc16ef16
+      www/examples/quickstart/upstream-merged.json: eecea6aa00bcc2afb334899438124c756b7b8b7666e1fffb3a51b3b26642cc08
+      www/examples/quickstart/upstream.json: abe70c5901ed0d3c340c144f67b6449660842617fda0805ed6384b9511fe350a
+      www/examples/scan/Justfile: ef9d8ba7903d0e43c8ecf1bf7ca05677be0ffb2304d3fd84d2b0ff87cabb6c02
+      www/examples/scan/canibump.toml: ee3d9d3dfe3da846fdadf03d978ed6b31e596f022a68f79275cf51b19b8c5f70
+      www/examples/scan/hosts/gpu.nix: d7843eba98d9019c1b51404ff4ff85ad55aaf8cec649e119c0275bf6110496af
+      www/examples/scan/upstream.json: 78498a9ce47eb95288d100942b405994cf792c7f24e824b1276cf6c4a57c9b4c
+      www/examples/scan/vendor/libwidget.nix: 84acb0302ebba14eeeb8a7691c59699dc20001350e7a2dd2cf3467512e150f21
+      www/examples/wait-on-a-package/canibump.toml: 69acb87bfe64fec0a9668e008f3c49cc71e4cccc5eaef53aa4b94d58be7823d8
+      www/examples/wait-on-a-package/upstream.json: 4e6999f02a7812572546c4c0e70104ea8a228353cf7a57976046bf40d8b7c23e
+      www/examples/wait-on-a-pr/canibump.toml: 7bae54b34408d5e0822b4fdf9f5507c9ce0dae617bb1944bce838de7813d759c
+      www/examples/wait-on-a-pr/upstream.json: d9990346747715bb8ea0374fa57449d37a3a80bd10dc6e2eba8eccb88ae5ac52
+      www/examples/wait-on-a-release/canibump.toml: 1e42c78922bc447f1fc99cb1ce5f9955de662aeba8541d06c55489a13136ae35
+      www/examples/wait-on-a-release/upstream.json: 621b80d44e5cd0cf4f1ea32278de4a94ca78200ec3ce3eceeea32d515e15e2b9
+    dependents:
+      www/content/catch-forgotten-workarounds.typ: 724a2f95d1ae92ce952f58bd25a1876069bf0122d9d840f596435f6483fb28fa
+      www/content/chain-steps.typ: a5619dcbff8999634a8f48d7be7d4326407b547c223a96a541299720fd83ca6a
+      www/content/cli.typ: 985f07f992ecdacda6df9df128b57d588161c6b9a11e5799cf6fe502e663c884
+      www/content/how-it-works.typ: d485346fe63599b4b9b1d4bdcdc56ef57fca8baa9861bfbeeda6e554f5dde672
+      www/content/index.typ: 3378b3a67c9ca2dae2a85ef2749c4bb7bda0e97498907131003fbf4300b9a7aa
+      www/content/manifest.typ: 395cdda770cc8a673383eec4249e63d47d56285ce3ff5be99c687e1439acf5f2
+      www/content/mark-workarounds.typ: afca8650c6ee468db212008086d1d4cf9691179ea0d7eb4214fb329de0f1e87d
+      www/content/quickstart.typ: 3de69750f52b5cf445540214af3ec9fee381c3feb3fc956beec68516164125bb
+      www/content/read-results-offline.typ: d6b97bc44c19aac56a0515c4900c3ebf312eb70eb7f877fb9829b8aea35bd869
+      www/content/report.typ: 385c7ed1a704fab2a11ab31c6da03a4b43ba44ff3c79d1921f9db1501c699cdc
+      www/content/run-in-ci.typ: 6e5c0e6da322c9d0c0defcb67d89786e53b5e6e52dea86584621ff3d3ba86385
+      www/content/state-file.typ: 08b85e2e3313e1e83c67982f84383061f27d23b8635823256977dc1fc6429362
+      www/content/tokens-and-hosts.typ: 6811d02331a08a41443283a5a9f32936afb131eebcd22e0f96a0d326fca6ffa4
+      www/content/wait-on-a-package.typ: 0d280b97dcd2439cfc76035c6c49f1ab6d5f30059a5e762fab040c99263992a9
+      www/content/wait-on-a-pr.typ: 3d1f1a7a1b43abf02d6cfc613135a08d6644fc0b189face637df745a66a21266
+      www/content/wait-on-a-release.typ: 74d69f8cf19307df9c2c494ed749fcd7a494779c522c33f3c31dd60ea6f788d3
   site-tooling:
     source:
       .github/workflows/pages.yml: ba8a88c6bc16ffa2427939ebb32726c7d25f68d2cbeacb8bedc8cbe08fd2d0b1
       www/build.sh: 7ebcbabee754f83ada94a2085c9f890803a6749d0c5efa418ad07c2becf7e44a
-      www/capture.sh: d1cbd97b2373d00351158f39ab0efb2831f74766187829de45ec1d78bf87937b
+      www/capture.sh: 7614a3d4bdb33dab7e2ada6d04ff6fc3f0e509aef8eea520806d900e3f04690a
       www/generate-md.sh: 7877371eca27a507d60f830367083decb1bb4f13504c7c5acc01b1905d05a00e
       www/generate-site-pages.sh: 87e42f23d912dbf72c683be5da092e57e80098b31e1a49e89cca2cf450e38060
-      www/generate.sh: 788e7e76a8a793f6088f6b05013a6beab3d4375d15520f00103a3e0eb8099f4f
+      www/generate.sh: d1345c936d86ac91a6e8fc531a6606082a83bfe37e4904750729d2a0c2a83e0b
       www/mock-upstream.py: 84aa8b89433ff885017f3c420cb90186e28fc9064df01fd13edac92949bf9392
       www/templates/base.typ: c614904307249af37465869ec8659befa9757a52af3edaeedecb5f1c9a81f528
-      www/templates/layout.typ: e5e4db3b997e219c4f0805bbbc55269a98f8eeb8dc58f4c21f5fb2935b9ade61
+      www/templates/layout.typ: d33f9cda9819397dd21b229d58f59243c7e20aa28aef2feeb92e2c93c0be61e1
       www/templates/tola.typ: 6f52ba5a2d740b02120825e628fffa6e7ae355095ea9682947697d7478b09c92
       www/tola.toml: e89c5d9e31ff9cc21a3e86dd5808f4fdc9decc3170260441487b7c73b6cdd1a8
       www/utils/mode.typ: a729a2bde7ff90c0f0c9535095cf6b1ea707ba6f8b9e8f2f47512f565f4b8a51
       www/utils/page.typ: 1aa43ea57db03f52971d9c0524d539862464c57ac3288cd66eb0819460fbf8cf
       www/utils/schema-ref.typ: 911e825197ca5f828d238524bfd983fc397597d8a8f952db67fa9e1930bee8a9
-      www/utils/site.typ: 7f4970b3ca54e5cc17f732752fe65ffad1b517ddd8fe3c11991963ac57c3d8cf
+      www/utils/site.typ: 65ee2513d5e32e26c5aedeb01ce7c53f6043b364463b0afab6eea7bc05fb75df
       www/utils/tola.typ: e537590773bc83e6a93b39f555505fa70874067742323c694916ddb6fad30dd0
-      www/utils/ui.typ: d0f746a7cf88804b36b41e3d19fc935d0971abc07bd676a0fc8f5fca6ee3cd06
+      www/utils/ui.typ: 76d360982aa92c919746e3a9b2cbce429decf31952e1b37f6d16e0302c4f78ff
     dependents:
-      www/README.md: 39157b335238972839fdce5e33e0359fd376e6343af5a6ad74266c99392d8176
+      www/README.md: 432223ce0b5203e9e91543f089f26bb6f57bf6a4ada09226b1cda46ef1003ce0

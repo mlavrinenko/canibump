@@ -1,0 +1,14 @@
+{
+  "/project/libfoo": [
+    {"repo": "nix_stable_25_11", "srcname": "libfoo", "version": "2.3.1"},
+    {"repo": "nix_unstable", "srcname": "libfoo", "version": "2.4.0"},
+    {"repo": "debian_13", "srcname": "libfoo", "version": "2.2.0"}
+  ],
+  "/v3/systems/cargo/packages/fastjson": {
+    "versions": [
+      {"versionKey": {"version": "1.0.184"}},
+      {"versionKey": {"version": "1.0.185"}},
+      {"versionKey": {"version": "1.1.0-rc1"}}
+    ]
+  }
+}

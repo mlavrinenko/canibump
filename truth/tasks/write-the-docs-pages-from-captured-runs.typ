@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: proposed(2026, 10, 13),
+  status: done(2026, 10, 13),
   links: parent("publish-the-docs-as-a-www-site-built-from-real-runs.typ")
     + depends-on(
       "render-the-cli-and-manifest-references-from-the-binary.typ",

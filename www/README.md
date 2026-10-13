@@ -24,8 +24,9 @@ builds. [generate.sh](generate.sh) builds it and runs it against a fixture in
 `examples/<name>/`, and [capture.sh](capture.sh) records each command, what it
 printed and its exit code in `generated/<slug>.json`. A page shows a record
 with `terminal("<slug>")`, a file of its fixture with
-`file("<slug>", "canibump.toml")`, one printed line with `capture-line`, and
-the last exit code with `exit-code`.
+`file("<slug>", "canibump.toml")`, one printed line with `capture-line` (or
+`capture-quote` for a prose line), and the last exit code with `exit-code`.
+`src("eval.rs")` names a source file and fails the build once it's gone.
 
 - Upstream is [mock-upstream.py](mock-upstream.py). It answers every provider
   from the fixture's `upstream.json`, a map from request path to JSON body.
@@ -37,6 +38,8 @@ the last exit code with `exit-code`.
 - The build fails when a capture exits other than expected, asks the mock for
   a route nobody wrote, or prints the capture area, your home or the checkout.
   Exit 1 and 2 are errors, so expecting one needs `--expect <regex>`.
+- Each `capture_copy` starts the fixture with no state file, and
+  `capture_prep` runs a setup step the page doesn't show.
 
 A capture is a fixture plus a few lines in generate.sh.
 
@@ -76,6 +79,20 @@ Both scanners read Typst's parse tree through
 [scripts/doc-blocks-lib.sh](../scripts/doc-blocks-lib.sh), ported from
 mindtape, and first run a control on known-bad input, so a scanner that reads
 nothing can't pass.
+
+## Voice
+
+Write like a dev showing the tool to a friend. Say "you", use contractions,
+keep sentences short. Open with the reader's problem, show the manifest and
+the run, then the rules. Cut every sentence the page works without.
+
+- One idea per sentence. No em dashes and no colons inside a sentence, so
+  split it instead.
+- Today's behaviour only, since git log holds the history.
+- State a fact on one page and link to it from the others.
+- Narrate a run sparingly, because the terminal block already shows it. The
+  `site-examples` group in outdatty.yaml flags the pages when a fixture
+  changes.
 
 ## Layout
 

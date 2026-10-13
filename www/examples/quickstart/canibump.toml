@@ -1,3 +1,5 @@
+#:schema https://raw.githubusercontent.com/mlavrinenko/canibump/main/schema/canibump.schema.json
+
 [[blocker]]
 id = "libfoo-crash"
 note = "drop the libfoo crash patch"

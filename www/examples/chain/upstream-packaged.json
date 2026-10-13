@@ -1,0 +1,19 @@
+{
+  "/repos/libfoo/libfoo/issues/412": {
+    "state": "closed",
+    "pull_request": {"merged_at": "2026-10-02T09:14:00Z"}
+  },
+  "/repos/libfoo/libfoo/pulls/412": {
+    "merged": true,
+    "merge_commit_sha": "4e1d2c9a7b3f5e6d8c0a1b2c3d4e5f6a7b8c9d0e"
+  },
+  "/repos/libfoo/libfoo/git/matching-refs/tags/v": [
+    {"ref": "refs/tags/v2.4.0"},
+    {"ref": "refs/tags/v2.4.1"}
+  ],
+  "/repos/libfoo/libfoo/compare/4e1d2c9a7b3f5e6d8c0a1b2c3d4e5f6a7b8c9d0e...v2.4.0": {"status": "behind"},
+  "/repos/libfoo/libfoo/compare/4e1d2c9a7b3f5e6d8c0a1b2c3d4e5f6a7b8c9d0e...v2.4.1": {"status": "ahead"},
+  "/project/libfoo": [
+    {"repo": "nix_unstable", "srcname": "libfoo", "version": "2.4.1"}
+  ]
+}
