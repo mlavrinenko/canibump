@@ -14,6 +14,11 @@ Before you send a change, run `just fix-check`: clippy's fixes, the formatter,
 then `just check`. Recipes live in the [Justfile](Justfile); a body over about
 five lines goes in `scripts/`.
 
+`just check` is two halves, `check-code` and `check-docs`, which CI runs as
+separate jobs in narrower shells, `nix develop .#rust` and `.#docs`. A tool a
+half runs goes in that shell's list in [flake.nix](flake.nix), one no CI job
+runs in `devTools`.
+
 ## Worktrees
 
 Work in parallel in a sibling worktree. `just fork` makes one and `just land`
@@ -30,16 +35,14 @@ just land                  # in the worktree: gate, wip check, fast-forward, rem
 A worktree only gets commits, so commit first. Never `git stash` in one: all
 worktrees share one stash list.
 
-[.config/wt.toml](.config/wt.toml) holds the hooks, so a clone needs no
-worktrunk config of its own. Before the fast-forward they run `just check` and
-`mt check --commits main..HEAD`, which refuses a branch naming a task still
-`wip`. After it they carry the gate records (`mmz --import`, once your mmz has
-it) and a fresh coverage lcov to the primary checkout.
+The hooks live in [.config/wt.toml](.config/wt.toml). Before the fast-forward
+they run `just check` and `mt check --commits main..HEAD`, which refuses a
+branch naming a task still `wip`. After it they carry the gate records
+(`mmz --import`, once your mmz has it) and a fresh coverage lcov home.
 
 ## Code Style
 
-All clippy lints are set to `deny`, so a violation does not compile. Key
-restrictions:
+Every clippy lint is `deny`, so a violation does not compile. The key ones:
 
 - No `unwrap()` or `expect()`; propagate with `?`, `anyhow::Result` in the
   binary, `thiserror::Error` for library errors callers match on
@@ -51,9 +54,8 @@ restrictions:
 
 ## Project Structure
 
-`main.rs` stays a thin entry point: argument parsing and a call into the
-library. Logic belongs in `lib.rs` and its modules. `main.rs` is excluded from
-coverage, so anything there goes untested.
+`main.rs` only parses arguments and calls the library; logic lives in `lib.rs`
+and its modules, since coverage skips `main.rs`.
 
 ## Testing
 
@@ -65,9 +67,9 @@ coverage, so anything there goes untested.
   `tests/it/main.rs`.
 - `just test` runs `cargo nextest run`, one process per test, plus
   `cargo test --doc`, which [nextest](https://nexte.st) skips
-  <!-- canibump:nextest-doctests -->. A green run prints the summary line. `just cover` instruments the same runner, so the
-  gate and the coverage cannot disagree. The output level lives in
-  [.config/nextest.toml](.config/nextest.toml).
+  <!-- canibump:nextest-doctests -->. A green run prints the summary line.
+  `just cover` instruments the same runner, so gate and coverage agree. The
+  output level lives in [.config/nextest.toml](.config/nextest.toml).
 - Near the linecop limit, `just fix-check` ejects an inline `#[cfg(test)]`
   module into a sibling `_tests.rs` with
   [ejectest](https://github.com/mlavrinenko/ejectest).
@@ -78,12 +80,11 @@ coverage, so anything there goes untested.
 subprocess e2e tests too. It starts with `cargo llvm-cov clean --workspace`,
 or a long-lived checkout keeps scoring binaries that no longer exist.
 
-`just crap` scores each function by the Change Risk Anti-Patterns metric
-(complexity weighted by coverage) and fails above 30, which a global coverage
-floor misses. Fix a flagged function with tests or less branching, never a
-higher threshold. It refuses a `target/coverage/lcov.info` older than a file
-in `src/` or `tests/`, since an uncovered function grades 0%, so run `just
-cover` first. `tests/**` and `*_tests.rs` are excluded.
+`just crap` fails a function above 30 on the Change Risk Anti-Patterns metric
+(complexity weighted by coverage), which a global floor misses. Fix it with
+tests or less branching, never a higher threshold. It refuses an lcov older
+than `src/` or `tests/`, so run `just cover` first. `tests/**` and
+`*_tests.rs` are excluded.
 
 Both are silent on a pass; CI runs them outside `just check`.
 
@@ -94,11 +95,10 @@ Rust files stop at 500 lines, Markdown at 200. Split a file past its limit.
 ## Dependency Drift
 
 [outdatty.yaml](outdatty.yaml) couples `source` files to the `dependents` that
-must follow them, like the CLI code and the docs that describe it. `just check`
-fails when a source changed and its dependents were not re-confirmed. Review
-them, update what needs it, run `just outdatty-update` and commit
-`outdatty.lock` with the change. Add a group for any new files that must move
-together.
+follow them, like the CLI code and its docs. `just check` fails when a source
+changed and its dependents were not re-confirmed. Update them, run
+`just outdatty-update` and commit `outdatty.lock` with the change. New files
+that must move together get a group.
 
 ## Memoized Gates
 
@@ -117,8 +117,8 @@ live in [.mmz/config.yaml](.mmz/config.yaml).
   untagged, so they never block a commit.
 - No `--force`: touch an input or delete the record under `.mmz/cache/` to
   re-run a fresh rule. `just status` prints each rule's freshness.
-- A new clone has no `Cargo.lock` until the first `just check` writes it, so the
-  second run misses once more. That is no broken cache.
+- A new clone's first `just check` writes `Cargo.lock`, so the second misses
+  once more. The cache is fine.
 
 ## Copy-Paste Gate
 
@@ -128,9 +128,8 @@ shared helper, never shuffle tokens until the detector loses the scent.
 
 ## Docs Site
 
-The site under `www/` builds with `just docs-build` and serves with live
-reload from `just docs-serve`. [www/README.md](www/README.md) says how it
-works and how to add a page.
+`just docs-build` builds the site under `www/`, `just docs-serve` serves it
+live. [www/README.md](www/README.md) says how it works and how to add a page.
 
 ## JSON Schema
 
@@ -141,36 +140,32 @@ fails while a committed file is stale; `just schema` regenerates them, and
 
 ## Dependency Audits
 
-`just deny` runs `cargo-deny` (advisories, licenses, bans). It needs network,
-so it runs in its own CI job, not in `just check`. The policy is
-[deny.toml](deny.toml): add a license to `licenses.allow` deliberately, never
-to silence a finding, and keep the file in cargo-deny's current schema, since a
-retired key fails the whole check. A green run is silent. Drop
-`--hide-inclusion-graph` from the recipe when chasing one finding.
+`just deny` runs `cargo-deny` (advisories, licenses, bans), silent when green.
+It needs network, so it runs in its own CI job, not in `just check`. In
+[deny.toml](deny.toml), widen `licenses.allow` deliberately, never to silence a
+finding, and keep cargo-deny's current schema: a retired key fails the whole
+check. Drop `--hide-inclusion-graph` from the recipe to chase one finding.
 
 `just outdated` lists newer dependency versions, network-bound and never a gate.
 
 ## Upstream Workarounds
 
 [canibump.toml](canibump.toml) is this repo using itself: one blocker per
-workaround in `flake.nix`, the `Justfile` or `.config/nextest.toml` that waits
-on an upstream issue or PR. A `canibump:<id>` comment marks each spot a
-workaround touches, so a bumpable line prints where to edit. `just canibump`
-checks them, off `just check` since it needs network. Add a blocker for each
-workaround, for an upstream item you opened and read, and mark its spots. The
-why and the exit plan live in the blocker alone.
+workaround that waits on an upstream issue or PR you opened and read. A
+`canibump:<id>` comment marks each spot it touches, so a bumpable line prints
+where to edit. The why and the exit plan live in the blocker alone.
+`just canibump` checks them, off `just check` since it needs network.
 
 ## Releasing
 
-`just release X.Y.Z --dry-run` first, then without the flag. Keep the entries
+`just release X.Y.Z --dry-run` first, then without the flag, with the entries
 under `[Unreleased]`. [cargo-release](https://github.com/crate-ci/cargo-release)
-(`release.toml`) bumps `Cargo.toml`, dates them, runs `scripts/release-hook.sh`,
-which holds every refusal, and commits. The recipe pushes `main`, waits for
-`ci.yml` on it (`scripts/release-ci.sh`), which builds every release target
-(`build.yml`), and tags only if it is green. After a red run, fix `main` and
-re-run: the bump stays done. The tag push is the only publish path
-(`release.yml`), so never `cargo publish` by hand. A repo's first release needs
-`main` pushed once by hand beforehand; the hook asks for it.
+(`release.toml`) bumps `Cargo.toml`, dates them, runs `scripts/release-hook.sh`
+(every refusal) and commits. The recipe pushes `main`, waits for `ci.yml` on it
+(`scripts/release-ci.sh`), which builds every release target, and tags only if
+it is green. After a red run, fix `main` and re-run. The tag push is the only
+publish path (`release.yml`), never `cargo publish` by hand. A repo's first
+release needs `main` pushed once by hand; the hook asks for it.
 
 ## Mutation Testing
 
@@ -192,8 +187,7 @@ Skip them for one commit with `git commit --no-verify`.
 
 Tasks are [MindTape](https://github.com/mlavrinenko/mindtape) files under
 `truth/tasks/`, configured in `.mindtape/config.toml`. `just check-tasks`
-(`mt check`) is a `just check` arm, skipped in CI, whose dev shell has no
-MindTape yet. A work commit carries a `Refs: <stem>` footer, and the task's
-`wip` or `done` flip rides with the work. The `commit-msg` hook holds both. The
-goals every open task rates itself against live in `truth/goals.typ` and
-`truth/process-goals.typ`.
+(`mt check`) is a `just check` arm, skipped in CI, whose shells lack MindTape.
+A work commit carries a `Refs: <stem>` footer and the task's `wip` or `done`
+flip; the `commit-msg` hook holds both. Tasks rate themselves against the goals
+in `truth/goals.typ` and `truth/process-goals.typ`.

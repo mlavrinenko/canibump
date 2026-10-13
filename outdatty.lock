@@ -78,8 +78,8 @@ groups:
       .config/nextest.toml: ec97d2444d9bf38aae8499d53eac3ffbbab47593637e3a324452ee72bec0ef0b
       .config/wt.toml: 7c06507d109ff5168d8bed19c9d700989abd6239cd9f800ef9cc43be17e79be7
       .mmz/config.yaml: e2640dd1dbc3c575ebfb5ad445b8bda4952f8f2a51851978bfb992053ce3ca4f
-      Justfile: 704b1ef449a203cd8ec3d664ba890810747e531f490e19e860c7f0905b4fa626
-      flake.nix: c95179c37ba0c1e5e078f918b2d56fe1b18c4d8e3bdbe439df3eb1c3dd26a273
+      Justfile: 68525a60b4361e9f042ef894bdacaf749d07cb57b49cd1fcfee7b61389d5a113
+      flake.nix: 83369926cf164df838464a8334f5df1ad2c8dc9156bd2626436eee8d984f6929
       release.toml: 0874f00ae73873868e5ace0bb2df30bb7f8b1be0a3a6186c4ec528c997f676a1
       scripts/check-doc-blocks.sh: 782092e2dc5c3e03dbcfdc630d2f40c74c24847c457515c990e80d43d5270840
       scripts/check-doc-prose.sh: 0553de3e5cbfdc861426b25669284c3508ec7ae2d520327576164559d0d627e5
@@ -92,8 +92,8 @@ groups:
       scripts/release-hook.sh: f9fe29a1ff1ad8df61a3317acf9e32c1e21ed4634e0d3ae15e6a29c0e4374c2e
       scripts/wt-carry-lcov.sh: 39b537a8a380b6fd1c88064bcfb2149a2207ba0ff390bf29c4bfa6e4b26fc650
     dependents:
-      AGENTS.md: f7b05504326c53160bf2ad017b43ebf554aa64c24819eecb73ad74bb16aa838d
-      CONTRIBUTING.md: 2dcf6e3a0202022ffd526e0c11edab02e466f9be3823ca611df7fcd34134b71d
+      AGENTS.md: c20c620fef082f9e1f003197403539b2c213bf28ec869b56eced287c91f43703
+      CONTRIBUTING.md: c17f03504f3170f1859a52fb13681a5ce09ec45a85c1b23fe1e8255fcc871754
   release-notes:
     source:
       Cargo.toml: acc8fe2cebd1a31e893599695b74352f7fd647c8c8331ef6b21bbf93b498a52a

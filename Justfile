@@ -21,7 +21,19 @@ fix-check: eject clippy-fix fmt check
 [doc("Run every gate, skipping those whose inputs did not change")]
 [group("daily")]
 [parallel]
-check: (mmz "fmt-check") (mmz "clippy") (mmz "test") (mmz "machete") (mmz "check-file-size") (mmz "check-dry") (mmz "check-tasks") (mmz "outdatty-check") (mmz "docs-build") (mmz "check-doc-blocks") (mmz "check-doc-prose")
+check: check-code check-docs
+
+# CI runs the halves as separate jobs, each in its own dev shell: `.#rust`
+# here, `.#docs` for check-docs.
+[doc("Run the code gates of check")]
+[group("gate")]
+[parallel]
+check-code: (mmz "fmt-check") (mmz "clippy") (mmz "test") (mmz "machete") (mmz "check-file-size") (mmz "check-dry") (mmz "check-tasks") (mmz "outdatty-check")
+
+[doc("Run the docs gates of check")]
+[group("gate")]
+[parallel]
+check-docs: (mmz "docs-build") (mmz "check-doc-blocks") (mmz "check-doc-prose")
 
 # The `--doc` pass is canibump:nextest-doctests. Green prints the summary.
 # The status level is in .config/nextest.toml, shared with `cover`.

@@ -16,77 +16,68 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
+  # Incremental state only bloats the target/ cache a fresh runner restores.
+  CARGO_INCREMENTAL: 0
 
 # Actions are pinned: first-party actions to immutable release tags, third-party
 # actions to commit SHAs. Bump them with Dependabot's `github-actions` ecosystem.
 jobs:
-  check:
+  # `just check` is these two halves, each in the narrowest dev shell that
+  # runs it, so a code job never builds the docs toolchain.
+  code:
     name: Check, Lint, Test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.3
-      - uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
-      # Caches /nix through the GitHub Actions cache (no external account or
-      # token). Replaces the deprecated DeterminateSystems/magic-nix-cache-action.
-      - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+      - uses: ./.github/actions/nix
         with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/flake.lock', '**/*.nix') }}
-          restore-prefixes-first-match: nix-${{ runner.os }}-
-          gc-max-store-size-linux: 5G
-          purge: true
-          purge-prefixes: nix-${{ runner.os }}-
-          purge-created: 0
-          purge-primary-key: never
+          shell: rust
+      - name: Check the code
+        run: nix develop .#rust --command just check-code
 
-      # Same dev shell as local development, so CI and `just check` match.
-      - name: Check
-        run: nix develop --command just check
+  docs:
+    name: Docs
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.3
+      - uses: ./.github/actions/nix
+        with:
+          shell: docs
+      - name: Build and check the docs
+        run: nix develop .#docs --command just check-docs
 
   coverage:
     name: Coverage
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.3
-      - uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
-      - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+      - uses: ./.github/actions/nix
         with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/flake.lock', '**/*.nix') }}
-          restore-prefixes-first-match: nix-${{ runner.os }}-
-          gc-max-store-size-linux: 5G
-          purge: true
-          purge-prefixes: nix-${{ runner.os }}-
-          purge-created: 0
-          purge-primary-key: never
+          shell: rust
 
       - name: Coverage (fails under 70%)
-        run: nix develop --command just cover
+        run: nix develop .#rust --command just cover
 
       # CRAP metric: fails if a function is both complex and undertested,
       # which a global coverage threshold can hide. Consumes the lcov that
       # `just cover` wrote.
       - name: CRAP gate (fails above 30)
-        run: nix develop --command just crap
+        run: nix develop .#rust --command just crap
 
   deny:
     name: Dependency Audit
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6.0.3
-      - uses: DeterminateSystems/nix-installer-action@ef8a148080ab6020fd15196c2084a2eea5ff2d25 # v22
-      - uses: nix-community/cache-nix-action@7df957e333c1e5da7721f60227dbba6d06080569 # v7
+      - uses: ./.github/actions/nix
         with:
-          primary-key: nix-${{ runner.os }}-${{ hashFiles('**/flake.lock', '**/*.nix') }}
-          restore-prefixes-first-match: nix-${{ runner.os }}-
-          gc-max-store-size-linux: 5G
-          purge: true
-          purge-prefixes: nix-${{ runner.os }}-
-          purge-created: 0
-          purge-primary-key: never
+          shell: rust
+          cargo: "false"
 
       # Same recipe as local `just deny`, so CI and a developer's run cannot
       # diverge on which cargo-deny checks are enforced.
       - name: Advisories, licenses, bans
-        run: nix develop --command just deny
+        run: nix develop .#rust --command just deny
 
   # Every release target, so `just release` sees a broken one before it tags.
   # Not on pull requests: the matrix is slow, and only main gets tagged.

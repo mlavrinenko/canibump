@@ -20,6 +20,9 @@
   [.mmz/config.yaml](.mmz/config.yaml) — an unmatched command is a hard error, not
   a silent skip. Don't wrap `just check` arms in `chronic`: a cache hit is already
   quiet, and a miss must stream its output.
+- `just check` runs `check-code` and `check-docs`; CI runs each in its own job
+  and dev shell (`.#rust`, `.#docs`). A new arm joins one half, and its tool
+  goes in that half's list in [flake.nix](flake.nix), else CI lacks it.
 - Be careful with the context. Omit non-necessary command outputs using `chronic` or `grep`.
   A recipe that prints on a green run wraps its command in `scripts/quiet.sh`.
 - [outdatty.yaml](outdatty.yaml) couples sources to dependents. When `just check`
