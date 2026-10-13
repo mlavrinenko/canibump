@@ -245,3 +245,22 @@ fn a_dry_run_expects_no_edit_at_all() {
     write(&release.work().join("Cargo.lock"), "# edited\n");
     release.refuses(true, "the working tree has uncommitted changes");
 }
+
+#[test]
+fn the_publish_dry_run_builds_in_a_target_dir_of_its_own() {
+    // Cargo's verify build shares the root crate's fingerprint, so in target/
+    // it would point the dev build at the packaged copy of src/.
+    let release = Release::new();
+    release.stub("cargo", "echo \"cargo $*\" >> \"$WORKSPACE_ROOT/../calls\"");
+    let out = release.run(true);
+    assert!(out.status.success(), "the hook refused:\n{}", stderr(&out));
+    let calls = std::fs::read_to_string(release.dir.path().join("calls")).expect("calls");
+    let publish = calls
+        .lines()
+        .find(|line| line.starts_with("cargo publish"))
+        .expect("a publish call");
+    assert!(
+        publish.contains("--target-dir target/package-verify"),
+        "got: {publish}"
+    );
+}

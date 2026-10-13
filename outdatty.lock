@@ -73,7 +73,7 @@ groups:
       scripts/eject.sh: 9fed177e7d200c062466f4c317c452280af8072de914f1eeb9ceb2a33cc97621
       scripts/quiet.sh: 7e05bb0d5be2959ede47c7eb33b9203e0446702ea178cdb596951df9e8b3fb73
       scripts/release-ci.sh: ed02a07820a1d3282d3269fd48ca6940d101ecfd98ac496d60cf2326769e7fba
-      scripts/release-hook.sh: 23cd583eaf49d395d73abe7e4313e19719c4301c6e188f708befbdaa8fd9ec10
+      scripts/release-hook.sh: f9fe29a1ff1ad8df61a3317acf9e32c1e21ed4634e0d3ae15e6a29c0e4374c2e
       scripts/wt-carry-lcov.sh: 39b537a8a380b6fd1c88064bcfb2149a2207ba0ff390bf29c4bfa6e4b26fc650
     dependents:
       AGENTS.md: 0bc948e4b14c45376fb95542d9bfbe360143a5d69df4ebfabff0a8dfe1d6e4eb

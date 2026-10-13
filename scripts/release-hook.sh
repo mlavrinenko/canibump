@@ -66,6 +66,8 @@ entries=$(sed -n "/^## \[${heading//./\\.}\]/,/^## \[/p" CHANGELOG.md | sed '1d;
 # The dated section is the review outdatty's release-notes group asks for.
 [ "$dry_run" = true ] || outdatty update --group release-notes >/dev/null
 just check || refuse "the gates have not passed on this tree" "fix what just check reports above, then commit"
-# --allow-dirty: on a real run the bump is not committed yet.
-cargo publish --dry-run --locked --allow-dirty --quiet \
+# --allow-dirty: on a real run the bump is not committed yet. Its own target
+# dir, because cargo's verify build shares the crate's fingerprint, and in
+# target/ it would leave the dev build checking the packaged copy of src/.
+cargo publish --dry-run --locked --allow-dirty --quiet --target-dir target/package-verify \
     || refuse "cargo publish --dry-run failed" "fix the packaging error above"
