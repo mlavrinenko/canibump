@@ -1,7 +1,7 @@
 # .mindtape/config.toml — canibump's backlog.
 # Adapted from ~/projects/home/mindtape/.mindtape/config.toml; the rationale
 # for every rule below lives in that file's comments.
-extends = ["mindtape-tasks"]
+extends = ["mindtape:tasks"]
 
 [tasks]
 

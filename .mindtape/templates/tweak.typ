@@ -13,7 +13,7 @@
 
 #slot(
   "why",
-  kind: "text",
+  kind: "raw",
   prompt: "Why the change, one line",
   example: "The help said `state` where the command says `status`",
 )
