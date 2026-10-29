@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: proposed(2026, 10, 11),
+  status: done(2026, 10, 29),
 )
 
 == Problem
@@ -39,14 +39,15 @@
 
 == TO-BE
 
-- 🟢 `flake.nix` takes MindTape as an input, and the dev shell's `mt` is the one `just check-tasks` and the git hooks run, locally and in CI.
+- 🟢 The dev shell takes `mt` from qahq, and it is the one `just check-tasks` and the git hooks run, locally and in CI.
 - 🟢 `ci.yml`'s `Check, Lint, Test` goes green on main.
 
 
 == Changes
 
-- `flake.nix`: a `mindtape` input, its package in the dev shell.
-- `flake.lock`: the new input.
+- `flake.nix`: qahq's `mindtape` package in the `rust` shell, which the default shell includes.
+- `flake.lock`: qahq bumped to the revision that ships it.
+- `Justfile`: `check-tasks` runs `mt check` in CI too.
 
 
 == Rollback
@@ -55,7 +56,7 @@ Revert the commit; the host's `mt` serves locally again, and CI stays red on `ch
 
 == Out of scope
 
-- Publishing MindTape's current main to GitHub. That is MindTape's maintainer's call, and this task waits on it.
+- A `mindtape` input of this flake's own: qahq already pins one beside the other gates.
 
 
 == Dogfood

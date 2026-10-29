@@ -168,9 +168,7 @@ check-doc-prose:
 [doc("Validate the task backlog")]
 [group("gate")]
 check-tasks:
-    # CI's dev shell has no MindTape until truth/tasks/put-mindtape-in-the-dev-shell-so-ci-can-check-the-tasks.typ
-    # lands; the commit-msg hook runs `mt check` on every commit meanwhile.
-    if [ -n "${CI:-}" ]; then echo "check-tasks: skipped in CI, whose dev shell has no MindTape"; else mt check -q; fi
+    mt check -q
 
 [doc("Fail when docs lag behind their sources")]
 [group("gate")]

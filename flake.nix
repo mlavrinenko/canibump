@@ -46,6 +46,9 @@
           qahq.packages.${system}.ejectest
           qahq.packages.${system}.jscpd
           qahq.packages.${system}.linecop
+          # `mt`: `just check-tasks` and the commit-msg hook check the backlog
+          # and each commit message against .mindtape/config.toml.
+          qahq.packages.${system}.mindtape
           # Memoized command runner. Every arm of `just check` runs as
           # `mmz just <subgate>`, so an arm whose declared inputs are
           # unchanged since it last passed is skipped. Rules and their input

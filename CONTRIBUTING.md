@@ -187,7 +187,7 @@ Skip them for one commit with `git commit --no-verify`.
 
 Tasks are [MindTape](https://github.com/mlavrinenko/mindtape) files under
 `truth/tasks/`, configured in `.mindtape/config.toml`. `just check-tasks`
-(`mt check`) is a `just check` arm, skipped in CI, whose shells lack MindTape.
+(`mt check`) is a `just check` arm, and `mt` comes from qahq in the dev shell.
 A work commit carries a `Refs: <stem>` footer and the task's `wip` or `done`
 flip; the `commit-msg` hook holds both. Tasks rate themselves against the goals
 in `truth/goals.typ` and `truth/process-goals.typ`.
