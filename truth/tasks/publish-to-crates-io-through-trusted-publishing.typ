@@ -27,7 +27,7 @@
     ),
   ),
   assignee: "agent",
-  status: wip(2026, 10, 30),
+  status: done(2026, 10, 30),
 )
 
 == Problem

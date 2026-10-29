@@ -1,13 +1,14 @@
 name: Deploy Pages
 
 on:
-  # Every push to main and every `v*` tag deploys the site built from that
-  # commit, so a docs change goes live with its push and waits on no release.
-  # A page can therefore describe a flag crates.io does not serve yet, until
-  # the next release catches up. By hand: `gh workflow run pages.yml`.
+  # Every push to main deploys the site built from that commit, so a docs
+  # change goes live with its push and waits on no release. A page can
+  # therefore describe a flag crates.io does not serve yet, until the next
+  # release catches up. No tag trigger: `just release` pushes main first, and
+  # the github-pages environment only admits main. By hand:
+  # `gh workflow run pages.yml`.
   push:
     branches: [main]
-    tags: ["v*"]
   workflow_dispatch: ~
 
 permissions:

@@ -201,7 +201,7 @@ groups:
       www/content/wait-on-a-release.typ: 74d69f8cf19307df9c2c494ed749fcd7a494779c522c33f3c31dd60ea6f788d3
   site-tooling:
     source:
-      .github/workflows/pages.yml: 9afc0b2cfccbd1460a143b356bd94f5490a1a72133166c4d379012addd836bdd
+      .github/workflows/pages.yml: 5cfc5eaec9e434d2050f1ddbfd4b6bd0ffafdce54fe26caf0da64b70c2d032ae
       docs/generate-md.sh: 7cfb29d0dfedb4a98e95679e59a5e1ba6dd0a396bf7087304592fc43e2515543
       www/build.sh: 684273a9b6ddedde5e7ca029cbb8b2a6f18fd6e64b530905bce26e24b0bdd81b
       www/capture.sh: 7614a3d4bdb33dab7e2ada6d04ff6fc3f0e509aef8eea520806d900e3f04690a
@@ -220,4 +220,4 @@ groups:
       www/utils/tola.typ: e537590773bc83e6a93b39f555505fa70874067742323c694916ddb6fad30dd0
       www/utils/ui.typ: 76d360982aa92c919746e3a9b2cbce429decf31952e1b37f6d16e0302c4f78ff
     dependents:
-      www/README.md: db0cfae1aef4a0c215df0bade292305969e9e12b0a73882c0d081fb20026649e
+      www/README.md: 54bf22a806d437c145d6176fc64b1000f2150e4029cc5627c171d9d8b284bd93

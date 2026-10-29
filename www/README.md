@@ -15,7 +15,7 @@ builds with `tola build --clean`, indexes the result with
 [Pagefind](https://pagefind.app), writes a Markdown copy of every page plus
 `llms.txt` ([generate-md.sh](generate-md.sh)), and runs `tola validate`, which
 fails on a dead link or a missing asset. `.github/workflows/pages.yml` runs the
-same recipe on every push to `main` and every `v*` tag, and deploys
+same recipe on every push to `main` and deploys
 `public/canibump`, so a docs change goes live with its push, not with a release.
 A page can describe behaviour `main` has and crates.io does not serve yet, until
 the next release catches up. Run it by hand with `gh workflow run pages.yml`.
