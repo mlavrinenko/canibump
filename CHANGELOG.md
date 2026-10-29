@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security
+
+- Update `rustls` to 0.23.46, `rustls-webpki` to 0.103.16 and `tokio` to 1.54.1,
+  past RUSTSEC-2026-0346, -0347, -0348, -0349, -0382 and -0386.
+
 ## [0.2.0] - 2026-10-12
 
 ### Added
