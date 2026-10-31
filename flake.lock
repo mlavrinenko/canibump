@@ -8,7 +8,7 @@
         ],
         "naersk": [
           "qahq",
-          "mindtape",
+          "linecop",
           "naersk"
         ],
         "nixpkgs": [
@@ -58,7 +58,7 @@
         ],
         "naersk": [
           "qahq",
-          "mindtape",
+          "linecop",
           "naersk"
         ],
         "nixpkgs": [
@@ -321,11 +321,7 @@
           "qahq",
           "flake-utils"
         ],
-        "naersk": [
-          "qahq",
-          "mindtape",
-          "naersk"
-        ],
+        "naersk": "naersk_2",
         "nixpkgs": [
           "qahq",
           "nixpkgs"
@@ -348,7 +344,11 @@
     "mindtape": {
       "inputs": {
         "flake-parts": "flake-parts_2",
-        "naersk": "naersk_2",
+        "naersk": [
+          "qahq",
+          "linecop",
+          "naersk"
+        ],
         "nixpkgs": [
           "qahq",
           "nixpkgs"
@@ -422,12 +422,10 @@
     "naersk_2": {
       "inputs": {
         "fenix": [
-          "qahq",
-          "mindtape"
+          "qahq"
         ],
         "nixpkgs": [
           "qahq",
-          "mindtape",
           "nixpkgs"
         ]
       },
@@ -442,6 +440,7 @@
       "original": {
         "owner": "nix-community",
         "repo": "naersk",
+        "rev": "9d4ed44d8b8cecdceb1d6fd76e74123d90ae6339",
         "type": "github"
       }
     },
@@ -690,11 +689,11 @@
         "outdatty": "outdatty"
       },
       "locked": {
-        "lastModified": 1793448003,
-        "narHash": "sha256-xR9nyRn+fmcrCXjCIu18eApnJBAQYJ+25ddFe7k9uos=",
+        "lastModified": 1793452769,
+        "narHash": "sha256-f6V+0PC7fGbU0iEMMhpV8A0DJVSDjhsQuKmMM+lIVrY=",
         "owner": "mlavrinenko",
         "repo": "qahq",
-        "rev": "3feae8d67f90953038822575aa4eede7e46180ee",
+        "rev": "97d0174a8b4b9c605f42b91712bc0527959182f1",
         "type": "github"
       },
       "original": {
