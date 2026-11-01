@@ -118,7 +118,7 @@ jobs:
         with:
           toolchain: stable
 
-      - uses: Swatinem/rust-cache@v2.9.1
+      - uses: Swatinem/rust-cache@v2.9.3
 
       # Trusted Publishing: crates.io trades the job's OIDC token for a
       # short-lived publish token that is revoked when the job ends.
